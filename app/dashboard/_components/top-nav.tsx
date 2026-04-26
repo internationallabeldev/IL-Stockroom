@@ -1,51 +1,16 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Search, Bell, User, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { cn } from '@/lib/utils'
-
-const navLinks = [
-  { href: '/dashboard',              label: 'Dashboard' },
-  { href: '/dashboard/orders',       label: 'Órdenes' },
-  { href: '/dashboard/inventory',    label: 'Inventario' },
-  { href: '/dashboard/requisitions', label: 'Requisiciones' },
-]
 
 export function TopNav({ userName }: { userName: string }) {
-  const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
   return (
     <header className="fixed top-0 z-50 h-16 w-full bg-[#F5F2EA] border-b border-[#1A1A1A]/15 flex items-center justify-between px-8">
-      <div className="flex items-center gap-8">
-        <span className="font-heading font-bold text-xl tracking-tighter select-none">
-          IL_STOCKROOM
-        </span>
-        <nav className="hidden md:flex gap-6">
-          {navLinks.map(({ href, label }) => {
-            const isActive =
-              href === '/dashboard'
-                ? pathname === '/dashboard'
-                : pathname.startsWith(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'font-heading text-base tracking-tight transition-colors duration-75',
-                  isActive
-                    ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A]'
-                    : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
-                )}
-              >
-                {label}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+      <span className="font-heading font-bold text-xl tracking-tighter select-none">
+        IL - STOCKROOM
+      </span>
 
       <div className="flex items-center gap-3">
         <div className="relative">
