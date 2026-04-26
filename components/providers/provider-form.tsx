@@ -58,7 +58,11 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 
   // Sync mode and form when drawer opens
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null })
+      setLogoPreview(null)
+      return
+    }
     setMode(initialMode)
     if (provider) {
       reset({

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProviderCard } from './provider-card'
 import { ProviderForm } from './provider-form'
 import { type Provider } from '@/actions/providers.actions'
@@ -12,6 +12,8 @@ const TYPE_FILTERS = [
   { value: 'PAPER_SUPPLIER', label: 'Papel' },
   { value: 'BOTH',           label: 'Ambos' },
 ]
+
+const DEFAULT_PAGE_SIZE = 12
 
 type DrawerState = {
   open: boolean
@@ -25,9 +27,11 @@ type Props = {
 }
 
 export function ProvidersList({ providers, canEdit }: Props) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch]       = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', provider: null })
+  const [page, setPage]           = useState(1)
+  const [pageSize, setPageSize]   = useState(DEFAULT_PAGE_SIZE)
+  const [drawer, setDrawer]       = useState<DrawerState>({ open: false, mode: 'create', provider: null })
 
   const filtered = providers.filter(p => {
     const matchType = !typeFilter || p.provider_type === typeFilter
@@ -40,10 +44,22 @@ export function ProvidersList({ providers, canEdit }: Props) {
     return matchType && matchSearch
   })
 
-  const openCreate = () => setDrawer({ open: true, mode: 'create', provider: null })
-  const openView   = (p: Provider) => setDrawer({ open: true, mode: 'view', provider: p })
-  const openEdit   = (p: Provider) => setDrawer({ open: true, mode: 'edit', provider: p })
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1) }, [search, typeFilter, pageSize])
+
+  const openCreate  = () => setDrawer({ open: true, mode: 'create', provider: null })
+  const openView    = (p: Provider) => setDrawer({ open: true, mode: 'view', provider: p })
+  const openEdit    = (p: Provider) => setDrawer({ open: true, mode: 'edit', provider: p })
   const closeDrawer = () => setDrawer(d => ({ ...d, open: false }))
+
+  function handlePageSizeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = Math.max(1, Math.min(100, Number(e.target.value) || DEFAULT_PAGE_SIZE))
+    setPageSize(val)
+  }
 
   return (
     <>
@@ -61,6 +77,7 @@ export function ProvidersList({ providers, canEdit }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Type filter */}
           <div className="flex border border-[#1A1A1A]/20">
             {TYPE_FILTERS.map(f => (
               <button
@@ -77,6 +94,21 @@ export function ProvidersList({ providers, canEdit }: Props) {
             ))}
           </div>
 
+          {/* Page size */}
+          <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-9">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">
+              Por página
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={pageSize}
+              onChange={handlePageSizeChange}
+              className="w-10 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
+            />
+          </div>
+
           {canEdit && (
             <button
               onClick={openCreate}
@@ -89,15 +121,67 @@ export function ProvidersList({ providers, canEdit }: Props) {
         </div>
       </div>
 
-      {/* Count */}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
-        {filtered.length} proveedor{filtered.length !== 1 ? 'es' : ''}
-      </p>
+      {/* Count + pagination info */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          {filtered.length} proveedor{filtered.length !== 1 ? 'es' : ''}
+          {filtered.length > pageSize && (
+            <span className="ml-1 font-normal normal-case tracking-normal">
+              — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}
+            </span>
+          )}
+        </p>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`ellipsis-${i}`} className="w-7 text-center text-[10px] text-[#5f5e59]">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={`size-7 text-[10px] font-bold border transition-colors ${
+                      safePage === n
+                        ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
+                        : 'border-[#1A1A1A]/20 hover:bg-[#E5E1D8]'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Grid */}
-      {filtered.length > 0 ? (
+      {paginated.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map(p => (
+          {paginated.map(p => (
             <ProviderCard
               key={p.id}
               provider={p}
