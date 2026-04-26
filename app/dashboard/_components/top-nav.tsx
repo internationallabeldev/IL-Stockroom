@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Search, Bell, User } from 'lucide-react'
+import { Search, Bell, User, Sun, Moon } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -14,6 +15,7 @@ const navLinks = [
 
 export function TopNav({ userName }: { userName: string }) {
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
 
   return (
     <header className="fixed top-0 z-50 h-16 w-full bg-[#F5F2EA] border-b border-[#1A1A1A]/15 flex items-center justify-between px-8">
@@ -54,8 +56,15 @@ export function TopNav({ userName }: { userName: string }) {
             className="h-8 w-56 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-3 text-xs outline-none transition-colors focus:border-[#1A1A1A]/40 placeholder:text-[#1A1A1A]/40"
           />
         </div>
-        <button className="flex size-8 items-center justify-center hover:bg-[#E5E1D8] transition-colors">
-          <Bell className="size-4 text-[#1A1A1A]/60" />
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="flex size-8 items-center justify-center hover:bg-[#E5E1D8] dark:hover:bg-white/10 transition-colors"
+        >
+          <Sun className="size-4 text-[#1A1A1A]/60 dark:hidden" />
+          <Moon className="size-4 hidden text-white/60 dark:block" />
+        </button>
+        <button className="flex size-8 items-center justify-center hover:bg-[#E5E1D8] dark:hover:bg-white/10 transition-colors">
+          <Bell className="size-4 text-[#1A1A1A]/60 dark:text-white/60" />
         </button>
         <div className="flex items-center gap-2 border-l border-[#1A1A1A]/15 pl-3">
           <User className="size-4 text-[#1A1A1A]/70" />

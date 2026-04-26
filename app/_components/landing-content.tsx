@@ -1,8 +1,11 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ContactForm } from './contact-form'
+
+const CMYK_COLORS = ['#00AEEF', '#EC008C', '#FFE600'] as const
 
 /* ─── constants ─────────────────────────────────────── */
 const E = [0.16, 1, 0.3, 1] as const   // snappy ease-out
@@ -10,17 +13,17 @@ const E = [0.16, 1, 0.3, 1] as const   // snappy ease-out
 const HEADLINE_LINES = ['EXPERIENCIA', 'Y CALIDAD', 'CON LA MEJOR']
 
 const products = [
-  { num: '01', name: 'Etiquetas',           desc: 'Etiquetas de alta precisión para todo tipo de envase y empaque industrial o comercial.' },
-  { num: '02', name: 'Booklet Label',        desc: 'Etiquetas tipo booklet con múltiples páginas para información técnica y regulatoria extensa.' },
-  { num: '03', name: 'Plegadizo',            desc: 'Cajas plegadizas con diseño estructural y acabados que comunican calidad en el punto de venta.' },
+  { num: '01', name: 'Etiquetas', desc: 'Etiquetas de alta precisión para todo tipo de envase y empaque industrial o comercial.' },
+  { num: '02', name: 'Booklet Label', desc: 'Etiquetas tipo booklet con múltiples páginas para información técnica y regulatoria extensa.' },
+  { num: '03', name: 'Plegadizo', desc: 'Cajas plegadizas con diseño estructural y acabados que comunican calidad en el punto de venta.' },
   { num: '04', name: 'Manga Termoencogible', desc: 'Mangas de contracción térmica de cobertura total para branding de 360° sobre el envase.' },
 ]
 
 const specialties = [
   { name: 'Hot Stamping', desc: 'Estampado en caliente para acabados metálicos de lujo sobre cualquier sustrato.' },
-  { name: 'Cold Foil',    desc: 'Aplicación de foil en frío con resolución de imagen de alta definición.' },
-  { name: 'Embossing',    desc: 'Relieve y grabado en bajo o alto relieve para tactilidad y distinción visual.' },
-  { name: 'Laminado',     desc: 'Laminación brillante, mate o soft-touch que protege e intensifica los colores.' },
+  { name: 'Cold Foil', desc: 'Aplicación de foil en frío con resolución de imagen de alta definición.' },
+  { name: 'Embossing', desc: 'Relieve y grabado en bajo o alto relieve para tactilidad y distinción visual.' },
+  { name: 'Laminado', desc: 'Laminación brillante, mate o soft-touch que protege e intensifica los colores.' },
 ]
 
 const partners = ['Gallus', 'Siegwerk Group', 'SGS — GMI Certified']
@@ -28,36 +31,36 @@ const partners = ['Gallus', 'Siegwerk Group', 'SGS — GMI Certified']
 const certifications = ['ISO 9001', 'PROFEPA — Industria Limpia', 'GMI Certified Printer']
 
 const navLinks = [
-  { href: '#nosotros',       label: 'Nosotros' },
-  { href: '#servicios',      label: 'Servicios' },
+  { href: '#nosotros', label: 'Nosotros' },
+  { href: '#servicios', label: 'Servicios' },
   { href: '#especialidades', label: 'Tecnología' },
-  { href: '#contacto',       label: 'Contacto' },
+  { href: '#contacto', label: 'Contacto' },
 ]
 
 /* ─── shared variants ───────────────────────────────── */
 const fadeUp = {
-  hidden:   { opacity: 0, y: 28 },
-  visible:  { opacity: 1, y: 0, transition: { duration: 0.7, ease: E } },
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: E } },
 }
 
 const fadeIn = {
-  hidden:   { opacity: 0 },
-  visible:  { opacity: 1, transition: { duration: 0.7, ease: E } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.7, ease: E } },
 }
 
 const stagger = {
-  hidden:   {},
-  visible:  { transition: { staggerChildren: 0.1 } },
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
 }
 
 const staggerFast = {
-  hidden:   {},
-  visible:  { transition: { staggerChildren: 0.07 } },
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
 }
 
 const heroLine = {
-  hidden:   { y: 80 },
-  visible:  (i: number) => ({
+  hidden: { y: 80 },
+  visible: (i: number) => ({
     y: 0,
     transition: { duration: 0.9, ease: E, delay: 0.2 + i * 0.12 },
   }),
@@ -65,10 +68,100 @@ const heroLine = {
 
 const vp = { once: true, margin: '-80px' } as const
 
+/* ─── CMYK drop ─────────────────────────────────────── */
+function CMYKDrop() {
+  const pw = 38
+  const dw = pw * Math.SQRT2
+  const periodY = 4 * dw
+
+  const colors = ['#00AEEF', '#EC008C', '#FFE600', '#1A1A1A']
+
+  const yTop = -(periodY + 20)
+  const yBottom = 260 + periodY + 20
+  const shiftTop = 260 - yTop
+  const shiftBottom = 260 - yBottom
+
+  const polys: { color: string; points: string }[] = []
+  let ci = 0
+  for (let x0 = -500; x0 < 700; x0 += dw) {
+    polys.push({
+      color: colors[ci % 4],
+      points: [
+        `${x0 + shiftBottom},${yBottom}`,
+        `${x0 + dw + shiftBottom},${yBottom}`,
+        `${x0 + dw + shiftTop},${yTop}`,
+        `${x0 + shiftTop},${yTop}`,
+      ].join(' '),
+    })
+    ci++
+  }
+
+  const dropPath =
+    'M100,10 C80,105 30,125 30,190 C30,228 65,250 100,250 C135,250 170,228 170,190 C170,125 120,105 100,10 Z'
+
+  return (
+    <svg
+      viewBox="0 0 200 260"
+      className="h-[75vh] w-auto"
+      style={{ filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.55))' }}
+    >
+      <defs>
+        <clipPath id="cmyk-drop-clip">
+          <path d={dropPath} />
+        </clipPath>
+        <filter id="drop-inset-shadow" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+          <feFlood floodColor="black" floodOpacity="1" result="flood" />
+          <feComposite in="flood" in2="SourceAlpha" operator="out" result="outside" />
+          <feGaussianBlur in="outside" stdDeviation="7" result="blurred" />
+          <feOffset in="blurred" dx="-6" dy="-9" result="shifted" />
+          <feComposite in="shifted" in2="SourceAlpha" operator="in" result="shadow" />
+          <feComponentTransfer in="shadow">
+            <feFuncA type="linear" slope="0.88" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+      <g clipPath="url(#cmyk-drop-clip)">
+        <g>
+          {polys.map(({ color, points }, i) => (
+            <polygon key={i} fill={color} points={points} />
+          ))}
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            from="0 0"
+            to={`0 ${periodY}`}
+            dur="5s"
+            repeatCount="indefinite"
+          />
+        </g>
+        <path d={dropPath} fill="black" filter="url(#drop-inset-shadow)" />
+      </g>
+      <path d={dropPath} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 /* ─── component ─────────────────────────────────────── */
 export function LandingContent() {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    const durations = [8000, 5000, 2000]
+    let idx = 0
+    let id: ReturnType<typeof setTimeout>
+    const tick = () => {
+      idx = (idx + 1) % CMYK_COLORS.length
+      el.style.setProperty('--cmyk-accent', CMYK_COLORS[idx])
+      id = setTimeout(tick, durations[idx])
+    }
+    id = setTimeout(tick, durations[idx])
+    return () => clearTimeout(id)
+  }, [])
+
   return (
-    <div className="bg-[#F5F2EA] text-[#1A1A1A]">
+    <div ref={wrapperRef} className="cmyk-cycling bg-[#F5F2EA] text-[#1A1A1A]">
 
       {/* ── NAV ─────────────────────────────────────────── */}
       <motion.header
@@ -100,64 +193,81 @@ export function LandingContent() {
       </motion.header>
 
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="bg-[#1A1A1A] text-[#F5F2EA] min-h-screen flex flex-col justify-between pt-16 px-8 md:px-16 pb-12">
-        <div className="flex-1 flex items-center py-16">
-          <div className="max-w-5xl">
+      <section className="bg-[#1A1A1A] text-[#F5F2EA] min-h-screen flex flex-col justify-between pt-16 px-8 md:px-16 pb-12 relative overflow-hidden">
+        <div className="flex-1 flex items-center py-12">
+          <div className="w-full flex items-center">
+            <div className="flex-1 min-w-0">
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="text-[10px] font-bold uppercase tracking-widest text-[#F5F2EA]/30 mb-10"
-            >
-              Empresa 100% Mexicana — Materiales de Empaque
-            </motion.p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="text-[10px] font-bold uppercase tracking-widest text-[#F5F2EA]/30 mb-10"
+              >
+                Empresa 100% Mexicana — Materiales de Empaque
+              </motion.p>
 
-            {/* Staggered line-by-line headline reveal */}
-            <h1 className="font-heading text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tighter leading-[0.92] mb-12">
-              {HEADLINE_LINES.map((line, i) => (
-                <div key={line} className="overflow-hidden">
-                  <motion.div custom={i} initial="hidden" animate="visible" variants={heroLine}>
-                    {line}
-                  </motion.div>
+              {/* Staggered line-by-line headline reveal */}
+
+              <h1 className="font-heading text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tighter leading-[0.92] mb-12">
+                <div>
+                  {HEADLINE_LINES.map((line, i) => (
+                    <div key={line} className="overflow-hidden">
+                      <motion.div custom={i} initial="hidden" animate="visible" variants={heroLine}>
+                        {line}
+                      </motion.div>
+                    </div>
+                  ))}
+                  <div className="overflow-hidden">
+                    <motion.div custom={3} initial="hidden" animate="visible" variants={heroLine}>
+                      <span className="text-(--cmyk-accent)">TECNOLOGIA</span>
+                    </motion.div>
+                  </div>
                 </div>
-              ))}
-              <div className="overflow-hidden">
-                <motion.div custom={3} initial="hidden" animate="visible" variants={heroLine}>
-                  <span className="text-[#008dc2]">TECNOLOGÍA</span>
+
+              </h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: E, delay: 0.82 }}
+                className="text-base text-[#F5F2EA]/50 max-w-xl mb-10 leading-relaxed"
+              >
+                Fabricamos materiales de empaque con tecnología de vanguardia
+                para ser parte integral del proceso productivo de nuestros clientes.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: E, delay: 1.02 }}
+                className="flex flex-wrap gap-3"
+              >
+                <a
+                  href="#contacto"
+                  className="px-7 py-3 bg-[#F5F2EA] text-[#1A1A1A] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                >
+                  Platícanos tu proyecto
+                </a>
+                <a
+                  href="#servicios"
+                  className="px-7 py-3 border border-[#F5F2EA]/25 text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:border-[#F5F2EA]/60 transition-colors"
+                >
+                  Ver servicios →
+                </a>
+              </motion.div>
+            </div>
+            <div className="hidden md:block w-[38%] shrink-0">
+              <div className="translate-x-[22%]">
+                <motion.div
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 1.2, ease: E, delay: 0.7 }}
+                >
+                  <CMYKDrop />
                 </motion.div>
               </div>
-            </h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: E, delay: 0.82 }}
-              className="text-base text-[#F5F2EA]/50 max-w-xl mb-10 leading-relaxed"
-            >
-              Fabricamos materiales de empaque con tecnología de vanguardia
-              para ser parte integral del proceso productivo de nuestros clientes.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: E, delay: 1.02 }}
-              className="flex flex-wrap gap-3"
-            >
-              <a
-                href="#contacto"
-                className="px-7 py-3 bg-[#F5F2EA] text-[#1A1A1A] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
-              >
-                Platícanos tu proyecto
-              </a>
-              <a
-                href="#servicios"
-                className="px-7 py-3 border border-[#F5F2EA]/25 text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:border-[#F5F2EA]/60 transition-colors"
-              >
-                Ver servicios →
-              </a>
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -177,7 +287,7 @@ export function LandingContent() {
           >
             {[['+20', 'Años de experiencia'], ['ISO', '9001 Certificados'], ['GMI', 'Certified Printer']].map(([val, label]) => (
               <motion.div key={val} variants={fadeUp}>
-                <p className="font-heading text-2xl font-bold text-[#008dc2]">{val}</p>
+                <p className="font-heading text-2xl font-bold text-(--cmyk-accent)">{val}</p>
                 <p className="text-[9px] font-bold uppercase tracking-widest text-[#F5F2EA]/30 mt-0.5">{label}</p>
               </motion.div>
             ))}
@@ -224,7 +334,7 @@ export function LandingContent() {
               variants={fadeUp}
               className={`p-8 ${i < 2 ? 'border-b md:border-b-0 md:border-r border-[#1A1A1A]/15' : ''}`}
             >
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#008dc2] mb-5">{label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-(--cmyk-accent) mb-5">{label}</p>
               <p className="text-sm leading-relaxed text-[#5f5e59]">{text}</p>
             </motion.div>
           ))}
@@ -258,12 +368,12 @@ export function LandingContent() {
                 ${i % 2 === 0 ? 'md:border-r border-[#F5F2EA]/10' : ''}
                 ${i < 2 ? 'border-b border-[#F5F2EA]/10' : ''}`}
             >
-              <p className="font-heading text-5xl font-bold text-[#F5F2EA]/[0.06] group-hover:text-[#008dc2]/20 transition-colors mb-4 select-none">
+              <p className="font-heading text-5xl font-bold text-[#F5F2EA]/[0.06] group-hover:text-(--cmyk-accent)/30 transition-colors mb-4 select-none">
                 {num}
               </p>
               <h3 className="font-heading text-2xl font-medium mb-3">{name}</h3>
               <p className="text-sm text-[#F5F2EA]/45 leading-relaxed">{desc}</p>
-              <p className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#008dc2] opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-widest text-(--cmyk-accent) opacity-0 group-hover:opacity-100 transition-opacity">
                 Más información →
               </p>
             </motion.div>
@@ -297,7 +407,7 @@ export function LandingContent() {
               className={`p-6 hover:bg-[#E5E1D8] transition-colors ${i < 3 ? 'border-r border-[#1A1A1A]/15' : ''}`}
             >
               <div className="size-8 border border-[#1A1A1A]/20 flex items-center justify-center mb-5">
-                <span className="text-[10px] font-bold text-[#008dc2]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="text-[10px] font-bold text-(--cmyk-accent)">{String(i + 1).padStart(2, '0')}</span>
               </div>
               <h3 className="font-heading text-lg font-medium mb-2">{name}</h3>
               <p className="text-xs text-[#5f5e59] leading-relaxed">{desc}</p>
@@ -371,17 +481,18 @@ export function LandingContent() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">Email</p>
                 <a
                   href="mailto:ventas@internationallabel.com.mx"
-                  className="font-heading text-base font-medium text-[#008dc2] hover:underline underline-offset-4"
+                  className="font-heading text-base font-medium text-(--cmyk-accent) hover:underline underline-offset-4"
                 >
                   ventas@internationallabel.com.mx
                 </a>
+
               </div>
               <div className="border-t border-[#1A1A1A]/10 pt-6">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">Certificaciones</p>
                 <div className="flex flex-col gap-2">
                   {certifications.map(cert => (
                     <span key={cert} className="text-xs font-medium text-[#1A1A1A]/60 flex items-center gap-2">
-                      <span className="size-1.5 rounded-full bg-[#008dc2] inline-block shrink-0" />
+                      <span className="size-1.5 rounded-full bg-(--cmyk-accent) inline-block shrink-0" />
                       {cert}
                     </span>
                   ))}
