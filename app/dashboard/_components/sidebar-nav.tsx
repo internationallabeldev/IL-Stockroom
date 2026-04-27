@@ -10,6 +10,7 @@ import {
   Package,
   ClipboardList,
   BarChart2,
+  Truck,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,7 @@ const navItems = [
   { href: '/dashboard/orders',         label: 'Órdenes',       icon: ShoppingCart },
   { href: '/dashboard/inventory',      label: 'Inventario',    icon: Package },
   { href: '/dashboard/requisitions',   label: 'Requisiciones', icon: ClipboardList },
+  { href: '/dashboard/providers',      label: 'Proveedores',   icon: Truck },
   { href: '/dashboard/reports',        label: 'Reportes',      icon: BarChart2 },
 ]
 
