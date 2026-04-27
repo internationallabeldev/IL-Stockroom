@@ -49,7 +49,6 @@ export type Database = {
       }
       ink_catalog: {
         Row: {
-          category_id: number | null
           code: string
           color_code: string | null
           created_at: string | null
@@ -61,12 +60,14 @@ export type Database = {
           last_purchase_date: string | null
           min_stock_kg: number
           name: string
+          ink_type: string | null
+          optical_density: number | null
+          prepress_pct: number | null
           provider_id: number | null
           updated_at: string | null
           viscosity: number | null
         }
         Insert: {
-          category_id?: number | null
           code: string
           color_code?: string | null
           created_at?: string | null
@@ -75,15 +76,17 @@ export type Database = {
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_type?: string | null
           last_purchase_date?: string | null
           min_stock_kg: number
           name: string
+          optical_density?: number | null
+          prepress_pct?: number | null
           provider_id?: number | null
           updated_at?: string | null
           viscosity?: number | null
         }
         Update: {
-          category_id?: number | null
           code?: string
           color_code?: string | null
           created_at?: string | null
@@ -92,21 +95,17 @@ export type Database = {
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_type?: string | null
           last_purchase_date?: string | null
           min_stock_kg?: number
           name?: string
+          optical_density?: number | null
+          prepress_pct?: number | null
           provider_id?: number | null
           updated_at?: string | null
           viscosity?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "ink_catalog_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "ink_catalog_provider_id_fkey"
             columns: ["provider_id"]
@@ -309,7 +308,6 @@ export type Database = {
       }
       paper_catalog: {
         Row: {
-          category_id: number | null
           code: string
           created_at: string | null
           current_stock_m2: number | null
@@ -327,7 +325,6 @@ export type Database = {
           weight_gsm: number | null
         }
         Insert: {
-          category_id?: number | null
           code: string
           created_at?: string | null
           current_stock_m2?: number | null
@@ -345,7 +342,6 @@ export type Database = {
           weight_gsm?: number | null
         }
         Update: {
-          category_id?: number | null
           code?: string
           created_at?: string | null
           current_stock_m2?: number | null
@@ -363,13 +359,6 @@ export type Database = {
           weight_gsm?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "paper_catalog_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "paper_catalog_provider_id_fkey"
             columns: ["provider_id"]
