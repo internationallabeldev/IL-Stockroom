@@ -49,7 +49,6 @@ export type Database = {
       }
       ink_catalog: {
         Row: {
-          category_id: number | null
           code: string
           color_code: string | null
           created_at: string | null
@@ -58,15 +57,17 @@ export type Database = {
           description: string | null
           enabled: boolean | null
           id: number
+          ink_type: string | null
           last_purchase_date: string | null
           min_stock_kg: number
           name: string
+          optical_density: number | null
+          prepress_pct: number | null
           provider_id: number | null
           updated_at: string | null
           viscosity: number | null
         }
         Insert: {
-          category_id?: number | null
           code: string
           color_code?: string | null
           created_at?: string | null
@@ -75,15 +76,17 @@ export type Database = {
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_type?: string | null
           last_purchase_date?: string | null
           min_stock_kg: number
           name: string
+          optical_density?: number | null
+          prepress_pct?: number | null
           provider_id?: number | null
           updated_at?: string | null
           viscosity?: number | null
         }
         Update: {
-          category_id?: number | null
           code?: string
           color_code?: string | null
           created_at?: string | null
@@ -92,21 +95,17 @@ export type Database = {
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_type?: string | null
           last_purchase_date?: string | null
           min_stock_kg?: number
           name?: string
+          optical_density?: number | null
+          prepress_pct?: number | null
           provider_id?: number | null
           updated_at?: string | null
           viscosity?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "ink_catalog_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "ink_catalog_provider_id_fkey"
             columns: ["provider_id"]
@@ -309,67 +308,78 @@ export type Database = {
       }
       paper_catalog: {
         Row: {
-          category_id: number | null
+          bulk_cm3g: number | null
           code: string
+          core_mm: number | null
           created_at: string | null
           current_stock_m2: number | null
           density: number | null
           description: string | null
           enabled: boolean | null
           id: number
+          ink_compatibility: string[] | null
           last_purchase_date: string | null
+          material: string | null
           min_stock_m2: number | null
           name: string
           provider_id: number | null
+          reel_diameter_mm: number | null
           standard_width_m: number | null
+          stock_unit: string
+          substrate_category: string | null
           thickness_mm: number | null
           updated_at: string | null
           weight_gsm: number | null
         }
         Insert: {
-          category_id?: number | null
+          bulk_cm3g?: number | null
           code: string
+          core_mm?: number | null
           created_at?: string | null
           current_stock_m2?: number | null
           density?: number | null
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_compatibility?: string[] | null
           last_purchase_date?: string | null
+          material?: string | null
           min_stock_m2?: number | null
           name: string
           provider_id?: number | null
+          reel_diameter_mm?: number | null
           standard_width_m?: number | null
+          stock_unit?: string
+          substrate_category?: string | null
           thickness_mm?: number | null
           updated_at?: string | null
           weight_gsm?: number | null
         }
         Update: {
-          category_id?: number | null
+          bulk_cm3g?: number | null
           code?: string
+          core_mm?: number | null
           created_at?: string | null
           current_stock_m2?: number | null
           density?: number | null
           description?: string | null
           enabled?: boolean | null
           id?: number
+          ink_compatibility?: string[] | null
           last_purchase_date?: string | null
+          material?: string | null
           min_stock_m2?: number | null
           name?: string
           provider_id?: number | null
+          reel_diameter_mm?: number | null
           standard_width_m?: number | null
+          stock_unit?: string
+          substrate_category?: string | null
           thickness_mm?: number | null
           updated_at?: string | null
           weight_gsm?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "paper_catalog_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "paper_catalog_provider_id_fkey"
             columns: ["provider_id"]
@@ -742,6 +752,7 @@ export type Database = {
           id: number
           ink_catalog_id: number
           is_complete: boolean | null
+          item_notes: string | null
           kg_per_unit: number
           purchase_order_id: number
           total_kg_ordered: number | null
@@ -755,6 +766,7 @@ export type Database = {
           id?: number
           ink_catalog_id: number
           is_complete?: boolean | null
+          item_notes?: string | null
           kg_per_unit: number
           purchase_order_id: number
           total_kg_ordered?: number | null
@@ -768,6 +780,7 @@ export type Database = {
           id?: number
           ink_catalog_id?: number
           is_complete?: boolean | null
+          item_notes?: string | null
           kg_per_unit?: number
           purchase_order_id?: number
           total_kg_ordered?: number | null
@@ -798,6 +811,7 @@ export type Database = {
           created_at: string | null
           id: number
           is_complete: boolean | null
+          item_notes: string | null
           length_m_per_unit: number
           paper_catalog_id: number
           purchase_order_id: number
@@ -812,6 +826,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           is_complete?: boolean | null
+          item_notes?: string | null
           length_m_per_unit: number
           paper_catalog_id: number
           purchase_order_id: number
@@ -826,6 +841,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           is_complete?: boolean | null
+          item_notes?: string | null
           length_m_per_unit?: number
           paper_catalog_id?: number
           purchase_order_id?: number
