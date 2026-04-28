@@ -14,7 +14,7 @@ const STOCK_FILTERS = [
   { value: 'empty', label: 'Sin stock' },
 ]
 
-const DEFAULT_PAGE_SIZE = 12
+const DEFAULT_PAGE_SIZE = 8
 
 type DrawerState = {
   open: boolean
@@ -33,6 +33,7 @@ export function PaperCatalogList({ items, providers, canEdit }: Props) {
   const [stockFilter, setStockFilter] = useState('')
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(DEFAULT_PAGE_SIZE)
+  const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer]           = useState<DrawerState>({ open: false, mode: 'create', item: null })
 
   const filtered = items.filter(item => {
@@ -65,7 +66,16 @@ export function PaperCatalogList({ items, providers, canEdit }: Props) {
   const closeDrawer = () => setDrawer(d => ({ ...d, open: false }))
 
   function handlePageSizeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setPageSize(Math.max(1, Math.min(100, Number(e.target.value) || DEFAULT_PAGE_SIZE)))
+    setPageSizeInput(e.target.value)
+    const n = parseInt(e.target.value)
+    if (!isNaN(n) && n >= 1 && n <= 100) setPageSize(n)
+  }
+
+  function handlePageSizeBlur() {
+    const n = parseInt(pageSizeInput)
+    const clamped = isNaN(n) || n < 1 ? pageSize : Math.min(100, n)
+    setPageSize(clamped)
+    setPageSizeInput(String(clamped))
   }
 
   return (
@@ -110,8 +120,9 @@ export function PaperCatalogList({ items, providers, canEdit }: Props) {
               type="number"
               min={1}
               max={100}
-              value={pageSize}
+              value={pageSizeInput}
               onChange={handlePageSizeChange}
+              onBlur={handlePageSizeBlur}
               className="w-10 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
             />
           </div>

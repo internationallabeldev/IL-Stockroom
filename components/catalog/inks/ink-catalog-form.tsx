@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { X, Pencil, Loader2, Palette } from 'lucide-react'
+import { X, Pencil, Loader2, Palette, Info } from 'lucide-react'
 import { inkCatalogSchema, type InkCatalogFormValues, INK_TYPES, INK_TYPE_LABELS, type InkType } from '@/lib/validations/ink-catalog.schema'
 import { createInkCatalogItem, updateInkCatalogItem, type InkCatalogItem } from '@/actions/ink-catalog.actions'
 import { StockBadge, StockBar } from '@/components/catalog/stock-badge'
@@ -269,7 +269,15 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                 Especificaciones de impresión
               </p>
               <div className="px-4 py-3 space-y-3">
-                <Field label="Volumen de anilox (cm³/m²)" error={errors.density?.message}>
+                <Field
+                  label="Volumen de anilox (cm³/m²)"
+                  error={errors.density?.message}
+                  info={{
+                    what: 'Volumen de celda del rodillo anilox que transfiere la tinta al sustrato.',
+                    why: 'A mayor volumen, más depósito de tinta. Valores bajos dan colores tenues; valores altos, colores sólidos y opacos.',
+                    example: '3.5 cm³/m² (proceso CMYK) · 6.0 cm³/m² (blanco o barniz)',
+                  }}
+                >
                   <input
                     {...register('density', { valueAsNumber: true })}
                     type="number" step="0.01" min="0"
@@ -277,7 +285,15 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                     className={inputCls}
                   />
                 </Field>
-                <Field label="Cobertura (%)" error={errors.prepress_pct?.message}>
+                <Field
+                  label="Cobertura (%)"
+                  error={errors.prepress_pct?.message}
+                  info={{
+                    what: 'Porcentaje de área cubierta por la imagen en el archivo de preprensa.',
+                    why: 'Se usa para estimar el consumo real de tinta por trabajo. Una cobertura alta implica mayor gasto.',
+                    example: '30% (texto/líneas) · 75% (fondo sólido)',
+                  }}
+                >
                   <div className="relative w-1/2">
                     <input
                       {...register('prepress_pct', { valueAsNumber: true })}
@@ -315,7 +331,15 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                   </div>
                 </Field>
                 <div className="w-1/2 pr-1.5">
-                  <Field label="Viscosidad (cP)" error={errors.viscosity?.message}>
+                  <Field
+                    label="Viscosidad (cP)"
+                    error={errors.viscosity?.message}
+                    info={{
+                      what: 'Resistencia al flujo de la tinta, medida en centipoise (cP).',
+                      why: 'Demasiado alta: la tinta no transfiere bien y genera puntos. Demasiado baja: escurre y mancha. Controlarla es clave para reproducibilidad.',
+                      example: '18 cP (UV flexo típico) · 12–25 cP (rango aceptable)',
+                    }}
+                  >
                     <input
                       {...register('viscosity', { valueAsNumber: true })}
                       type="number" step="0.1" min="0"
@@ -332,7 +356,15 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               </p>
               <div className="px-4 py-3">
                 <div className="w-1/2">
-                  <Field label="Densidad óptica — OD" error={errors.optical_density?.message}>
+                  <Field
+                    label="Densidad óptica — OD"
+                    error={errors.optical_density?.message}
+                    info={{
+                      what: 'Medida de la opacidad del color impreso usando un densitómetro.',
+                      why: 'Permite verificar que el color cumple la especificación del cliente y es consistente entre tirajes.',
+                      example: '1.80 (negro) · 1.40 (cian) · 1.50 (magenta) · 1.05 (amarillo)',
+                    }}
+                  >
                     <input
                       {...register('optical_density', { valueAsNumber: true })}
                       type="number" step="0.01" min="0"
@@ -659,10 +691,79 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
 const inputCls =
   'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+type FieldInfoData = { what: string; why: string; example: string }
+
+function InfoPopover({ info }: { info: FieldInfoData }) {
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  function handleEnter() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const popW = 272
+      const left = Math.min(
+        Math.max(rect.left + rect.width / 2 - popW / 2, 8),
+        window.innerWidth - popW - 8
+      )
+      setPos({ top: rect.bottom + 6, left })
+    }
+    setOpen(true)
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setOpen(false)}
+        aria-label="Más información"
+        className={cn(
+          'size-4 flex items-center justify-center transition-colors shrink-0',
+          open ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60'
+        )}
+      >
+        <Info className="size-3.5" />
+      </button>
+
+      {open && (
+        <div
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 272, zIndex: 200 }}
+          className="bg-[#F5F2EA] border border-[#1A1A1A]/20 px-3.5 py-3 space-y-2"
+        >
+          {/* arrow */}
+          <div
+            style={{ position: 'absolute', top: -5, left: Math.min(
+              Math.max((btnRef.current?.getBoundingClientRect().left ?? 0) + 8 - pos.left, 10),
+              252
+            ) }}
+            className="size-2.5 rotate-45 bg-[#F5F2EA] border-l border-t border-[#1A1A1A]/20"
+          />
+          <p className="text-[11px] text-[#1A1A1A]/80 leading-snug">{info.what}</p>
+          <p className="text-[11px] text-[#5f5e59] leading-snug">{info.why}</p>
+          <p className="font-mono text-[10px] text-[#1A1A1A]/40 pt-2 border-t border-[#1A1A1A]/10 leading-relaxed">
+            {info.example}
+          </p>
+        </div>
+      )}
+    </>
+  )
+}
+
+function Field({ label, error, info, children }: {
+  label: string
+  error?: string
+  info?: FieldInfoData
+  children: React.ReactNode
+}) {
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">{label}</label>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">{label}</label>
+        {info && <InfoPopover info={info} />}
+      </div>
       {children}
       {error && <p className="text-[10px] text-destructive mt-1">{error}</p>}
     </div>

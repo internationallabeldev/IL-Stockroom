@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { QueryProvider } from "./query-provider";
 
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -30,7 +31,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <QueryProvider>
+            {children}
+          </QueryProvider>
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>

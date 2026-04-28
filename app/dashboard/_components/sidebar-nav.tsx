@@ -16,16 +16,21 @@ import {
   BookOpen,
   ChevronRight,
   LogOut,
+  type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/dashboard',              label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/dashboard/orders',       label: 'Órdenes',       icon: ShoppingCart },
   { href: '/dashboard/inventory',    label: 'Inventario',    icon: Package },
   { href: '/dashboard/requisitions', label: 'Requisiciones', icon: ClipboardList },
   { href: '/dashboard/providers',    label: 'Proveedores',   icon: Truck },
   { href: '/dashboard/reports',      label: 'Reportes',      icon: BarChart2 },
+]
+
+const orderItems = [
+  { href: '/dashboard/orders/ink',   label: 'Tintas', icon: Droplet },
+  { href: '/dashboard/orders/paper', label: 'Papel',  icon: FileText },
 ]
 
 const catalogItems = [
@@ -48,9 +53,21 @@ function SystemUptime() {
   return <span className="font-mono text-lg tracking-wider">{h}:{m}:{s}</span>
 }
 
-function CatalogNavItem({ pathname }: { pathname: string }) {
+type SubItem = { href: string; label: string; icon: LucideIcon }
+
+function CollapsibleNavItem({
+  label,
+  icon: Icon,
+  items,
+  pathname,
+}: {
+  label: string
+  icon: LucideIcon
+  items: SubItem[]
+  pathname: string
+}) {
   const [open, setOpen] = useState(false)
-  const isActive = pathname.startsWith('/dashboard/catalog')
+  const isActive = items.some(i => pathname.startsWith(i.href))
 
   return (
     <li
@@ -59,14 +76,14 @@ function CatalogNavItem({ pathname }: { pathname: string }) {
     >
       <div
         className={cn(
-          'flex items-center gap-4 px-6 py-3 text-[10px] font-bold uppercase tracking-widest transition-all duration-150 cursor-default',
+          'flex items-center gap-4 px-6 py-3 text-[10px] font-bold uppercase tracking-widest transition-all duration-150 cursor-default select-none',
           isActive
             ? 'bg-[#1A1A1A] text-[#F5F2EA]'
             : 'text-[#1A1A1A]/60 hover:bg-[#D1CDC1] hover:text-[#1A1A1A]'
         )}
       >
-        <BookOpen className="size-3.75 shrink-0" />
-        <span className="flex-1">Catálogo</span>
+        <Icon className="size-3.75 shrink-0" />
+        <span className="flex-1">{label}</span>
         <ChevronRight
           className={cn(
             'size-3 shrink-0 transition-transform duration-200',
@@ -82,7 +99,7 @@ function CatalogNavItem({ pathname }: { pathname: string }) {
         )}
       >
         <ul className="border-l-2 border-[#1A1A1A]/15 ml-6">
-          {catalogItems.map(({ href, label, icon: Icon }) => {
+          {items.map(({ href, label: subLabel, icon: SubIcon }) => {
             const isSubActive = pathname.startsWith(href)
             return (
               <li key={href}>
@@ -95,8 +112,8 @@ function CatalogNavItem({ pathname }: { pathname: string }) {
                       : 'text-[#1A1A1A]/55 hover:bg-[#D1CDC1] hover:text-[#1A1A1A]'
                   )}
                 >
-                  <Icon className="size-3.5 shrink-0" />
-                  {label}
+                  <SubIcon className="size-3.5 shrink-0" />
+                  {subLabel}
                 </Link>
               </li>
             )
@@ -147,7 +164,19 @@ export function SidebarNav({ userName }: { userName?: string | null }) {
             )
           })}
 
-          <CatalogNavItem pathname={pathname} />
+          <CollapsibleNavItem
+            label="Órdenes"
+            icon={ShoppingCart}
+            items={orderItems}
+            pathname={pathname}
+          />
+
+          <CollapsibleNavItem
+            label="Catálogo"
+            icon={BookOpen}
+            items={catalogItems}
+            pathname={pathname}
+          />
         </ul>
       </nav>
 
