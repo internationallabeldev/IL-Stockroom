@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PaperCatalogCard } from './paper-catalog-card'
 import { PaperCatalogForm } from './paper-catalog-form'
-import type { PaperCatalogItem } from '@/actions/paper-catalog.actions'
+import { getPaperCatalog, type PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import type { Provider } from '@/actions/providers.actions'
 
 const STOCK_FILTERS = [
@@ -28,13 +29,20 @@ type Props = {
   canEdit: boolean
 }
 
-export function PaperCatalogList({ items, providers, canEdit }: Props) {
+export function PaperCatalogList({ items: initialItems, providers, canEdit }: Props) {
   const [search, setSearch]           = useState('')
   const [stockFilter, setStockFilter] = useState('')
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer]           = useState<DrawerState>({ open: false, mode: 'create', item: null })
+
+  const { data: items = initialItems } = useQuery({
+    queryKey: ['paper-catalog'],
+    queryFn: () => getPaperCatalog(),
+    initialData: initialItems,
+    refetchInterval: 30_000,
+  })
 
   const filtered = items.filter(item => {
     const q = search.toLowerCase()

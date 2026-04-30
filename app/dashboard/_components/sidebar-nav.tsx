@@ -14,6 +14,7 @@ import {
   Droplet,
   FileText,
   BookOpen,
+  ClipboardCheck,
   ChevronRight,
   LogOut,
   type LucideIcon,
@@ -26,6 +27,11 @@ const navItems = [
   { href: '/dashboard/requisitions', label: 'Requisiciones', icon: ClipboardList },
   { href: '/dashboard/providers',    label: 'Proveedores',   icon: Truck },
   { href: '/dashboard/reports',      label: 'Reportes',      icon: BarChart2 },
+]
+
+const receiptItems = [
+  { href: '/dashboard/receipts/ink',   label: 'Tintas', icon: Droplet },
+  { href: '/dashboard/receipts/paper', label: 'Papel',  icon: FileText },
 ]
 
 const orderItems = [
@@ -60,14 +66,18 @@ function CollapsibleNavItem({
   icon: Icon,
   items,
   pathname,
+  baseHref,
 }: {
   label: string
   icon: LucideIcon
   items: SubItem[]
   pathname: string
+  baseHref?: string
 }) {
   const [open, setOpen] = useState(false)
-  const isActive = items.some(i => pathname.startsWith(i.href))
+  const isActive = baseHref
+    ? pathname.startsWith(baseHref)
+    : items.some(i => pathname.startsWith(i.href))
 
   return (
     <li
@@ -163,6 +173,14 @@ export function SidebarNav({ userName }: { userName?: string | null }) {
               </li>
             )
           })}
+
+          <CollapsibleNavItem
+            label="Recepciones"
+            icon={ClipboardCheck}
+            items={receiptItems}
+            pathname={pathname}
+            baseHref="/dashboard/receipts"
+          />
 
           <CollapsibleNavItem
             label="Órdenes"

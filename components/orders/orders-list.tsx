@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Plus, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Eye, ChevronLeft, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import {
   getPurchaseOrders,
   type PurchaseOrderSummary,
@@ -26,7 +26,6 @@ const STATUS_TABS: { value: OrderStatus | ''; label: string }[] = [
   { value: 'CANCELLED', label: 'Cancelada' },
 ]
 
-const PAGE_SIZE = 15
 
 type Props = {
   initialOrders: PurchaseOrderSummary[]
@@ -41,22 +40,83 @@ export function OrdersList({
   initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate,
 }: Props) {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
-  const [page, setPage] = useState(1)
-  const [formOpen, setFormOpen] = useState(false)
+  const [pageSizeInput, setPageSizeInput] = useState('10')
+  const [pageSize, setPageSize]           = useState(10)
+  const [page, setPage]                   = useState(1)
+  const [formOpen, setFormOpen]           = useState(false)
+  const [filtersOpen, setFiltersOpen]     = useState(false)
 
-  const { data: orders = initialOrders } = useQuery({
-    queryKey: ['purchase-orders', materialType, statusFilter],
-    queryFn: () => getPurchaseOrders({
-      material_type: materialType,
-      ...(statusFilter ? { status: statusFilter } : {}),
-    }),
+  // Range filters
+  const [qtyMin,   setQtyMin]   = useState('')
+  const [qtyMax,   setQtyMax]   = useState('')
+  const [reqFrom,  setReqFrom]  = useState('')
+  const [reqTo,    setReqTo]    = useState('')
+  const [delFrom,  setDelFrom]  = useState('')
+  const [delTo,    setDelTo]    = useState('')
+
+  const [sortKey, setSortKey] = useState<'order_number' | 'provider' | 'qty' | 'request_date' | 'delivery_date' | 'status'>('order_number')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function toggleSort(key: typeof sortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  const activeFilters = [qtyMin, qtyMax, reqFrom, reqTo, delFrom, delTo].filter(Boolean).length
+
+  function resetFilters() {
+    setQtyMin(''); setQtyMax('')
+    setReqFrom(''); setReqTo('')
+    setDelFrom(''); setDelTo('')
+    setPage(1)
+  }
+
+  const { data: allOrders = initialOrders } = useQuery({
+    queryKey: ['purchase-orders', materialType],
+    queryFn: () => getPurchaseOrders({ material_type: materialType }),
     initialData: initialOrders,
     refetchInterval: 30_000,
   })
 
-  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE))
+  const orders = allOrders.filter(o => {
+    if (statusFilter && o.status !== statusFilter) return false
+
+    const total = materialType === 'INK'
+      ? o.ink_items.reduce((s, i) => s + (i.total_kg_ordered ?? 0), 0)
+      : o.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
+    if (qtyMin !== '' && total < parseFloat(qtyMin)) return false
+    if (qtyMax !== '' && total > parseFloat(qtyMax)) return false
+
+    const req = o.request_date?.slice(0, 10) ?? ''
+    if (reqFrom && req < reqFrom) return false
+    if (reqTo   && req > reqTo)   return false
+
+    const del = o.expected_delivery_date?.slice(0, 10) ?? ''
+    if (delFrom && (!del || del < delFrom)) return false
+    if (delTo   && (!del || del > delTo))   return false
+
+    return true
+  })
+  const dir = sortDir === 'asc' ? 1 : -1
+  const sorted = [...orders].sort((a, b) => {
+    switch (sortKey) {
+      case 'order_number':   return (a.order_number - b.order_number) * dir
+      case 'provider':       return (a.providers?.name ?? '').localeCompare(b.providers?.name ?? '') * dir
+      case 'qty': {
+        const qa = materialType === 'INK' ? a.ink_items.reduce((s, i) => s + (i.total_kg_ordered  ?? 0), 0) : a.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
+        const qb = materialType === 'INK' ? b.ink_items.reduce((s, i) => s + (i.total_kg_ordered  ?? 0), 0) : b.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
+        return (qa - qb) * dir
+      }
+      case 'request_date':   return a.request_date.localeCompare(b.request_date) * dir
+      case 'delivery_date':  return (a.expected_delivery_date ?? '').localeCompare(b.expected_delivery_date ?? '') * dir
+      case 'status':         return (a.status ?? '').localeCompare(b.status ?? '') * dir
+      default:               return 0
+    }
+  })
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / pageSize))
   const safePage   = Math.min(page, totalPages)
-  const paginated  = orders.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const paginated  = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
     <>
@@ -80,21 +140,138 @@ export function OrdersList({
           ))}
         </div>
 
-        {canCreate && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setFormOpen(true)}
-            className="flex items-center gap-2 px-4 py-1.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+            onClick={() => setFiltersOpen(v => !v)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 border text-[10px] font-bold uppercase tracking-widest transition-colors',
+              filtersOpen || activeFilters > 0
+                ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
+                : 'border-[#1A1A1A]/20 text-[#1A1A1A]/60 hover:text-[#1A1A1A]'
+            )}
           >
-            <Plus className="size-3.5" />
-            Nueva orden
+            <SlidersHorizontal className="size-3.5" />
+            Filtros
+            {activeFilters > 0 && (
+              <span className="ml-0.5 bg-white/20 text-[9px] px-1 rounded-sm">{activeFilters}</span>
+            )}
           </button>
-        )}
+          {canCreate && (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="flex items-center gap-2 px-4 py-1.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+            >
+              <Plus className="size-3.5" />
+              Nueva orden
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Count */}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
-        {orders.length} orden{orders.length !== 1 ? 'es' : ''}
-      </p>
+      {/* Filter panel */}
+      {filtersOpen && (
+        <div className="border border-[#1A1A1A]/15 bg-[#E5E1D8]/20 p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Cantidad */}
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">
+              Cantidad ({materialType === 'INK' ? 'kg' : 'm²'})
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number" min={0} placeholder="Mín"
+                value={qtyMin}
+                onChange={e => { setQtyMin(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+              <span className="text-[#5f5e59] text-xs">—</span>
+              <input
+                type="number" min={0} placeholder="Máx"
+                value={qtyMax}
+                onChange={e => { setQtyMax(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+            </div>
+          </div>
+
+          {/* Fecha solicitud */}
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">Fecha solicitud</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={reqFrom}
+                onChange={e => { setReqFrom(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+              <span className="text-[#5f5e59] text-xs">—</span>
+              <input
+                type="date"
+                value={reqTo}
+                onChange={e => { setReqTo(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+            </div>
+          </div>
+
+          {/* Fecha entrega esperada */}
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">Entrega esperada</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={delFrom}
+                onChange={e => { setDelFrom(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+              <span className="text-[#5f5e59] text-xs">—</span>
+              <input
+                type="date"
+                value={delTo}
+                onChange={e => { setDelTo(e.target.value); setPage(1) }}
+                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+              />
+            </div>
+          </div>
+
+          {activeFilters > 0 && (
+            <div className="sm:col-span-3 flex justify-end">
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+              >
+                <X className="size-3" />
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Count + page size */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          {orders.length} orden{orders.length !== 1 ? 'es' : ''}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Mostrar</span>
+          <input
+            type="number"
+            min={1}
+            value={pageSizeInput}
+            onChange={e => {
+              setPageSizeInput(e.target.value)
+              const n = parseInt(e.target.value, 10)
+              if (n > 0) { setPageSize(n); setPage(1) }
+            }}
+            onBlur={() => {
+              const n = parseInt(pageSizeInput, 10)
+              if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
+            }}
+            className="w-14 border border-[#1A1A1A]/20 px-2 py-1 text-[10px] font-bold text-center bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">filas</span>
+        </div>
+      </div>
 
       {/* Table */}
       {paginated.length === 0 ? (
@@ -109,9 +286,35 @@ export function OrdersList({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
-                  {['#Orden', 'Proveedor', 'Artículos', 'Cantidad', 'Solicitud', 'Entrega esp.', 'Estado', ''].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
-                      {h}
+                  {([
+                    { label: '#Orden',       key: 'order_number'  },
+                    { label: 'Proveedor',    key: 'provider'      },
+                    { label: 'Artículos',    key: null            },
+                    { label: 'Cantidad',     key: 'qty'           },
+                    { label: 'Solicitud',    key: 'request_date'  },
+                    { label: 'Entrega esp.', key: 'delivery_date' },
+                    { label: 'Estado',       key: 'status'        },
+                    { label: '',             key: null            },
+                  ] as const).map(col => (
+                    <th
+                      key={col.label}
+                      onClick={() => col.key && toggleSort(col.key)}
+                      className={cn(
+                        'px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none',
+                        col.key && 'cursor-pointer hover:text-[#1A1A1A] transition-colors'
+                      )}
+                    >
+                      {col.key ? (
+                        <span className="inline-flex items-center gap-1">
+                          {col.label}
+                          {sortKey === col.key
+                            ? sortDir === 'asc'
+                              ? <ArrowUp className="size-3" />
+                              : <ArrowDown className="size-3" />
+                            : <ArrowUpDown className="size-3 opacity-30" />
+                          }
+                        </span>
+                      ) : col.label}
                     </th>
                   ))}
                 </tr>
