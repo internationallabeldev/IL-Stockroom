@@ -37,7 +37,7 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
     open: false, receiptId: 0, materialType: 'INK', batchRef: '', currentQuality: 'PENDING',
   })
 
-  const { data: order } = useQuery({
+  const { data: order, refetch } = useQuery({
     queryKey: ['order-with-receipts', initialOrder.id],
     queryFn:  () => getOrderWithReceipts(initialOrder.id),
     initialData: initialOrder,
@@ -88,7 +88,7 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
       {/* Back + header */}
       <div className="flex items-start gap-4">
         <Link
-          href="/dashboard/receipts"
+          href={`/dashboard/receipts/${order.material_type === 'INK' ? 'ink' : 'paper'}`}
           className="shrink-0 size-8 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] transition-colors mt-0.5"
         >
           <ChevronLeft className="size-4" />
@@ -210,13 +210,13 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
 
       <ReceiptForm
         open={receiptForm.open}
-        onClose={() => setReceiptForm({ open: false, item: null })}
+        onClose={() => { setReceiptForm({ open: false, item: null }); refetch() }}
         item={receiptForm.item}
       />
 
       <BatchReceiptForm
         open={batchFormOpen}
-        onClose={() => setBatchFormOpen(false)}
+        onClose={() => { setBatchFormOpen(false); refetch() }}
         order={order}
       />
 

@@ -1,0 +1,272 @@
+'use client'
+
+import { useState } from 'react'
+import { ChevronRight, FlaskConical, History, PowerOff } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { InkLot } from '@/actions/ink-inventory.actions'
+import { LotProgressBar } from '../shared/lot-progress-bar'
+import { LotLocationEdit } from './lot-location-edit'
+import { toast } from 'sonner'
+import { disableLot } from '@/actions/ink-inventory.actions'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+type Props = {
+  lots:          InkLot[]
+  canManage:     boolean
+  canRequest:    boolean
+  onHistory:     (id: number) => void
+  onRequest:     (lot: InkLot) => void
+  onLotDisabled: () => void
+}
+
+type CatalogGroup = {
+  catalogId:   number
+  code:        string
+  name:        string
+  colorCode:   string | null
+  minStockKg:  number
+  totalKg:     number
+  activeCount: number
+  lots:        InkLot[]
+}
+
+function stockBadge(totalKg: number, minKg: number) {
+  if (totalKg <= 0)         return { label: 'Sin stock', cls: 'border-red-200   text-red-700   bg-red-50'   }
+  if (totalKg < minKg)      return { label: 'Bajo',      cls: 'border-yellow-200 text-yellow-700 bg-yellow-50' }
+  return                           { label: 'OK',         cls: 'border-green-200 text-green-700  bg-green-50'  }
+}
+
+function fmtDate(d: string | null | undefined) {
+  if (!d) return '—'
+  const [y, m, day] = d.split('T')[0].split('-')
+  return `${day}/${m}/${y}`
+}
+
+function buildGroups(lots: InkLot[]): CatalogGroup[] {
+  const map = new Map<number, CatalogGroup>()
+
+  for (const lot of lots) {
+    if (!lot.ink_catalog) continue
+    const c = lot.ink_catalog
+    let g = map.get(c.id)
+    if (!g) {
+      g = {
+        catalogId:   c.id,
+        code:        c.code,
+        name:        c.name,
+        colorCode:   c.color_code,
+        minStockKg:  c.min_stock_kg ?? 0,
+        totalKg:     0,
+        activeCount: 0,
+        lots:        [],
+      }
+      map.set(c.id, g)
+    }
+    g.lots.push(lot)
+    const remaining = lot.remaining_kg ?? 0
+    if (lot.enabled && remaining > 0) {
+      g.totalKg     += remaining
+      g.activeCount += 1
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, onRequest, onLotDisabled }: Props) {
+  const [expanded,   setExpanded]   = useState<Set<number>>(new Set())
+  const [confirming, setConfirming] = useState<number | null>(null)
+  const [disabling,  setDisabling]  = useState<number | null>(null)
+
+  const groups = buildGroups(lots)
+
+  async function handleDisable(id: number) {
+    setDisabling(id)
+    const res = await disableLot(id)
+    setDisabling(null)
+    setConfirming(null)
+    if (res.error) { toast.error(res.error); return }
+    toast.success('Lote deshabilitado')
+    onLotDisabled()
+  }
+
+  function toggle(id: number) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          No hay lotes para mostrar
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-[#1A1A1A]/15 divide-y divide-[#1A1A1A]/10">
+      {groups.map(g => {
+        const open  = expanded.has(g.catalogId)
+        const badge = stockBadge(g.totalKg, g.minStockKg)
+
+        return (
+          <div key={g.catalogId}>
+            {/* ── Catalog header row ─────────────────────────────────────────── */}
+            <button
+              onClick={() => toggle(g.catalogId)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#E5E1D8]/40 transition-colors"
+            >
+              <ChevronRight
+                className={cn('size-3.5 text-[#5f5e59] transition-transform shrink-0', open && 'rotate-90')}
+              />
+
+              {/* Color swatch */}
+              <span
+                className="size-3.5 rounded-full shrink-0 border border-[#1A1A1A]/10"
+                style={{ backgroundColor: g.colorCode ?? '#D9D5CC' }}
+              />
+
+              {/* Name + code */}
+              <span className="flex-1 flex items-baseline gap-2 min-w-0">
+                <span className="font-mono text-[10px] text-[#5f5e59] shrink-0">{g.code}</span>
+                <span className="font-medium text-sm truncate">{g.name}</span>
+              </span>
+
+              {/* Stats */}
+              <span className="flex items-center gap-3 shrink-0">
+                <span className="text-[10px] font-mono text-[#5f5e59]">
+                  {g.totalKg.toFixed(1)} kg
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                  {g.activeCount} {g.activeCount === 1 ? 'lote' : 'lotes'}
+                </span>
+                <span className={cn('text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border', badge.cls)}>
+                  {badge.label}
+                </span>
+              </span>
+            </button>
+
+            {/* ── Expanded lot sub-table ─────────────────────────────────────── */}
+            {open && (
+              <div className="border-t border-[#1A1A1A]/8 bg-[#E5E1D8]/15 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#1A1A1A]/10">
+                      {[
+                        'Lote interno', 'Lote prov.', 'Stock',
+                        'Ubicación', 'Recepción', 'Estado', '',
+                      ].map(h => (
+                        <th
+                          key={h}
+                          className="pl-8 pr-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap first:pl-12"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1A1A1A]/8">
+                    {g.lots.map(lot => (
+                      <tr
+                        key={lot.id}
+                        className={cn(
+                          'transition-colors',
+                          lot.enabled ? 'hover:bg-[#E5E1D8]/30' : 'opacity-50 bg-[#E5E1D8]/10'
+                        )}
+                      >
+                        <td className="pl-12 pr-4 py-2.5 font-mono font-bold text-[11px]">
+                          {lot.internal_batch}
+                        </td>
+
+                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59]">
+                          {lot.receipt?.provider_batch ?? '—'}
+                        </td>
+
+                        <td className="px-4 py-2.5">
+                          <LotProgressBar initial={lot.initial_kg ?? 0} used={lot.used_kg ?? 0} unit="kg" />
+                        </td>
+
+                        <td className="px-4 py-2.5">
+                          <LotLocationEdit
+                            inventoryId={lot.id}
+                            value={lot.location}
+                            canEdit={canManage}
+                          />
+                        </td>
+
+                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">
+                          {fmtDate(lot.receipt?.receipt_date)}
+                        </td>
+
+                        <td className="px-4 py-2.5">
+                          <span className={cn(
+                            'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
+                            lot.enabled
+                              ? 'border-green-200 text-green-700 bg-green-50'
+                              : 'border-[#1A1A1A]/20 text-[#5f5e59] bg-[#E5E1D8]/40'
+                          )}>
+                            {lot.enabled ? 'Activo' : 'Deshabilitado'}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-2.5">
+                          <TooltipProvider>
+                            <div className="flex items-center gap-0.5">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button onClick={() => onHistory(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-[#1A1A1A] transition-colors rounded">
+                                    <History className="size-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Historial</TooltipContent>
+                              </Tooltip>
+
+                              {canRequest && lot.enabled && (lot.remaining_kg ?? 0) > 0 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button onClick={() => onRequest(lot)} className="p-1.5 text-blue-600 hover:text-blue-800 transition-colors rounded">
+                                      <FlaskConical className="size-3.5" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Solicitar material</TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {canManage && lot.enabled && (
+                                confirming === lot.id ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">¿Confirmar?</span>
+                                    <button onClick={() => handleDisable(lot.id)} disabled={disabling === lot.id} className="text-[9px] font-bold uppercase tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50">Sí</button>
+                                    <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A]">No</button>
+                                  </div>
+                                ) : (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-red-600 transition-colors rounded">
+                                        <PowerOff className="size-3.5" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Deshabilitar lote</TooltipContent>
+                                  </Tooltip>
+                                )
+                              )}
+                            </div>
+                          </TooltipProvider>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}

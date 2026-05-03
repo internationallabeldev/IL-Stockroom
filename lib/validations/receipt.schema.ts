@@ -10,6 +10,7 @@ export const createInkReceiptSchema = z.object({
   kg_received:            z.number().positive('Debe ser mayor a 0'),
   quality_certificate:    z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL']).default('PENDING'),
   quality_notes:          z.string().nullable().optional(),
+  certificate_url:        z.string().nullable().optional(),
 })
 
 export const createPaperReceiptSchema = z.object({
@@ -23,11 +24,13 @@ export const createPaperReceiptSchema = z.object({
   width_m:                z.number().positive('Debe ser mayor a 0'),
   quality_certificate:    z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL']).default('PENDING'),
   quality_notes:          z.string().nullable().optional(),
+  certificate_url:        z.string().nullable().optional(),
 })
 
 export const updateQualitySchema = z.object({
   quality_certificate: z.enum(['APPROVED', 'REJECTED', 'CONDITIONAL']),
   quality_notes:       z.string().nullable().optional(),
+  certificate_url:     z.string().nullable().optional(),
 })
 
 export type CreateInkReceiptValues   = z.infer<typeof createInkReceiptSchema>

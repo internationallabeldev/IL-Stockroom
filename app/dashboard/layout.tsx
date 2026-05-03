@@ -3,6 +3,7 @@ import { getSessionUser } from '@/actions/auth.actions'
 import { TopNav } from './_components/top-nav'
 import { SidebarNav } from './_components/sidebar-nav'
 import { StatusBar } from './_components/status-bar'
+import { SidebarProvider, DashboardShell } from './_components/sidebar-context'
 
 export default async function DashboardLayout({
   children,
@@ -15,13 +16,13 @@ export default async function DashboardLayout({
   const displayName = user.email ?? 'Operador'
 
   return (
-    <div className="min-h-screen bg-[#F5F2EA]">
-      <TopNav userName={displayName} />
-      <SidebarNav userName={displayName} />
-      <main className="ml-64 pt-16 min-h-screen pb-10">
-        {children}
-      </main>
-      <StatusBar />
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen bg-[#F5F2EA]">
+        <TopNav userName={displayName} />
+        <SidebarNav userName={displayName} />
+        <DashboardShell>{children}</DashboardShell>
+        <StatusBar />
+      </div>
+    </SidebarProvider>
   )
 }

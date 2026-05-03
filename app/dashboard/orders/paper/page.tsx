@@ -14,7 +14,8 @@ export default async function PaperOrdersPage() {
     getSessionUser(),
   ])
 
-  const canCreate = user?.role === 'ADMIN' || user?.role === 'PURCHASER'
+  const canCreate  = user?.role === 'ADMIN' || user?.role === 'PURCHASER'
+  const canReceive = user?.role === 'ADMIN' || user?.role === 'WAREHOUSE_MANAGER'
 
   return (
     <div className="px-8 pt-8 pb-16">
@@ -34,6 +35,7 @@ export default async function PaperOrdersPage() {
         inkCatalog={inkCatalog}
         paperCatalog={paperCatalog}
         canCreate={canCreate}
+        canReceive={canReceive}
       />
     </div>
   )

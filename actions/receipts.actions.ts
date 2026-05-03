@@ -9,6 +9,7 @@ import {
   updateQualitySchema,
 } from '@/lib/validations/receipt.schema'
 import type { Database } from '@/types/database.types'
+import { logger } from '@/lib/logger'
 
 type QualityCertificate = Database['public']['Enums']['quality_certificate']
 
@@ -89,8 +90,40 @@ export type ReceivableOrder = {
   paper_items: { id: number; units_ordered: number; units_received: number | null; is_complete: boolean | null }[]
 }
 
-const CAN_RECEIVE  = ['ADMIN', 'WAREHOUSE_MANAGER']
+const CAN_RECEIVE   = ['ADMIN', 'WAREHOUSE_MANAGER']
+const CERT_BUCKET   = 'quality-certificates'
+const CERT_EXTS     = ['pdf', 'jpg', 'jpeg', 'png', 'webp']
 const PATHS        = ['/dashboard/receipts', '/dashboard/orders/ink', '/dashboard/orders/paper']
+
+// ─── Certificate upload ────────────────────────────────────────────────────────
+
+export async function uploadCertificate(
+  formData: FormData
+): Promise<{ url?: string; error?: string }> {
+  const user = await getSessionUser()
+  if (!user || !CAN_RECEIVE.includes(user.role)) return { error: 'Sin permisos' }
+
+  const file = formData.get('file') as File | null
+  if (!file || !(file instanceof File)) return { error: 'No se proporcionó archivo' }
+
+  const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+  if (!CERT_EXTS.includes(ext)) return { error: 'Solo se permiten PDF, JPG o PNG' }
+
+  const supabase = createAdminClient()
+  const path     = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { data, error } = await supabase.storage
+    .from(CERT_BUCKET)
+    .upload(path, file, { contentType: file.type })
+
+  if (error) return { error: error.message }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from(CERT_BUCKET)
+    .getPublicUrl(data.path)
+
+  return { url: publicUrl }
+}
 
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
@@ -271,8 +304,9 @@ export async function createInkReceipt(
       kg_received:            d.kg_received,
       quality_certificate:    d.quality_certificate as QualityCertificate,
       quality_notes:          d.quality_notes ?? null,
+      certificate_url:        d.certificate_url ?? null,
       received_by:            user.id,
-    })
+    } as any)
 
   if (receiptError) return { error: receiptError.message }
 
@@ -323,11 +357,11 @@ export async function createPaperReceipt(
       units_received:         d.units_received,
       length_m:               d.length_m,
       width_m:                d.width_m,
-      total_m2_received:      d.units_received * d.length_m * d.width_m,
       quality_certificate:    d.quality_certificate as QualityCertificate,
       quality_notes:          d.quality_notes ?? null,
+      certificate_url:        d.certificate_url ?? null,
       received_by:            user.id,
-    })
+    } as any)
 
   if (receiptError) return { error: receiptError.message }
 
@@ -349,18 +383,24 @@ export async function updateInkReceiptQuality(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+
   const { error } = await supabase
     .from('ink_receipts')
     .update({
       quality_certificate: parsed.data.quality_certificate as QualityCertificate,
       quality_notes:       parsed.data.quality_notes ?? null,
+      certificate_url:     parsed.data.certificate_url ?? null,
       updated_at:          new Date().toISOString(),
     })
     .eq('id', receiptId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    logger.error('updateInkReceiptQuality', { receiptId, msg: error.message })
+    return { error: error.message }
+  }
 
   PATHS.forEach(p => revalidatePath(p))
+  revalidatePath('/dashboard/inventory/inks')
   return { success: true }
 }
 
@@ -375,18 +415,24 @@ export async function updatePaperReceiptQuality(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+
   const { error } = await supabase
     .from('paper_receipts')
     .update({
       quality_certificate: parsed.data.quality_certificate as QualityCertificate,
       quality_notes:       parsed.data.quality_notes ?? null,
+      certificate_url:     parsed.data.certificate_url ?? null,
       updated_at:          new Date().toISOString(),
     })
     .eq('id', receiptId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    logger.error('updatePaperReceiptQuality', { receiptId, msg: error.message })
+    return { error: error.message }
+  }
 
   PATHS.forEach(p => revalidatePath(p))
+  revalidatePath('/dashboard/inventory/papers')
   return { success: true }
 }
 
@@ -424,14 +470,17 @@ async function _updateOrderItemAndStatus(
   const allComplete  = items.every(i => i.is_complete || (i.units_received ?? 0) >= unitsOrdered)
   const anyReceived  = items.some(i => (i.units_received ?? 0) > 0)
 
-  const newStatus = allComplete ? 'COMPLETED' : anyReceived ? 'PARTIAL' : 'PENDING'
+  type PurchaseOrderStatus = Database['public']['Enums']['purchase_order_status']
+  const newStatus = (allComplete ? 'COMPLETED' : anyReceived ? 'PARTIAL' : 'PENDING') as PurchaseOrderStatus
 
-  await supabase
+  const { error: statusError } = await supabase
     .from('purchase_orders')
     .update({
       status: newStatus,
       actual_delivery_date: newStatus === 'COMPLETED' ? new Date().toISOString().split('T')[0] : null,
       updated_at: new Date().toISOString(),
-    })
+    } as any)
     .eq('id', orderId)
+
+  if (statusError) console.error('[receipts] order status update failed:', statusError.message)
 }

@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { X, Loader2 } from 'lucide-react'
-import { createInkReceipt, createPaperReceipt } from '@/actions/receipts.actions'
+import { X, Loader2, Paperclip, CheckCircle2, XCircle } from 'lucide-react'
+import { createInkReceipt, createPaperReceipt, uploadCertificate } from '@/actions/receipts.actions'
 import { cn } from '@/lib/utils'
 
 export type ReceiptItemContext = {
@@ -48,12 +48,16 @@ const inkSchema = z.object({
   kg_received:            z.number().positive('Mayor a 0'),
   quality_certificate:    z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL']),
   quality_notes:          z.string().optional(),
+  certificate_url:        z.string().nullable().optional(),
 })
 type InkValues = z.infer<typeof inkSchema>
 
 function InkReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: () => void }) {
   const today     = new Date().toISOString().split('T')[0]
   const remaining = item.unitsOrdered - item.unitsReceived
+  const [certUrl,   setCertUrl]   = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<InkValues>({
@@ -68,6 +72,7 @@ function InkReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: 
         kg_received:            +(((item.kgPerUnit ?? 0) * Math.max(1, remaining)).toFixed(3)),
         quality_certificate:    'PENDING',
         quality_notes:          '',
+        certificate_url:        null,
       },
     })
 
@@ -87,8 +92,22 @@ function InkReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: 
 
   const unitsVal = watch('units_received')
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await uploadCertificate(fd)
+    setUploading(false)
+    if (res.error) { toast.error(res.error); return }
+    setCertUrl(res.url ?? null)
+    setValue('certificate_url', res.url ?? null)
+    toast.success('Certificado subido')
+  }
+
   async function onSubmit(data: InkValues) {
-    const res = await createInkReceipt(data)
+    const res = await createInkReceipt({ ...data, certificate_url: certUrl })
     if (res.error) { toast.error(res.error); return }
     toast.success('Recepción registrada')
     onClose()
@@ -148,6 +167,11 @@ function InkReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: 
           onQualityChange={v => setValue('quality_certificate', v)}
           qualityError={errors.quality_certificate?.message}
           notesProps={register('quality_notes')}
+          certUrl={certUrl}
+          uploading={uploading}
+          fileRef={fileRef}
+          onFileChange={handleFileChange}
+          onCertRemove={() => { setCertUrl(null); setValue('certificate_url', null); if (fileRef.current) fileRef.current.value = '' }}
         />
       </form>
     </Drawer>
@@ -167,12 +191,16 @@ const paperSchema = z.object({
   width_m:                z.number().positive('Mayor a 0'),
   quality_certificate:    z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL']),
   quality_notes:          z.string().optional(),
+  certificate_url:        z.string().nullable().optional(),
 })
 type PaperValues = z.infer<typeof paperSchema>
 
 function PaperReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: () => void }) {
   const today     = new Date().toISOString().split('T')[0]
   const remaining = item.unitsOrdered - item.unitsReceived
+  const [certUrl,   setCertUrl]   = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<PaperValues>({
@@ -188,6 +216,7 @@ function PaperReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose
         width_m:                item.widthM ?? 0,
         quality_certificate:    'PENDING',
         quality_notes:          '',
+        certificate_url:        null,
       },
     })
 
@@ -209,8 +238,22 @@ function PaperReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose
   const [lengthVal, widthVal, unitsVal] = watch(['length_m', 'width_m', 'units_received'])
   const totalM2 = (unitsVal || 0) * (lengthVal || 0) * (widthVal || 0)
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await uploadCertificate(fd)
+    setUploading(false)
+    if (res.error) { toast.error(res.error); return }
+    setCertUrl(res.url ?? null)
+    setValue('certificate_url', res.url ?? null)
+    toast.success('Certificado subido')
+  }
+
   async function onSubmit(data: PaperValues) {
-    const res = await createPaperReceipt(data)
+    const res = await createPaperReceipt({ ...data, certificate_url: certUrl })
     if (res.error) { toast.error(res.error); return }
     toast.success('Recepción registrada')
     onClose()
@@ -271,6 +314,11 @@ function PaperReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose
           onQualityChange={v => setValue('quality_certificate', v)}
           qualityError={errors.quality_certificate?.message}
           notesProps={register('quality_notes')}
+          certUrl={certUrl}
+          uploading={uploading}
+          fileRef={fileRef}
+          onFileChange={handleFileChange}
+          onCertRemove={() => { setCertUrl(null); setValue('certificate_url', null); if (fileRef.current) fileRef.current.value = '' }}
         />
       </form>
     </Drawer>
@@ -365,11 +413,21 @@ function QualitySection({
   onQualityChange,
   qualityError,
   notesProps,
+  certUrl,
+  uploading,
+  fileRef,
+  onFileChange,
+  onCertRemove,
 }: {
-  quality: QualityValue
-  onQualityChange: (v: QualityValue) => void
-  qualityError?: string
-  notesProps: object
+  quality:        QualityValue
+  onQualityChange:(v: QualityValue) => void
+  qualityError?:  string
+  notesProps:     object
+  certUrl:        string | null
+  uploading:      boolean
+  fileRef:        React.RefObject<HTMLInputElement | null>
+  onFileChange:   (e: React.ChangeEvent<HTMLInputElement>) => void
+  onCertRemove:   () => void
 }) {
   return (
     <div className="border border-[#1A1A1A]/10">
@@ -384,7 +442,7 @@ function QualitySection({
               <button
                 key={q}
                 type="button"
-                onClick={() => onQualityChange(q)}
+                onClick={() => { if (q !== 'APPROVED') onCertRemove(); onQualityChange(q) }}
                 className={cn(
                   'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                   quality === q
@@ -398,6 +456,38 @@ function QualitySection({
           </div>
           {qualityError && <p className="text-[10px] text-destructive mt-1">{qualityError}</p>}
         </div>
+
+        {/* Certificate file — only when approved */}
+        {quality === 'APPROVED' && <div>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">
+            Archivo del certificado (PDF / imagen)
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="h-9 px-3 flex items-center gap-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] hover:text-[#1A1A1A] transition-colors disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="size-3 animate-spin" /> : <Paperclip className="size-3" />}
+              {uploading ? 'Subiendo...' : 'Adjuntar'}
+            </button>
+            {certUrl && (
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-green-600" />
+                <a href={certUrl} target="_blank" rel="noreferrer"
+                  className="text-[10px] font-bold text-green-700 underline underline-offset-2">
+                  Ver certificado
+                </a>
+                <button type="button" onClick={onCertRemove} className="text-[#5f5e59] hover:text-red-600 transition-colors">
+                  <XCircle className="size-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={onFileChange} />
+        </div>}
+
         <div>
           <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">Notas de calidad</label>
           <textarea

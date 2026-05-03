@@ -1,9 +1,8 @@
-import { getPendingQualityReceipts, getAllReceipts, getReceivableOrders } from '@/actions/receipts.actions'
+import { getPendingQualityReceipts, getAllReceipts } from '@/actions/receipts.actions'
 import { getSessionUser } from '@/actions/auth.actions'
 import { redirect } from 'next/navigation'
 import { PendingQualityList } from '@/components/receipts/pending-quality-list'
 import { ReceiptsHistory } from '@/components/receipts/receipts-history'
-import { PendingOrdersList } from '@/components/receipts/pending-orders-list'
 import { AlertTriangle } from 'lucide-react'
 import { ReceiptsPageTabs } from '../_components/receipts-page-tabs'
 
@@ -15,14 +14,12 @@ export default async function InkReceiptsPage() {
 
   const canEdit = ['ADMIN', 'WAREHOUSE_MANAGER'].includes(user.role)
 
-  const [pending, history, receivable] = await Promise.all([
+  const [pending, history] = await Promise.all([
     getPendingQualityReceipts(),
     getAllReceipts(),
-    getReceivableOrders(),
   ])
 
-  const pendingCount    = pending.inkReceipts.length
-  const receivableCount = receivable.inkOrders.length
+  const pendingCount = pending.inkReceipts.length
 
   return (
     <div className="p-8">
@@ -30,7 +27,7 @@ export default async function InkReceiptsPage() {
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight">Recepciones — Tintas</h1>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-1">
-            Registro de material recibido y control de calidad
+            Control de calidad e historial de material recibido
           </p>
         </div>
         {pendingCount > 0 && (
@@ -44,15 +41,7 @@ export default async function InkReceiptsPage() {
       </div>
 
       <ReceiptsPageTabs
-        receivableCount={receivableCount}
         pendingCount={pendingCount}
-        receivablePanel={
-          <PendingOrdersList
-            initialInk={receivable.inkOrders}
-            initialPaper={receivable.paperOrders}
-            defaultMaterial="INK"
-          />
-        }
         pendingPanel={
           <PendingQualityList
             initialInk={pending.inkReceipts}

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Plus, Eye, ChevronLeft, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { Plus, Eye, ChevronLeft, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react'
 import {
   getPurchaseOrders,
   type PurchaseOrderSummary,
@@ -19,9 +19,9 @@ import type { PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import { cn } from '@/lib/utils'
 
 const STATUS_TABS: { value: OrderStatus | ''; label: string }[] = [
-  { value: '',          label: 'Todas' },
-  { value: 'PENDING',   label: 'Pendiente' },
-  { value: 'PARTIAL',   label: 'Parcial' },
+  { value: '', label: 'Todas' },
+  { value: 'PENDING', label: 'Pendiente' },
+  { value: 'PARTIAL', label: 'Parcial' },
   { value: 'COMPLETED', label: 'Completada' },
   { value: 'CANCELLED', label: 'Cancelada' },
 ]
@@ -34,25 +34,27 @@ type Props = {
   inkCatalog: InkCatalogItem[]
   paperCatalog: PaperCatalogItem[]
   canCreate: boolean
+  canReceive?: boolean
 }
 
 export function OrdersList({
-  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate,
+  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive,
 }: Props) {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
+  const [search, setSearch] = useState('')
   const [pageSizeInput, setPageSizeInput] = useState('10')
-  const [pageSize, setPageSize]           = useState(10)
-  const [page, setPage]                   = useState(1)
-  const [formOpen, setFormOpen]           = useState(false)
-  const [filtersOpen, setFiltersOpen]     = useState(false)
+  const [pageSize, setPageSize] = useState(10)
+  const [page, setPage] = useState(1)
+  const [formOpen, setFormOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Range filters
-  const [qtyMin,   setQtyMin]   = useState('')
-  const [qtyMax,   setQtyMax]   = useState('')
-  const [reqFrom,  setReqFrom]  = useState('')
-  const [reqTo,    setReqTo]    = useState('')
-  const [delFrom,  setDelFrom]  = useState('')
-  const [delTo,    setDelTo]    = useState('')
+  const [qtyMin, setQtyMin] = useState('')
+  const [qtyMax, setQtyMax] = useState('')
+  const [reqFrom, setReqFrom] = useState('')
+  const [reqTo, setReqTo] = useState('')
+  const [delFrom, setDelFrom] = useState('')
+  const [delTo, setDelTo] = useState('')
 
   const [sortKey, setSortKey] = useState<'order_number' | 'provider' | 'qty' | 'request_date' | 'delivery_date' | 'status'>('order_number')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -78,8 +80,15 @@ export function OrdersList({
     refetchInterval: 30_000,
   })
 
+  const q = search.trim().toLowerCase()
   const orders = allOrders.filter(o => {
     if (statusFilter && o.status !== statusFilter) return false
+
+    if (q) {
+      const num = `#${o.order_number}`
+      const prov = (o.providers?.name ?? '').toLowerCase()
+      if (!num.includes(q) && !prov.includes(q)) return false
+    }
 
     const total = materialType === 'INK'
       ? o.ink_items.reduce((s, i) => s + (i.total_kg_ordered ?? 0), 0)
@@ -89,58 +98,70 @@ export function OrdersList({
 
     const req = o.request_date?.slice(0, 10) ?? ''
     if (reqFrom && req < reqFrom) return false
-    if (reqTo   && req > reqTo)   return false
+    if (reqTo && req > reqTo) return false
 
     const del = o.expected_delivery_date?.slice(0, 10) ?? ''
     if (delFrom && (!del || del < delFrom)) return false
-    if (delTo   && (!del || del > delTo))   return false
+    if (delTo && (!del || del > delTo)) return false
 
     return true
   })
   const dir = sortDir === 'asc' ? 1 : -1
   const sorted = [...orders].sort((a, b) => {
     switch (sortKey) {
-      case 'order_number':   return (a.order_number - b.order_number) * dir
-      case 'provider':       return (a.providers?.name ?? '').localeCompare(b.providers?.name ?? '') * dir
+      case 'order_number': return (a.order_number - b.order_number) * dir
+      case 'provider': return (a.providers?.name ?? '').localeCompare(b.providers?.name ?? '') * dir
       case 'qty': {
-        const qa = materialType === 'INK' ? a.ink_items.reduce((s, i) => s + (i.total_kg_ordered  ?? 0), 0) : a.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
-        const qb = materialType === 'INK' ? b.ink_items.reduce((s, i) => s + (i.total_kg_ordered  ?? 0), 0) : b.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
+        const qa = materialType === 'INK' ? a.ink_items.reduce((s, i) => s + (i.total_kg_ordered ?? 0), 0) : a.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
+        const qb = materialType === 'INK' ? b.ink_items.reduce((s, i) => s + (i.total_kg_ordered ?? 0), 0) : b.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
         return (qa - qb) * dir
       }
-      case 'request_date':   return a.request_date.localeCompare(b.request_date) * dir
-      case 'delivery_date':  return (a.expected_delivery_date ?? '').localeCompare(b.expected_delivery_date ?? '') * dir
-      case 'status':         return (a.status ?? '').localeCompare(b.status ?? '') * dir
-      default:               return 0
+      case 'request_date': return a.request_date.localeCompare(b.request_date) * dir
+      case 'delivery_date': return (a.expected_delivery_date ?? '').localeCompare(b.expected_delivery_date ?? '') * dir
+      case 'status': return (a.status ?? '').localeCompare(b.status ?? '') * dir
+      default: return 0
     }
   })
 
   const totalPages = Math.max(1, Math.ceil(orders.length / pageSize))
-  const safePage   = Math.min(page, totalPages)
-  const paginated  = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const safePage = Math.min(page, totalPages)
+  const paginated = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
     <>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        {/* Status tabs */}
-        <div className="flex border border-[#1A1A1A]/20">
-          {STATUS_TABS.map(t => (
-            <button
-              key={t.value}
-              onClick={() => { setStatusFilter(t.value); setPage(1) }}
-              className={cn(
-                'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                statusFilter === t.value
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+
+        {/* Search */}
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por # o proveedor..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
+            className="pl-8 pr-3 py-1.5 border border-[#1A1A1A]/20 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A] w-full"
+          />
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Status tabs */}
+          <div className="flex border border-[#1A1A1A]/20">
+            {STATUS_TABS.map(t => (
+              <button
+                key={t.value}
+                onClick={() => { setStatusFilter(t.value); setPage(1) }}
+                className={cn(
+                  'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                  statusFilter === t.value
+                    ? 'bg-[#1A1A1A] text-[#F5F2EA]'
+                    : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setFiltersOpen(v => !v)}
             className={cn(
@@ -247,32 +268,6 @@ export function OrdersList({
         </div>
       )}
 
-      {/* Count + page size */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
-          {orders.length} orden{orders.length !== 1 ? 'es' : ''}
-        </p>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Mostrar</span>
-          <input
-            type="number"
-            min={1}
-            value={pageSizeInput}
-            onChange={e => {
-              setPageSizeInput(e.target.value)
-              const n = parseInt(e.target.value, 10)
-              if (n > 0) { setPageSize(n); setPage(1) }
-            }}
-            onBlur={() => {
-              const n = parseInt(pageSizeInput, 10)
-              if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
-            }}
-            className="w-14 border border-[#1A1A1A]/20 px-2 py-1 text-[10px] font-bold text-center bg-transparent focus:outline-none focus:border-[#1A1A1A]"
-          />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">filas</span>
-        </div>
-      </div>
-
       {/* Table */}
       {paginated.length === 0 ? (
         <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
@@ -287,14 +282,14 @@ export function OrdersList({
               <thead>
                 <tr className="border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
                   {([
-                    { label: '#Orden',       key: 'order_number'  },
-                    { label: 'Proveedor',    key: 'provider'      },
-                    { label: 'Artículos',    key: null            },
-                    { label: 'Cantidad',     key: 'qty'           },
-                    { label: 'Solicitud',    key: 'request_date'  },
+                    { label: '#Orden', key: 'order_number' },
+                    { label: 'Proveedor', key: 'provider' },
+                    { label: 'Artículos', key: null },
+                    { label: 'Cantidad', key: 'qty' },
+                    { label: 'Solicitud', key: 'request_date' },
                     { label: 'Entrega esp.', key: 'delivery_date' },
-                    { label: 'Estado',       key: 'status'        },
-                    { label: '',             key: null            },
+                    { label: 'Estado', key: 'status' },
+                    { label: '', key: null },
                   ] as const).map(col => (
                     <th
                       key={col.label}
@@ -321,11 +316,11 @@ export function OrdersList({
               </thead>
               <tbody className="divide-y divide-[#1A1A1A]/08">
                 {paginated.map(order => {
-                  const items   = materialType === 'INK' ? order.ink_items : order.paper_items
-                  const total   = materialType === 'INK'
-                    ? order.ink_items.reduce((s, i) => s + (i.total_kg_ordered  ?? 0), 0)
+                  const items = materialType === 'INK' ? order.ink_items : order.paper_items
+                  const total = materialType === 'INK'
+                    ? order.ink_items.reduce((s, i) => s + (i.total_kg_ordered ?? 0), 0)
                     : order.paper_items.reduce((s, i) => s + (i.total_m2_ordered ?? 0), 0)
-                  const unit    = materialType === 'INK' ? 'kg' : 'm²'
+                  const unit = materialType === 'INK' ? 'kg' : 'm²'
                   const complete = items.filter(i => i.is_complete).length
 
                   return (
@@ -352,13 +347,23 @@ export function OrdersList({
                         <OrderStatusBadge status={order.status} size="xs" />
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/dashboard/orders/${order.id}`}
-                          className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
-                        >
-                          <Eye className="size-3.5" />
-                          Ver
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/dashboard/orders/${order.id}`}
+                            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+                          >
+                            <Eye className="size-3.5" />
+                            Ver
+                          </Link>
+                          {canReceive && (order.status === 'PENDING' || order.status === 'PARTIAL') && (
+                            <Link
+                              href={`/dashboard/receipts/${order.id}`}
+                              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A] hover:opacity-70 transition-opacity"
+                            >
+                              Recibir
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -367,46 +372,73 @@ export function OrdersList({
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end gap-1 mt-4">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-                className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="size-3.5" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
-                .reduce<(number | '…')[]>((acc, n, i, arr) => {
-                  if (i > 0 && n - (arr[i - 1] as number) > 1) acc.push('…')
-                  acc.push(n)
-                  return acc
-                }, [])
-                .map((n, i) =>
-                  n === '…'
-                    ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-[#5f5e59]">…</span>
-                    : <button
-                        key={n}
-                        onClick={() => setPage(n as number)}
-                        className={cn('size-7 text-[10px] font-bold border transition-colors', safePage === n
-                          ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
-                          : 'border-[#1A1A1A]/20 hover:bg-[#E5E1D8]'
-                        )}
-                      >{n}</button>
-                )}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
-                className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="size-3.5" />
-              </button>
-            </div>
-          )}
         </>
       )}
+
+      {/* Bottom bar: count + page size + pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+            {orders.length} orden{orders.length !== 1 ? 'es' : ''}
+          </p>
+          <span className="text-[#1A1A1A]/20">|</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Mostrar</span>
+          <input
+            type="number"
+            min={1}
+            value={pageSizeInput}
+            onChange={e => {
+              setPageSizeInput(e.target.value)
+              const n = parseInt(e.target.value, 10)
+              if (n > 0) { setPageSize(n); setPage(1) }
+            }}
+            onBlur={() => {
+              const n = parseInt(pageSizeInput, 10)
+              if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
+            }}
+            className="w-14 border border-[#1A1A1A]/20 px-2 py-1 text-[10px] font-bold text-center bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">filas</span>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, i, arr) => {
+                if (i > 0 && n - (arr[i - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…'
+                  ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-[#5f5e59]">…</span>
+                  : <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={cn('size-7 text-[10px] font-bold border transition-colors', safePage === n
+                      ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
+                      : 'border-[#1A1A1A]/20 hover:bg-[#E5E1D8]'
+                    )}
+                  >{n}</button>
+              )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
 
       {materialType === 'INK' ? (
         <InkOrderForm

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, FileCheck } from 'lucide-react'
 import { getAllReceipts, type InkReceiptWithContext, type PaperReceiptWithContext } from '@/actions/receipts.actions'
 import { QualityBadge } from './quality-badge'
 import { QualityUpdateForm } from './quality-update-form'
@@ -190,10 +190,6 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
                 const order = row.kind === 'ink'
                   ? (d as InkReceiptWithContext).purchase_order_item?.purchase_order
                   : (d as PaperReceiptWithContext).purchase_order_item?.purchase_order
-                const qty = row.kind === 'ink'
-                  ? `${(d as InkReceiptWithContext).kg_received} kg`
-                  : `${((d as PaperReceiptWithContext).total_m2_received ?? 0).toFixed(1)} m²`
-
                 return (
                   <tr key={`${row.kind}-${d.id}`} className="hover:bg-[#E5E1D8]/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-[11px]">{d.internal_batch}</td>
@@ -212,9 +208,38 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
                       OC-{String(order?.order_number ?? '').padStart(4, '0')}
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px]">{fmtDate(d.receipt_date)}</td>
-                    <td className="px-4 py-3 font-mono text-[11px]">{qty}</td>
                     <td className="px-4 py-3">
-                      <QualityBadge value={d.quality_certificate as any} size="xs" />
+                      {row.kind === 'ink' ? (
+                        <>
+                          <p className="font-mono text-[11px]">{(d as InkReceiptWithContext).units_received} uds · {(d as InkReceiptWithContext).kg_received} kg</p>
+                          <p className="font-mono text-[10px] text-[#5f5e59]">
+                            {((d as InkReceiptWithContext).kg_received / (d as InkReceiptWithContext).units_received).toFixed(3)} kg/ud
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-mono text-[11px]">{(d as PaperReceiptWithContext).units_received} rollos · {(d as PaperReceiptWithContext).length_m} m × {(d as PaperReceiptWithContext).width_m} m</p>
+                          <p className="font-mono text-[10px] text-[#5f5e59]">
+                            {((d as PaperReceiptWithContext).total_m2_received ?? 0).toFixed(2)} m² total
+                          </p>
+                        </>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <QualityBadge value={d.quality_certificate as any} size="xs" />
+                        {(d as any).certificate_url && (
+                          <a
+                            href={(d as any).certificate_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Ver certificado"
+                            className="text-[#5f5e59] hover:text-green-700 transition-colors"
+                          >
+                            <FileCheck className="size-3.5" />
+                          </a>
+                        )}
+                      </div>
                     </td>
                     {canEdit && (
                       <td className="px-4 py-3 text-right">
