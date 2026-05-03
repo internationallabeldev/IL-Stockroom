@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProviderCard } from './provider-card'
 import { ProviderForm } from './provider-form'
-import { type Provider } from '@/actions/providers.actions'
+import { getProviders, type Provider } from '@/actions/providers.actions'
 
 const TYPE_FILTERS = [
   { value: '',               label: 'Todos' },
@@ -26,13 +27,20 @@ type Props = {
   canEdit: boolean
 }
 
-export function ProvidersList({ providers, canEdit }: Props) {
+export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
   const [search, setSearch]       = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [page, setPage]           = useState(1)
   const [pageSize, setPageSize]   = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer]       = useState<DrawerState>({ open: false, mode: 'create', provider: null })
+
+  const { data: providers = initialProviders } = useQuery({
+    queryKey: ['providers'],
+    queryFn: () => getProviders(),
+    initialData: initialProviders,
+    refetchInterval: 30_000,
+  })
 
   const filtered = providers.filter(p => {
     const matchType = !typeFilter || p.provider_type === typeFilter

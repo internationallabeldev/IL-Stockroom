@@ -14,7 +14,7 @@ export function StatusBar() {
   }, [])
 
   return (
-    <footer className="fixed bottom-0 left-64 right-0 z-30 h-10 bg-[#fdf9f0] border-t border-[#1A1A1A]/15 px-8 flex items-center justify-between">
+    <footer className="fixed bottom-0 left-16 right-0 z-30 h-10 bg-[#fdf9f0] border-t border-[#1A1A1A]/15 px-8 flex items-center justify-between">
       <div className="flex gap-6 items-center text-[10px] font-bold uppercase tracking-widest">
         <span className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-[#008dc2] inline-block" />

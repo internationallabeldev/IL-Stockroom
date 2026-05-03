@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { InkCatalogCard } from './ink-catalog-card'
 import { InkCatalogForm } from './ink-catalog-form'
-import type { InkCatalogItem } from '@/actions/ink-catalog.actions'
+import { getInkCatalog, type InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { Provider } from '@/actions/providers.actions'
 
 const STOCK_FILTERS = [
@@ -28,13 +29,20 @@ type Props = {
   canEdit: boolean
 }
 
-export function InkCatalogList({ items, providers, canEdit }: Props) {
+export function InkCatalogList({ items: initialItems, providers, canEdit }: Props) {
   const [search, setSearch]           = useState('')
   const [stockFilter, setStockFilter] = useState('')
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer]           = useState<DrawerState>({ open: false, mode: 'create', item: null })
+
+  const { data: items = initialItems } = useQuery({
+    queryKey: ['ink-catalog'],
+    queryFn: () => getInkCatalog(),
+    initialData: initialItems,
+    refetchInterval: 30_000,
+  })
 
   const filtered = items.filter(item => {
     const q = search.toLowerCase()
