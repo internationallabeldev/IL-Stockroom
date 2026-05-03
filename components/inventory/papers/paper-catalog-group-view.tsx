@@ -5,8 +5,7 @@ import { ChevronRight, History, PowerOff, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { disablePaperLot, type PaperLot } from '@/actions/paper-inventory.actions'
-import { LotProgressBar }  from '../shared/lot-progress-bar'
-import { LotLocationEdit } from './lot-location-edit'
+import { DisponibleCell } from './disponible-cell'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type Props = {
@@ -148,7 +147,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-[#1A1A1A]/10">
-                      {['Lote interno', 'Lote prov.', 'Inicial', 'Restante m²', 'Ubicación', 'Recepción', 'Estado', ''].map(h => (
+                      {['Lote interno', 'Lote prov.', 'Disponible', 'Recepción', 'Estado', ''].map(h => (
                         <th key={h} className="pl-8 pr-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap first:pl-12">
                           {h}
                         </th>
@@ -168,28 +167,13 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                           {lot.internal_batch}
                         </td>
 
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59]">
-                          {(lot.receipt as any)?.provider_batch ?? '—'}
-                        </td>
-
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">
-                          {lot.initial_length_m.toFixed(2)}m × {lot.initial_width_m.toFixed(2)}m
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                          <p className="font-mono text-[10px] text-[#5f5e59]">{lot.receipt?.provider_batch ?? '—'}</p>
                         </td>
 
                         <td className="px-4 py-2.5">
-                          <LotProgressBar
-                            initial={lot.initial_m2 ?? 0}
-                            used={lot.used_m2 ?? 0}
-                            unit="m²"
-                          />
-                        </td>
-
-                        <td className="px-4 py-2.5">
-                          <LotLocationEdit
-                            inventoryId={lot.id}
-                            value={lot.location}
-                            canEdit={canManage}
-                          />
+                          <DisponibleCell lot={lot} />
                         </td>
 
                         <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">

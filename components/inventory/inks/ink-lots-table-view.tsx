@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { History, PowerOff, FlaskConical } from 'lucide-react'
 import { toast } from 'sonner'
 import { disableLot, type InkLot } from '@/actions/ink-inventory.actions'
-import { LotProgressBar }  from '../shared/lot-progress-bar'
-import { LotLocationEdit } from './lot-location-edit'
+import { DisponibleCellInk } from './disponible-cell-ink'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
@@ -55,8 +54,8 @@ export function InkLotsTableView({ lots, canManage, canRequest, onHistory, onReq
           <thead>
             <tr className="bg-[#E5E1D8]/60 border-b border-[#1A1A1A]/10">
               {[
-                'Lote interno', 'Lote prov.', 'Tinta', 'Stock',
-                'Ubicación', 'Recepción', 'Estado', '',
+                'Lote interno', 'Lote prov.', 'Tinta', 'Disponible',
+                'Recepción', 'Estado', '',
               ].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">
                   {h}
@@ -79,8 +78,9 @@ export function InkLotsTableView({ lots, canManage, canRequest, onHistory, onReq
                 </td>
 
                 {/* Lote proveedor */}
-                <td className="px-4 py-3 font-mono text-[11px] text-[#5f5e59]">
-                  {lot.receipt?.provider_batch ?? '—'}
+                <td className="px-4 py-3">
+                  <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                  <p className="font-mono text-[10px] text-[#5f5e59]">{lot.receipt?.provider_batch ?? '—'}</p>
                 </td>
 
                 {/* Tinta */}
@@ -89,18 +89,9 @@ export function InkLotsTableView({ lots, canManage, canRequest, onHistory, onReq
                   <p className="font-medium">{lot.ink_catalog?.name}</p>
                 </td>
 
-                {/* Stock */}
+                {/* Disponible */}
                 <td className="px-4 py-3">
-                  <LotProgressBar initial={lot.initial_kg ?? 0} used={lot.used_kg ?? 0} unit="kg" />
-                </td>
-
-                {/* Ubicación */}
-                <td className="px-4 py-3">
-                  <LotLocationEdit
-                    inventoryId={lot.id}
-                    value={lot.location}
-                    canEdit={canManage}
-                  />
+                  <DisponibleCellInk lot={lot} />
                 </td>
 
                 {/* Fecha recepción */}

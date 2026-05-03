@@ -14,7 +14,8 @@ type RequisitionRow  = Database['public']['Tables']['production_requisitions']['
 export type InkLot = InkInventoryRow & {
   ink_catalog: Pick<InkCatalogRow, 'id' | 'code' | 'name' | 'color_code' | 'min_stock_kg' | 'current_stock_kg' | 'density' | 'viscosity'> | null
   receipt: (InkReceiptRow & {
-    receiver: { first_name: string | null; last_name: string | null } | null
+    receiver:            { first_name: string | null; last_name: string | null } | null
+    purchase_order_item: { purchase_order: { provider: { id: number; name: string } | null } | null } | null
   }) | null
 }
 
@@ -46,7 +47,12 @@ export async function getInkInventory(_filters?: InventoryFilters): Promise<InkL
       ink_catalog:ink_catalog_id ( id, code, name, color_code, min_stock_kg, current_stock_kg, density, viscosity ),
       receipt:receipt_id (
         *,
-        receiver:received_by ( first_name, last_name )
+        receiver:received_by ( first_name, last_name ),
+        purchase_order_item:purchase_order_item_id (
+          purchase_order:purchase_order_id (
+            provider:provider_id ( id, name )
+          )
+        )
       )
     `)
     .order('created_at', { ascending: false })

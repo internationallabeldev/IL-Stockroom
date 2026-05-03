@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { ChevronRight, FlaskConical, History, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { InkLot } from '@/actions/ink-inventory.actions'
-import { LotProgressBar } from '../shared/lot-progress-bar'
-import { LotLocationEdit } from './lot-location-edit'
+import { DisponibleCellInk } from './disponible-cell-ink'
 import { toast } from 'sonner'
 import { disableLot } from '@/actions/ink-inventory.actions'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -158,8 +157,8 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
                   <thead>
                     <tr className="border-b border-[#1A1A1A]/10">
                       {[
-                        'Lote interno', 'Lote prov.', 'Stock',
-                        'Ubicación', 'Recepción', 'Estado', '',
+                        'Lote interno', 'Lote prov.', 'Disponible',
+                        'Recepción', 'Estado', '',
                       ].map(h => (
                         <th
                           key={h}
@@ -183,20 +182,13 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
                           {lot.internal_batch}
                         </td>
 
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59]">
-                          {lot.receipt?.provider_batch ?? '—'}
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                          <p className="font-mono text-[10px] text-[#5f5e59]">{lot.receipt?.provider_batch ?? '—'}</p>
                         </td>
 
                         <td className="px-4 py-2.5">
-                          <LotProgressBar initial={lot.initial_kg ?? 0} used={lot.used_kg ?? 0} unit="kg" />
-                        </td>
-
-                        <td className="px-4 py-2.5">
-                          <LotLocationEdit
-                            inventoryId={lot.id}
-                            value={lot.location}
-                            canEdit={canManage}
-                          />
+                          <DisponibleCellInk lot={lot} />
                         </td>
 
                         <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">
