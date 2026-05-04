@@ -1,30 +1,32 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { LayoutList, Layers, Search, X, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getPaperInventory, type PaperLot } from '@/actions/paper-inventory.actions'
+import type { PaperCatalogForRequisition }   from '@/actions/requisitions.actions'
 import { PaperLotsTableView }    from './paper-lots-table-view'
 import { PaperCatalogGroupView } from './paper-catalog-group-view'
 import { PaperLotHistorySheet }  from './paper-lot-history-sheet'
-import { PaperRequisitionSheet } from './paper-requisition-sheet'
+import { RequisitionForm }       from '@/components/requisitions/requisition-form'
 
 type View = 'table' | 'group'
 
 type Props = {
-  initialLots: PaperLot[]
-  canManage:   boolean
-  canRequest:  boolean
+  initialLots:  PaperLot[]
+  canManage:    boolean
+  canRequest:   boolean
+  paperCatalog: PaperCatalogForRequisition[]
 }
 
-export function PaperInventoryView({ initialLots, canManage, canRequest }: Props) {
-  const [view, setView] = useState<View>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('paper-inv-view') as View) ?? 'table'
-    }
-    return 'table'
-  })
+export function PaperInventoryView({ initialLots, canManage, canRequest, paperCatalog }: Props) {
+  const [view, setView] = useState<View>('table')
+
+  useEffect(() => {
+    const stored = localStorage.getItem('paper-inv-view') as View
+    if (stored === 'table' || stored === 'group') setView(stored)
+  }, [])
   const [search,       setSearch]       = useState('')
   const [lowStock,     setLowStock]     = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -52,6 +54,7 @@ export function PaperInventoryView({ initialLots, canManage, canRequest }: Props
   }
 
   function openRequest(lot: PaperLot) {
+    if (!lot.paper_catalog) return
     setSelectedLot(lot)
     setRequisitionOpen(true)
   }
@@ -204,11 +207,18 @@ export function PaperInventoryView({ initialLots, canManage, canRequest }: Props
         inventoryId={historyLotId}
       />
 
-      <PaperRequisitionSheet
+      <RequisitionForm
         open={requisitionOpen}
         onClose={() => { setRequisitionOpen(false); refetch() }}
-        preselectedPaper={selectedLot?.paper_catalog ?? null}
-        availableLots={lots as PaperLot[]}
+        inkCatalog={[]}
+        paperCatalog={paperCatalog}
+        preselected={selectedLot?.paper_catalog ? {
+          materialType: 'PAPER',
+          catalogId:    selectedLot.paper_catalog.id,
+          name:         selectedLot.paper_catalog.name,
+          code:         selectedLot.paper_catalog.code,
+          stock:        selectedLot.paper_catalog.current_stock_m2 ?? undefined,
+        } : undefined}
       />
     </>
   )

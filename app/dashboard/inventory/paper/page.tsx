@@ -1,7 +1,8 @@
-import { getSessionUser }      from '@/actions/auth.actions'
-import { getPaperInventory }   from '@/actions/paper-inventory.actions'
-import { PaperInventoryView }  from '@/components/inventory/papers/paper-inventory-view'
-import { redirect }            from 'next/navigation'
+import { getSessionUser }              from '@/actions/auth.actions'
+import { getPaperInventory }           from '@/actions/paper-inventory.actions'
+import { getPaperCatalogWithStock }    from '@/actions/requisitions.actions'
+import { PaperInventoryView }          from '@/components/inventory/papers/paper-inventory-view'
+import { redirect }                    from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,10 @@ export default async function PaperInventoryPage() {
   const canManage  = ['ADMIN', 'WAREHOUSE_MANAGER'].includes(user.role)
   const canRequest = user.role === 'PRODUCER'
 
-  const lots = await getPaperInventory()
+  const [lots, paperCatalog] = await Promise.all([
+    getPaperInventory(),
+    getPaperCatalogWithStock(),
+  ])
 
   return (
     <div className="p-8">
@@ -27,6 +31,7 @@ export default async function PaperInventoryPage() {
         initialLots={lots}
         canManage={canManage}
         canRequest={canRequest}
+        paperCatalog={paperCatalog}
       />
     </div>
   )

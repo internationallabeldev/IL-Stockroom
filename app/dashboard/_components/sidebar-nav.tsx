@@ -14,10 +14,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/dashboard',              label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/dashboard/requisitions', label: 'Requisiciones', icon: ClipboardList },
-  { href: '/dashboard/providers',    label: 'Proveedores',   icon: Truck },
-  { href: '/dashboard/reports',      label: 'Reportes',      icon: BarChart2 },
+  { href: '/dashboard',           label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/dashboard/providers', label: 'Proveedores', icon: Truck },
+  { href: '/dashboard/reports',   label: 'Reportes',   icon: BarChart2 },
+]
+
+const requisitionItems = [
+  { href: '/dashboard/requisitions/inks',  label: 'Tintas', icon: Droplet  },
+  { href: '/dashboard/requisitions/paper', label: 'Papel',  icon: FileText },
 ]
 
 const inventoryItems = [
@@ -218,10 +222,11 @@ export function SidebarNav({ userName }: { userName?: string | null }) {
               )
             })}
 
-            <CollapsibleNavItem label="Inventario"  icon={Package}       items={inventoryItems} pathname={pathname} baseHref="/dashboard/inventory" expanded={expanded} />
-            <CollapsibleNavItem label="Recepciones" icon={ClipboardCheck} items={receiptItems}   pathname={pathname} baseHref="/dashboard/receipts"  expanded={expanded} />
-            <CollapsibleNavItem label="Órdenes"     icon={ShoppingCart}   items={orderItems}     pathname={pathname} expanded={expanded} />
-            <CollapsibleNavItem label="Catálogo"    icon={BookOpen}       items={catalogItems}   pathname={pathname} expanded={expanded} />
+            <CollapsibleNavItem label="Requisiciones" icon={ClipboardList}  items={requisitionItems} pathname={pathname} baseHref="/dashboard/requisitions" expanded={expanded} />
+            <CollapsibleNavItem label="Inventario"   icon={Package}        items={inventoryItems}  pathname={pathname} baseHref="/dashboard/inventory"   expanded={expanded} />
+            <CollapsibleNavItem label="Recepciones"  icon={ClipboardCheck} items={receiptItems}    pathname={pathname} baseHref="/dashboard/receipts"    expanded={expanded} />
+            <CollapsibleNavItem label="Órdenes"      icon={ShoppingCart}   items={orderItems}      pathname={pathname} expanded={expanded} />
+            <CollapsibleNavItem label="Catálogo"     icon={BookOpen}       items={catalogItems}    pathname={pathname} expanded={expanded} />
           </ul>
         </nav>
 
