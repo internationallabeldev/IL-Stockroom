@@ -1,7 +1,8 @@
-import { getSessionUser }      from '@/actions/auth.actions'
-import { getInkInventory }     from '@/actions/ink-inventory.actions'
-import { InkInventoryView }    from '@/components/inventory/inks/ink-inventory-view'
-import { redirect }            from 'next/navigation'
+import { getSessionUser }              from '@/actions/auth.actions'
+import { getInkInventory }             from '@/actions/ink-inventory.actions'
+import { getInkCatalogWithStock }      from '@/actions/requisitions.actions'
+import { InkInventoryView }            from '@/components/inventory/inks/ink-inventory-view'
+import { redirect }                    from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,9 +11,12 @@ export default async function InkInventoryPage() {
   if (!user) redirect('/login')
 
   const canManage  = ['ADMIN', 'WAREHOUSE_MANAGER'].includes(user.role)
-  const canRequest = user.role === 'PRODUCER'
+  const canRequest = user.role !== 'USER'
 
-  const lots = await getInkInventory()
+  const [lots, inkCatalog] = await Promise.all([
+    getInkInventory(),
+    getInkCatalogWithStock(),
+  ])
 
   return (
     <div className="p-8">
@@ -27,6 +31,7 @@ export default async function InkInventoryPage() {
         initialLots={lots}
         canManage={canManage}
         canRequest={canRequest}
+        inkCatalog={inkCatalog}
       />
     </div>
   )

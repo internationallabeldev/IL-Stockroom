@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { LayoutList, Layers, Search, X, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInkInventory, type InkLot } from '@/actions/ink-inventory.actions'
+import type { InkCatalogForRequisition }  from '@/actions/requisitions.actions'
 import { InkLotsTableView }       from './ink-lots-table-view'
 import { InkCatalogGroupView }    from './ink-catalog-group-view'
 import { InkLotHistorySheet }     from './ink-lot-history-sheet'
-import { InkRequisitionSheet }    from './ink-requisition-sheet'
+import { RequisitionForm }        from '@/components/requisitions/requisition-form'
 
 type View = 'table' | 'group'
 
@@ -16,15 +17,16 @@ type Props = {
   initialLots: InkLot[]
   canManage:   boolean
   canRequest:  boolean
+  inkCatalog:  InkCatalogForRequisition[]
 }
 
-export function InkInventoryView({ initialLots, canManage, canRequest }: Props) {
-  const [view,       setView]       = useState<View>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('ink-inv-view') as View) ?? 'table'
-    }
-    return 'table'
-  })
+export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalog }: Props) {
+  const [view, setView] = useState<View>('table')
+
+  useEffect(() => {
+    const stored = localStorage.getItem('ink-inv-view') as View
+    if (stored === 'table' || stored === 'group') setView(stored)
+  }, [])
   const [search,     setSearch]     = useState('')
   const [lowStock,   setLowStock]   = useState(false)
   const [showDisabled, setShowDisabled] = useState(false)
@@ -52,6 +54,7 @@ export function InkInventoryView({ initialLots, canManage, canRequest }: Props) 
   }
 
   function openRequest(lot: InkLot) {
+    if (!lot.ink_catalog) return
     setSelectedLot(lot)
     setRequisitionOpen(true)
   }
@@ -212,11 +215,19 @@ export function InkInventoryView({ initialLots, canManage, canRequest }: Props) 
         inventoryId={historyLotId}
       />
 
-      <InkRequisitionSheet
+      <RequisitionForm
         open={requisitionOpen}
         onClose={() => { setRequisitionOpen(false); refetch() }}
-        preselectedInk={selectedLot?.ink_catalog ?? null}
-        availableLots={lots as InkLot[]}
+        inkCatalog={inkCatalog}
+        paperCatalog={[]}
+        preselected={selectedLot?.ink_catalog ? {
+          materialType: 'INK',
+          catalogId:    selectedLot.ink_catalog.id,
+          name:         selectedLot.ink_catalog.name,
+          code:         selectedLot.ink_catalog.code,
+          colorCode:    selectedLot.ink_catalog.color_code,
+          stock:        selectedLot.ink_catalog.current_stock_kg ?? undefined,
+        } : undefined}
       />
     </>
   )

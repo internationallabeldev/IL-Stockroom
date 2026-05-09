@@ -245,6 +245,7 @@ export type Database = {
       }
       ink_receipts: {
         Row: {
+          certificate_url: string | null
           created_at: string | null
           id: number
           internal_batch: string
@@ -260,6 +261,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          certificate_url?: string | null
           created_at?: string | null
           id?: number
           internal_batch: string
@@ -275,6 +277,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          certificate_url?: string | null
           created_at?: string | null
           id?: number
           internal_batch?: string
@@ -555,6 +558,7 @@ export type Database = {
       }
       paper_receipts: {
         Row: {
+          certificate_url: string | null
           created_at: string | null
           id: number
           internal_batch: string
@@ -572,6 +576,7 @@ export type Database = {
           width_m: number
         }
         Insert: {
+          certificate_url?: string | null
           created_at?: string | null
           id?: number
           internal_batch: string
@@ -589,6 +594,7 @@ export type Database = {
           width_m: number
         }
         Update: {
+          certificate_url?: string | null
           created_at?: string | null
           id?: number
           internal_batch?: string
@@ -895,7 +901,7 @@ export type Database = {
           id?: number
           material_type: Database["public"]["Enums"]["material_type"]
           notes?: string | null
-          order_number: number
+          order_number?: number
           payment_method: string
           provider_id: number
           request_date?: string
@@ -934,6 +940,102 @@ export type Database = {
             columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requisition_ink_items: {
+        Row: {
+          created_at: string | null
+          id: number
+          ink_catalog_id: number
+          is_fulfilled: boolean | null
+          kg_delivered: number | null
+          kg_requested: number
+          requisition_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          ink_catalog_id: number
+          is_fulfilled?: boolean | null
+          kg_delivered?: number | null
+          kg_requested: number
+          requisition_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          ink_catalog_id?: number
+          is_fulfilled?: boolean | null
+          kg_delivered?: number | null
+          kg_requested?: number
+          requisition_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requisition_ink_items_ink_catalog_id_fkey"
+            columns: ["ink_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "ink_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requisition_ink_items_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "production_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requisition_paper_items: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_fulfilled: boolean | null
+          length_m_requested: number
+          m2_delivered: number | null
+          m2_requested: number | null
+          paper_catalog_id: number
+          requisition_id: number
+          width_m_requested: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_fulfilled?: boolean | null
+          length_m_requested: number
+          m2_delivered?: number | null
+          m2_requested?: number | null
+          paper_catalog_id: number
+          requisition_id: number
+          width_m_requested: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_fulfilled?: boolean | null
+          length_m_requested?: number
+          m2_delivered?: number | null
+          m2_requested?: number | null
+          paper_catalog_id?: number
+          requisition_id?: number
+          width_m_requested?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requisition_paper_items_paper_catalog_id_fkey"
+            columns: ["paper_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "paper_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requisition_paper_items_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "production_requisitions"
             referencedColumns: ["id"]
           },
         ]
@@ -1002,7 +1104,7 @@ export type Database = {
       material_type: "INK" | "PAPER"
       provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "BOTH"
       purchase_order_status: "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED"
-      quality_certificate: "APPROVED" | "REJECTED" | "PENDING" | "CONDITIONAL"
+      quality_certificate: "PENDING" | "APPROVED" | "REJECTED"
       requisition_status: "PENDING" | "APPROVED" | "FULFILLED" | "REJECTED"
       user_role:
         | "ADMIN"
@@ -1140,7 +1242,7 @@ export const Constants = {
       material_type: ["INK", "PAPER"],
       provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "BOTH"],
       purchase_order_status: ["PENDING", "PARTIAL", "COMPLETED", "CANCELLED"],
-      quality_certificate: ["APPROVED", "REJECTED", "PENDING", "CONDITIONAL"],
+      quality_certificate: ["PENDING", "APPROVED", "REJECTED"],
       requisition_status: ["PENDING", "APPROVED", "FULFILLED", "REJECTED"],
       user_role: [
         "ADMIN",
