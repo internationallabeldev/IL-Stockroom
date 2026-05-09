@@ -20,9 +20,9 @@ export default async function InkInventoryPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Inventario — Tintas</h1>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-1">
+      <div className="mb-5">
+        <h1 className="font-heading text-xl font-semibold tracking-tight">Inventario — Tintas</h1>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
           Lotes activos, ubicaciones y solicitudes de material
         </p>
       </div>

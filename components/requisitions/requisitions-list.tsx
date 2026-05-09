@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import Link from 'next/link'
 import {
   Search, X, Plus, Eye, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, ArrowUpDown, Droplet, FileText,
@@ -18,6 +17,10 @@ import {
 } from '@/actions/requisitions.actions'
 import { RequisitionStatusBadge } from './requisition-status-badge'
 import { RequisitionForm }        from './requisition-form'
+import { RequisitionSheet }       from './requisition-sheet'
+import type { Database }          from '@/types/database.types'
+
+type UserRole = Database['public']['Enums']['user_role']
 
 // ── Tab config ───────────────────────────────────────────────────────────────
 
@@ -36,6 +39,7 @@ type Props = {
   initialRequisitions: Requisition[]
   canCreate:    boolean
   canManage:    boolean
+  userRole:     UserRole
   inkCatalog:   InkCatalogForRequisition[]
   paperCatalog: PaperCatalogForRequisition[]
   materialType?: MaterialType
@@ -45,6 +49,7 @@ export function RequisitionsList({
   initialRequisitions,
   canCreate,
   canManage,
+  userRole,
   inkCatalog,
   paperCatalog,
   materialType,
@@ -57,6 +62,7 @@ export function RequisitionsList({
   const [pageSize,    setPageSize]    = useState(15)
   const [pageSizeInp, setPageSizeInp] = useState('15')
   const [formOpen,    setFormOpen]    = useState(false)
+  const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
 
   const { data: all = initialRequisitions } = useQuery({
     queryKey:        ['requisitions'],
@@ -247,13 +253,13 @@ export function RequisitionsList({
                     <RequisitionStatusBadge status={req.status} size="xs" />
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/dashboard/requisitions/${req.id}`}
+                    <button
+                      onClick={() => setSelectedReq(req)}
                       className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
                     >
                       <Eye className="size-3.5" />
                       Ver
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -337,6 +343,15 @@ export function RequisitionsList({
         inkCatalog={inkCatalog}
         paperCatalog={paperCatalog}
         defaultMaterialType={materialType}
+      />
+
+      {/* Detail sheet */}
+      <RequisitionSheet
+        open={!!selectedReq}
+        onClose={() => setSelectedReq(null)}
+        requisitionId={selectedReq?.id ?? null}
+        initialRequisition={selectedReq}
+        userRole={userRole}
       />
     </>
   )

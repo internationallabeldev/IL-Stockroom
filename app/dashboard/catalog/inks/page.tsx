@@ -12,12 +12,12 @@ export default async function InkCatalogPage() {
   const canEdit = user?.role === 'ADMIN' || user?.role === 'WAREHOUSE_MANAGER'
 
   return (
-    <div className="px-8 pt-8 pb-16">
-      <header className="mb-8">
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">
+    <div className="px-8 pt-6 pb-8">
+      <header className="mb-5">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-[#1A1A1A]">
           Catálogo de Tintas
         </h1>
-        <p className="text-lg text-[#5f5e59] mt-1">
+        <p className="text-sm text-[#5f5e59] mt-0.5">
           {items.length} tinta{items.length !== 1 ? 's' : ''} registrada{items.length !== 1 ? 's' : ''}
         </p>
       </header>

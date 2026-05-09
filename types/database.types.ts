@@ -461,7 +461,7 @@ export type Database = {
           {
             foreignKeyName: "paper_inventory_receipt_id_fkey"
             columns: ["receipt_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "paper_receipts"
             referencedColumns: ["id"]
           },
@@ -1042,6 +1042,7 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           code: string | null
           created_at: string | null
           email: string
@@ -1052,10 +1053,12 @@ export type Database = {
           invited_by: string | null
           last_name: string
           last_sign_in_at: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           code?: string | null
           created_at?: string | null
           email: string
@@ -1066,10 +1069,12 @@ export type Database = {
           invited_by?: string | null
           last_name: string
           last_sign_in_at?: string | null
+          phone?: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           code?: string | null
           created_at?: string | null
           email?: string
@@ -1080,6 +1085,7 @@ export type Database = {
           invited_by?: string | null
           last_name?: string
           last_sign_in_at?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -57,5 +58,23 @@ export async function getSessionUser() {
     .eq('id', user.id)
     .single()
 
-  return profile
+  if (profile) return profile
+
+  // El trigger no creó el perfil — lo creamos desde los metadatos del usuario
+  const meta = user.user_metadata ?? {}
+  const admin = createAdminClient()
+  const { data: newProfile } = await admin
+    .from('users')
+    .upsert({
+      id: user.id,
+      email: user.email!,
+      first_name: (meta.first_name as string) ?? '',
+      last_name: (meta.last_name as string) ?? '',
+      role: (meta.role as string) ?? 'USER',
+      enabled: true,
+    })
+    .select()
+    .single()
+
+  return newProfile ?? null
 }

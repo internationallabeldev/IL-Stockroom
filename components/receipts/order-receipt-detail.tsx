@@ -5,10 +5,13 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, Plus, CheckCircle2, ListPlus } from 'lucide-react'
 import Link from 'next/link'
 import { getOrderWithReceipts, type OrderWithReceipts, type InkReceiptRow, type PaperReceiptRow } from '@/actions/receipts.actions'
+import { Pencil } from 'lucide-react'
 import { QualityBadge } from './quality-badge'
 import { QualityUpdateForm } from './quality-update-form'
+import { EditReceiptForm } from './edit-receipt-form'
 import { ReceiptForm, type ReceiptItemContext } from './receipt-form'
 import { BatchReceiptForm } from './batch-receipt-form'
+import type { UpdateReceiptAdminValues } from '@/lib/validations/receipt.schema'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
@@ -30,11 +33,23 @@ type QualityDialog = {
   currentQuality: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
 }
 
+type EditDialog = {
+  open:          boolean
+  receiptId:     number
+  materialType:  'INK' | 'PAPER'
+  batchRef:      string
+  initialValues: UpdateReceiptAdminValues
+}
+
 export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props) {
   const [receiptForm, setReceiptForm]   = useState<{ open: boolean; item: ReceiptItemContext | null }>({ open: false, item: null })
   const [batchFormOpen, setBatchFormOpen] = useState(false)
   const [qualityDialog, setQualityDialog] = useState<QualityDialog>({
     open: false, receiptId: 0, materialType: 'INK', batchRef: '', currentQuality: 'PENDING',
+  })
+  const [editDialog, setEditDialog] = useState<EditDialog>({
+    open: false, receiptId: 0, materialType: 'INK', batchRef: '',
+    initialValues: { receipt_date: '', invoice_remission: '', provider_batch: '', quality_certificate: 'PENDING' },
   })
 
   const { data: order, refetch } = useQuery({
@@ -195,6 +210,20 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
                       onEvalQuality={({ receiptId, batchRef, currentQuality }) =>
                         setQualityDialog({ open: true, receiptId, materialType: order.material_type, batchRef, currentQuality })
                       }
+                      onEdit={rec => setEditDialog({
+                        open: true,
+                        receiptId: rec.id,
+                        materialType: order.material_type,
+                        batchRef: (rec as any).internal_batch,
+                        initialValues: {
+                          receipt_date:        (rec as any).receipt_date?.split('T')[0] ?? '',
+                          invoice_remission:   (rec as any).invoice_remission ?? '',
+                          provider_batch:      (rec as any).provider_batch ?? '',
+                          quality_certificate: (rec as any).quality_certificate ?? 'PENDING',
+                          quality_notes:       (rec as any).quality_notes ?? '',
+                          certificate_url:     (rec as any).certificate_url ?? '',
+                        },
+                      })}
                     />
                   ))}
                 </div>
@@ -228,6 +257,15 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
         currentQuality={qualityDialog.currentQuality}
         batchRef={qualityDialog.batchRef}
       />
+
+      <EditReceiptForm
+        open={editDialog.open}
+        onClose={() => { setEditDialog(d => ({ ...d, open: false })); refetch() }}
+        receiptId={editDialog.receiptId}
+        materialType={editDialog.materialType}
+        batchRef={editDialog.batchRef}
+        initialValues={editDialog.initialValues}
+      />
     </div>
   )
 }
@@ -239,11 +277,13 @@ function ReceiptRow({
   materialType,
   canEdit,
   onEvalQuality,
+  onEdit,
 }: {
-  receipt: InkReceiptRow | PaperReceiptRow
-  materialType: 'INK' | 'PAPER'
-  canEdit: boolean
+  receipt:       InkReceiptRow | PaperReceiptRow
+  materialType:  'INK' | 'PAPER'
+  canEdit:       boolean
   onEvalQuality: (p: { receiptId: number; batchRef: string; currentQuality: any }) => void
+  onEdit:        (receipt: InkReceiptRow | PaperReceiptRow) => void
 }) {
   const r = receipt as any
   const qty = materialType === 'INK'
@@ -273,6 +313,15 @@ function ReceiptRow({
             className="px-2 py-1 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
           >
             Evaluar
+          </button>
+        )}
+        {canEdit && (
+          <button
+            onClick={() => onEdit(receipt)}
+            className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] transition-colors"
+            title="Editar datos administrativos"
+          >
+            <Pencil className="size-3" />
           </button>
         )}
       </div>

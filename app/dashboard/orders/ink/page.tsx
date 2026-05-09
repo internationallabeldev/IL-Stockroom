@@ -18,16 +18,7 @@ export default async function InkOrdersPage() {
   const canReceive = user?.role === 'ADMIN' || user?.role === 'WAREHOUSE_MANAGER'
 
   return (
-    <div className="px-8 pt-8 pb-16">
-      <header className="mb-8">
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">
-          Órdenes de compra — Tintas
-        </h1>
-        <p className="text-lg text-[#5f5e59] mt-1">
-          {orders.length} orden{orders.length !== 1 ? 'es' : ''} registrada{orders.length !== 1 ? 's' : ''}
-        </p>
-      </header>
-
+    <div className="px-8 pt-6 pb-8">
       <OrdersList
         initialOrders={orders}
         materialType="INK"

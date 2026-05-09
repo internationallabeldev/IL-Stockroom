@@ -29,6 +29,7 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
                       request.nextUrl.pathname.startsWith('/register')
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+  const isUsersRoute = request.nextUrl.pathname.startsWith('/dashboard/users')
 
   // Sin sesión intentando entrar al dashboard → /login
   if (!user && isDashboard) {
@@ -38,6 +39,19 @@ export async function middleware(request: NextRequest) {
   // Con sesión intentando ir a login → /dashboard
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Ruta /users: solo ADMIN
+  if (user && isUsersRoute) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return supabaseResponse

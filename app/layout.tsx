@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -31,24 +30,22 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <QueryProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                classNames: {
-                  toast:       '!bg-[#F5F2EA] !border !border-[#1A1A1A]/20 !rounded-none !shadow-none font-sans',
-                  title:       '!text-[10px] !font-bold !uppercase !tracking-widest !text-[#1A1A1A]',
-                  description: '!text-[10px] !text-[#5f5e59] !font-normal',
-                  icon:        '!text-[#1A1A1A]/50',
-                  success:     '!border-l-2 !border-l-green-600',
-                  error:       '!border-l-2 !border-l-red-600',
-                  warning:     '!border-l-2 !border-l-yellow-500',
-                  info:        '!border-l-2 !border-l-[#008dc2]',
-                },
-              }}
-            />
-          </ThemeProvider>
+          {children}
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              classNames: {
+                toast:       '!bg-[#F5F2EA] !border !border-[#1A1A1A]/20 !rounded-none !shadow-none font-sans',
+                title:       '!text-[10px] !font-bold !uppercase !tracking-widest !text-[#1A1A1A]',
+                description: '!text-[10px] !text-[#5f5e59] !font-normal',
+                icon:        '!text-[#1A1A1A]/50',
+                success:     '!border-l-2 !border-l-green-600',
+                error:       '!border-l-2 !border-l-red-600',
+                warning:     '!border-l-2 !border-l-yellow-500',
+                info:        '!border-l-2 !border-l-[#008dc2]',
+              },
+            }}
+          />
         </QueryProvider>
       </body>
     </html>
