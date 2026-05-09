@@ -33,6 +33,16 @@ export const updateQualitySchema = z.object({
   certificate_url:     z.string().nullable().optional(),
 })
 
+export const updateReceiptAdminSchema = z.object({
+  receipt_date:        z.string().min(1, 'La fecha es requerida'),
+  invoice_remission:   z.string().min(1, 'Remisión/factura requerida'),
+  provider_batch:      z.string().min(1, 'Lote proveedor requerido'),
+  quality_certificate: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL']),
+  quality_notes:       z.string().nullable().optional(),
+  certificate_url:     z.string().nullable().optional(),
+})
+
 export type CreateInkReceiptValues   = z.infer<typeof createInkReceiptSchema>
 export type CreatePaperReceiptValues = z.infer<typeof createPaperReceiptSchema>
 export type UpdateQualityValues      = z.infer<typeof updateQualitySchema>
+export type UpdateReceiptAdminValues = z.infer<typeof updateReceiptAdminSchema>

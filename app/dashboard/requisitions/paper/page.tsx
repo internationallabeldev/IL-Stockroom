@@ -17,12 +17,12 @@ export default async function PaperRequisitionsPage() {
   const pending   = paperReqs.filter(r => r.status === 'PENDING').length
 
   return (
-    <div className="px-8 pt-8 pb-16">
-      <header className="mb-8">
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">
+    <div className="px-8 pt-6 pb-8">
+      <header className="mb-5">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-[#1A1A1A]">
           Requisiciones — Papel
         </h1>
-        <p className="text-lg text-[#5f5e59] mt-1">
+        <p className="text-sm text-[#5f5e59] mt-0.5">
           {paperReqs.length} total
           {pending > 0 && ` · ${pending} pendiente${pending !== 1 ? 's' : ''} de atender`}
         </p>
@@ -32,6 +32,7 @@ export default async function PaperRequisitionsPage() {
         initialRequisitions={requisitions}
         canCreate={canCreate}
         canManage={canManage}
+        userRole={user?.role ?? 'USER'}
         inkCatalog={inkCatalog}
         paperCatalog={paperCatalog}
         materialType="PAPER"

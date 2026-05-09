@@ -7,6 +7,7 @@ import {
   createInkReceiptSchema,
   createPaperReceiptSchema,
   updateQualitySchema,
+  updateReceiptAdminSchema,
 } from '@/lib/validations/receipt.schema'
 import type { Database } from '@/types/database.types'
 import { logger } from '@/lib/logger'
@@ -430,6 +431,68 @@ export async function updatePaperReceiptQuality(
     logger.error('updatePaperReceiptQuality', { receiptId, msg: error.message })
     return { error: error.message }
   }
+
+  PATHS.forEach(p => revalidatePath(p))
+  revalidatePath('/dashboard/inventory/papers')
+  return { success: true }
+}
+
+export async function updateInkReceiptAdmin(
+  receiptId: number,
+  values: unknown
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await getSessionUser()
+  if (!user || !CAN_RECEIVE.includes(user.role)) return { error: 'Sin permisos' }
+
+  const parsed = updateReceiptAdminSchema.safeParse(values)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('ink_receipts')
+    .update({
+      receipt_date:        parsed.data.receipt_date,
+      invoice_remission:   parsed.data.invoice_remission,
+      provider_batch:      parsed.data.provider_batch,
+      quality_certificate: parsed.data.quality_certificate as QualityCertificate,
+      quality_notes:       parsed.data.quality_notes ?? null,
+      certificate_url:     parsed.data.certificate_url ?? null,
+      updated_at:          new Date().toISOString(),
+    })
+    .eq('id', receiptId)
+
+  if (error) return { error: error.message }
+
+  PATHS.forEach(p => revalidatePath(p))
+  revalidatePath('/dashboard/inventory/inks')
+  return { success: true }
+}
+
+export async function updatePaperReceiptAdmin(
+  receiptId: number,
+  values: unknown
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await getSessionUser()
+  if (!user || !CAN_RECEIVE.includes(user.role)) return { error: 'Sin permisos' }
+
+  const parsed = updateReceiptAdminSchema.safeParse(values)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('paper_receipts')
+    .update({
+      receipt_date:        parsed.data.receipt_date,
+      invoice_remission:   parsed.data.invoice_remission,
+      provider_batch:      parsed.data.provider_batch,
+      quality_certificate: parsed.data.quality_certificate as QualityCertificate,
+      quality_notes:       parsed.data.quality_notes ?? null,
+      certificate_url:     parsed.data.certificate_url ?? null,
+      updated_at:          new Date().toISOString(),
+    })
+    .eq('id', receiptId)
+
+  if (error) return { error: error.message }
 
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath('/dashboard/inventory/papers')
