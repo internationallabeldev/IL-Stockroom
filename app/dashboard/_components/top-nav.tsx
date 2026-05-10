@@ -6,8 +6,18 @@ import { useMaterial } from './material-context'
 import { usePathname } from 'next/navigation'
 
 const PAGE_TITLES: Record<string, string> = {
-  '/dashboard/orders/ink':   'Órdenes de compra — Tintas',
-  '/dashboard/orders/paper': 'Órdenes de compra — Papel',
+  '/dashboard/orders/ink':        'Órdenes de compra — Tintas',
+  '/dashboard/orders/paper':      'Órdenes de compra — Papel',
+  '/dashboard/requisitions':      'Requisiciones de producción',
+  '/dashboard/requisitions/inks': 'Requisiciones — Tintas',
+  '/dashboard/requisitions/paper':'Requisiciones — Papel',
+  '/dashboard/catalog/inks':      'Catálogo de Tintas',
+  '/dashboard/catalog/papers':    'Catálogo de Papel',
+  '/dashboard/providers':         'Proveedores',
+  '/dashboard/inventory/inks':    'Inventario — Tintas',
+  '/dashboard/inventory/paper':   'Inventario — Papel',
+  '/dashboard/receipts/ink':      'Recepciones — Tintas',
+  '/dashboard/receipts/paper':    'Recepciones — Papel',
 }
 
 export function TopNav({ userName }: { userName: string }) {

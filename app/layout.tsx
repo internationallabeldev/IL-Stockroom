@@ -14,7 +14,20 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: "IL Stockroom",
-  description: "Sistema de gestión de inventario",
+  description: "Sistema de gestión de inventario para International Label",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "IL Stockroom",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({
