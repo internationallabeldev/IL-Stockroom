@@ -42,7 +42,7 @@ export const paperCatalogSchema = z.object({
   bulk_cm3g:          z.number().positive('Debe ser positivo').nullable().optional(),
   // Inventario
   min_stock_m2:       z.number().min(0, 'No puede ser negativo').nullable().optional(),
-  stock_unit:         z.enum(STOCK_UNITS).default('m2'),
+  stock_unit:         z.enum(STOCK_UNITS),
   // Producción
   reel_diameter_mm:   z.number().positive('Debe ser positivo').nullable().optional(),
   core_mm:            z.number().positive('Debe ser positivo').nullable().optional(),

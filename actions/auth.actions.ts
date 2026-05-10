@@ -63,6 +63,7 @@ export async function getSessionUser() {
   // El trigger no creó el perfil — lo creamos desde los metadatos del usuario
   const meta = user.user_metadata ?? {}
   const admin = createAdminClient()
+  type UserRole = 'ADMIN' | 'PURCHASER' | 'WAREHOUSE_MANAGER' | 'PRODUCER' | 'USER'
   const { data: newProfile } = await admin
     .from('users')
     .upsert({
@@ -70,9 +71,9 @@ export async function getSessionUser() {
       email: user.email!,
       first_name: (meta.first_name as string) ?? '',
       last_name: (meta.last_name as string) ?? '',
-      role: (meta.role as string) ?? 'USER',
+      role: ((meta.role as string) ?? 'USER') as UserRole,
       enabled: true,
-    })
+    } as never)
     .select()
     .single()
 

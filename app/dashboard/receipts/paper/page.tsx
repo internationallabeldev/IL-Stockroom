@@ -23,22 +23,14 @@ export default async function PaperReceiptsPage() {
 
   return (
     <div className="p-8">
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="font-heading text-xl font-semibold tracking-tight">Recepciones — Papel</h1>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
-            Control de calidad e historial de material recibido
-          </p>
+      {pendingCount > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 mb-5 bg-yellow-50 border border-yellow-200 text-yellow-700">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''} de calidad
+          </span>
         </div>
-        {pendingCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 text-yellow-700">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">
-              {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''} de calidad
-            </span>
-          </div>
-        )}
-      </div>
+      )}
 
       <ReceiptsPageTabs
         pendingCount={pendingCount}

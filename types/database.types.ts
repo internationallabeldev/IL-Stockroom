@@ -1110,7 +1110,7 @@ export type Database = {
       material_type: "INK" | "PAPER"
       provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "BOTH"
       purchase_order_status: "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED"
-      quality_certificate: "PENDING" | "APPROVED" | "REJECTED"
+      quality_certificate: "PENDING" | "APPROVED" | "REJECTED" | "CONDITIONAL"
       requisition_status: "PENDING" | "APPROVED" | "FULFILLED" | "REJECTED"
       user_role:
         | "ADMIN"
@@ -1248,7 +1248,7 @@ export const Constants = {
       material_type: ["INK", "PAPER"],
       provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "BOTH"],
       purchase_order_status: ["PENDING", "PARTIAL", "COMPLETED", "CANCELLED"],
-      quality_certificate: ["PENDING", "APPROVED", "REJECTED"],
+      quality_certificate: ["PENDING", "APPROVED", "REJECTED", "CONDITIONAL"],
       requisition_status: ["PENDING", "APPROVED", "FULFILLED", "REJECTED"],
       user_role: [
         "ADMIN",
