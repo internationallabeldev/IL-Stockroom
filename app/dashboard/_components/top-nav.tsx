@@ -4,6 +4,8 @@ import { Bell, User, Droplet, FileText, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMaterial } from './material-context'
 import { usePathname } from 'next/navigation'
+import { useCommandPalette } from '@/hooks/use-command-palette'
+import { CommandPalette } from '@/components/search/command-palette'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard/orders/ink':         'Órdenes de compra — Tintas',
@@ -29,8 +31,11 @@ export function TopNav({ userName }: { userName: string }) {
   const pathname = usePathname()
   const pageTitle = PAGE_TITLES[pathname] ?? null
   const showMaterialToggle = pathname !== '/dashboard/providers'
+  const { isOpen, open, close } = useCommandPalette()
 
   return (
+    <>
+    <CommandPalette isOpen={isOpen} onClose={close} />
     <header className="fixed top-0 z-50 h-16 w-full bg-[#F5F2EA] border-b border-[#1A1A1A]/15 flex items-center justify-between px-8">
       <div className="flex items-center gap-4">
         <span className="font-heading font-bold text-xl tracking-tighter select-none">
@@ -77,15 +82,17 @@ export function TopNav({ userName }: { userName: string }) {
           </button>
         </div>}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40" />
-          <input
-            type="search"
-            placeholder="Buscar operaciones..."
-            className="h-8 w-56 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-3 text-xs outline-none transition-colors focus:border-[#1A1A1A]/40 placeholder:text-[#1A1A1A]/40"
-          />
-        </div>
+        {/* Search trigger */}
+        <button
+          onClick={open}
+          className="relative flex h-8 w-56 cursor-text items-center gap-2 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-2.5 pr-2 text-left transition-colors hover:border-[#1A1A1A]/40"
+        >
+          <Search className="size-3.5 shrink-0 text-[#1A1A1A]/40" />
+          <span className="flex-1 text-xs text-[#1A1A1A]/40">Buscar...</span>
+          <kbd className="hidden shrink-0 rounded border border-[#1A1A1A]/15 bg-[#1A1A1A]/6 px-1 py-0.5 text-[10px] font-medium text-[#1A1A1A]/40 sm:block">
+            Ctrl K
+          </kbd>
+        </button>
 
         <div className="w-px h-5 bg-[#1A1A1A]/15" />
 
@@ -101,5 +108,6 @@ export function TopNav({ userName }: { userName: string }) {
         </div>
       </div>
     </header>
+    </>
   )
 }
