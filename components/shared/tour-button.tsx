@@ -1,19 +1,39 @@
 'use client'
 
 import { HelpCircle } from 'lucide-react'
-import { useNextStep } from 'nextstepjs'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
+import { providersTourSteps } from '@/lib/tours/providers-tour'
+
+const tourStepsMap: Record<string, typeof providersTourSteps> = {
+  'providers-tour': providersTourSteps,
+}
 
 type Props = {
   tourName: string
 }
 
 export function TourButton({ tourName }: Props) {
-  const { startNextStep } = useNextStep()
+  function startTour() {
+    const steps = tourStepsMap[tourName]
+    if (!steps) return
+
+    const driverObj = driver({
+      showProgress: true,
+      steps,
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Anterior',
+      doneBtnText: 'Finalizar',
+      progressText: '{{current}} de {{total}}',
+    })
+
+    driverObj.drive()
+  }
 
   return (
     <div className="fixed bottom-6 left-6 z-50 group">
       <button
-        onClick={() => startNextStep(tourName)}
+        onClick={startTour}
         className="size-12 rounded-full bg-[#1A1A1A] text-[#F5F2EA] flex items-center justify-center shadow-lg hover:opacity-80 transition-opacity"
         aria-label="Iniciar tour"
       >

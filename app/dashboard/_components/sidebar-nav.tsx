@@ -90,7 +90,7 @@ function NavLink({
       <Tooltip>
         <TooltipTrigger asChild>
           <Link href={href} className={cn(cls, 'flex justify-center items-center h-10 w-full')}>
-            <Icon className="size-5 shrink-0" />
+            <Icon className="size-4 shrink-0" />
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right">{label}</TooltipContent>
@@ -100,7 +100,7 @@ function NavLink({
 
   return (
     <Link href={href} className={cn(cls, 'flex items-center gap-4 px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest')}>
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-4.5 shrink-0" />
       {label}
     </Link>
   )
