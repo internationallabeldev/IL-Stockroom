@@ -319,7 +319,7 @@ export function RequisitionForm({ open, onClose, inkCatalog, paperCatalog, prese
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-[#1A1A1A]/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Drawer */}
       <div className="relative ml-auto h-full w-full max-w-xl bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">

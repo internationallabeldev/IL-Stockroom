@@ -15,7 +15,7 @@ import {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type RequisitionStatus = 'PENDING' | 'APPROVED' | 'FULFILLED' | 'REJECTED'
+export type RequisitionStatus = 'PENDING' | 'APPROVED' | 'PARTIAL' | 'FULFILLED' | 'REJECTED' | 'CANCELLED'
 export type MaterialType      = 'INK' | 'PAPER'
 
 export type RequisitionInkItem = {
@@ -45,10 +45,11 @@ export type RequisitionPaperItem = {
 export type InkOutputRecord = {
   id:               number
   requisition_id:   number
-  inventory_id:     number
+  ink_inventory_id: number
   kg_delivered:     number
   kg_requested:     number
   kg_returned:      number | null
+  notes:            string | null
   received_by:      string
   delivered_by:     string
   output_date:      string
@@ -60,7 +61,7 @@ export type InkOutputRecord = {
 export type PaperOutputRecord = {
   id:                   number
   requisition_id:       number
-  inventory_id:         number
+  paper_inventory_id:   number
   length_m_delivered:   number
   length_m_requested:   number
   length_m_returned:    number | null
@@ -70,6 +71,7 @@ export type PaperOutputRecord = {
   m2_delivered:         number | null
   m2_requested:         number | null
   m2_returned:          number | null
+  notes:                string | null
   received_by:          string
   delivered_by:         string
   output_date:          string
@@ -148,7 +150,7 @@ const FULL_SELECT = `
   ink_outputs (
     *,
     delivered_by_user:delivered_by ( first_name, last_name ),
-    ink_inventory:inventory_id (
+    ink_inventory:ink_inventory_id (
       internal_batch,
       ink_catalog:ink_catalog_id ( name, color_code )
     )
@@ -156,7 +158,7 @@ const FULL_SELECT = `
   paper_outputs (
     *,
     delivered_by_user:delivered_by ( first_name, last_name ),
-    paper_inventory:inventory_id (
+    paper_inventory:paper_inventory_id (
       internal_batch,
       paper_catalog:paper_catalog_id ( name )
     )
@@ -513,19 +515,19 @@ export async function fulfillInkRequisition(
     .single()
 
   if (!req) return { error: 'Requisición no encontrada' }
-  if (!['APPROVED'].includes(req.status)) return { error: 'La requisición debe estar aprobada' }
+  if (!['APPROVED', 'PARTIAL'].includes(req.status)) return { error: 'La requisición debe estar aprobada o parcial' }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: outErr } = await (supabase as any)
     .from('ink_outputs')
     .insert(outputs.map(o => ({
-      requisition_id: requisitionId,
-      inventory_id:   o.inventory_id,
-      kg_delivered:   o.kg_delivered,
-      kg_requested:   o.kg_delivered,
-      kg_returned:    0,
-      delivered_by:   user.id,
-      received_by:    req.requested_by,
+      requisition_id:   requisitionId,
+      ink_inventory_id: o.inventory_id,
+      kg_delivered:     o.kg_delivered,
+      kg_requested:     o.kg_delivered,
+      kg_returned:      0,
+      delivered_by:     user.id,
+      received_by:      req.requested_by,
     })))
 
   if (outErr) return { error: outErr.message }
@@ -561,7 +563,7 @@ export async function fulfillInkRequisition(
     .eq('requisition_id', requisitionId)
 
   const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
-  const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'APPROVED'
+  const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase as any)
@@ -597,7 +599,7 @@ export async function fulfillPaperRequisition(
     .single()
 
   if (!req) return { error: 'Requisición no encontrada' }
-  if (!['APPROVED'].includes(req.status)) return { error: 'La requisición debe estar aprobada' }
+  if (!['APPROVED', 'PARTIAL'].includes(req.status)) return { error: 'La requisición debe estar aprobada o parcial' }
 
   // Pre-fetch lot catalog IDs
   const { data: origLots } = await (supabase as any)
@@ -615,7 +617,7 @@ export async function fulfillPaperRequisition(
       .from('paper_outputs')
       .insert({
         requisition_id:      requisitionId,
-        inventory_id:        output.inventory_id,
+        paper_inventory_id:  output.inventory_id,
         length_m_delivered:  output.length_m,
         length_m_requested:  output.length_m,
         width_m_delivered:   output.width_m,
@@ -653,7 +655,7 @@ export async function fulfillPaperRequisition(
     .eq('requisition_id', requisitionId)
 
   const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
-  const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'APPROVED'
+  const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase as any)

@@ -1,12 +1,14 @@
 import { cn } from '@/lib/utils'
-import { Clock, CheckCircle, PackageCheck, XCircle } from 'lucide-react'
+import { Clock, CheckCircle, PackageCheck, XCircle, PackageOpen, Ban } from 'lucide-react'
 import type { RequisitionStatus } from '@/actions/requisitions.actions'
 
 const CONFIG: Record<RequisitionStatus, { label: string; cls: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  PENDING:   { label: 'Pendiente', cls: 'bg-amber-50 text-amber-800 border-amber-300',  Icon: Clock        },
-  APPROVED:  { label: 'Aprobada',  cls: 'bg-blue-50  text-blue-800  border-blue-300',   Icon: CheckCircle  },
-  FULFILLED: { label: 'Surtida',   cls: 'bg-green-50 text-green-800 border-green-300',  Icon: PackageCheck },
-  REJECTED:  { label: 'Rechazada', cls: 'bg-red-50   text-red-800   border-red-300',    Icon: XCircle      },
+  PENDING:   { label: 'Pendiente', cls: 'bg-amber-50  text-amber-800  border-amber-300',  Icon: Clock        },
+  APPROVED:  { label: 'Aprobada',  cls: 'bg-blue-50   text-blue-800   border-blue-300',   Icon: CheckCircle  },
+  PARTIAL:   { label: 'Parcial',   cls: 'bg-orange-50 text-orange-800 border-orange-300', Icon: PackageOpen  },
+  FULFILLED: { label: 'Surtida',   cls: 'bg-green-50  text-green-800  border-green-300',  Icon: PackageCheck },
+  REJECTED:  { label: 'Rechazada', cls: 'bg-red-50    text-red-800    border-red-300',    Icon: XCircle      },
+  CANCELLED: { label: 'Cancelada', cls: 'bg-stone-100 text-stone-600  border-stone-300',  Icon: Ban          },
 }
 
 export function RequisitionStatusBadge({

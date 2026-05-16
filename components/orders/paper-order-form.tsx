@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -43,6 +44,7 @@ const DEFAULT: CreatePurchaseOrderValues = {
 }
 
 export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props) {
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [address, setAddress] = useState<DeliveryAddress>(EMPTY_ADDRESS)
 
@@ -73,6 +75,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
     const res = await createPurchaseOrder({ ...data, material_type: 'PAPER' })
     if (res.error) { toast.error(res.error); return }
     toast.success(`Orden #${res.orderNumber} creada`)
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
     handleClose()
   }
 
@@ -90,7 +93,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/40" onClick={handleClose} />
+      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative ml-auto h-full w-full max-w-3xl bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
 

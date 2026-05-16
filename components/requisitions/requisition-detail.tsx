@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   ArrowLeft, CheckCircle, XCircle, Truck,
-  RotateCcw, Droplet, FileText, Package, User,
+  Droplet, FileText, User,
   CalendarClock, Hash,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -17,7 +17,10 @@ import {
   type Requisition,
 } from '@/actions/requisitions.actions'
 import { RequisitionStatusBadge } from './requisition-status-badge'
-import { FulfillForm }            from './fulfill-form'
+import { RequisitionProgress }    from '@/components/outputs/requisition-progress'
+import { OutputsHistory }         from '@/components/outputs/outputs-history'
+import { InkOutputForm }          from '@/components/outputs/ink-output-form'
+import { PaperOutputForm }        from '@/components/outputs/paper-output-form'
 import type { Database }          from '@/types/database.types'
 
 type UserRole = Database['public']['Enums']['user_role']
@@ -43,7 +46,8 @@ export function RequisitionDetail({ requisition: initial, userRole }: Props) {
 
   if (!req) return null
 
-  const isManager = userRole === 'ADMIN' || userRole === 'WAREHOUSE_MANAGER'
+  const isManager   = userRole === 'ADMIN' || userRole === 'WAREHOUSE_MANAGER'
+  const canSurtir   = isManager && (req.status === 'APPROVED' || req.status === 'PARTIAL')
 
   async function handleApprove() {
     setSubmitting(true)
@@ -62,7 +66,7 @@ export function RequisitionDetail({ requisition: initial, userRole }: Props) {
     setSubmitting(false)
   }
 
-const inkItems   = req.ink_items   ?? []
+  const inkItems   = req.ink_items   ?? []
   const paperItems = req.paper_items ?? []
   const inkOuts    = req.ink_outputs    ?? []
   const paperOuts  = req.paper_outputs  ?? []
@@ -122,7 +126,7 @@ const inkItems   = req.ink_items   ?? []
             </>
           )}
 
-          {isManager && req.status === 'APPROVED' && (
+          {canSurtir && (
             <button
               disabled={submitting}
               onClick={() => setFulfillOpen(true)}
@@ -132,13 +136,12 @@ const inkItems   = req.ink_items   ?? []
               Surtir
             </button>
           )}
-
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Left: Info + Items */}
+        {/* Left: Info + Items + Progress */}
         <div className="lg:col-span-2 space-y-6">
 
           {/* Meta info */}
@@ -164,7 +167,7 @@ const inkItems   = req.ink_items   ?? []
                 <MetaItem icon={CalendarClock} label="Aprobada" value={fmtDateTime(req.approved_at)} />
               )}
               {req.fulfilled_at && (
-                <MetaItem icon={CalendarClock} label="Surtida" value={fmtDateTime(req.fulfilled_at)} />
+                <MetaItem icon={CalendarClock} label="Completada" value={fmtDateTime(req.fulfilled_at)} />
               )}
             </div>
 
@@ -174,8 +177,10 @@ const inkItems   = req.ink_items   ?? []
                 <p className="text-sm text-[#1A1A1A]">{req.notes}</p>
               </div>
             )}
-
           </section>
+
+          {/* Delivery progress */}
+          <RequisitionProgress inkItems={inkItems} paperItems={paperItems} />
 
           {/* Items — INK */}
           {inkItems.length > 0 && (
@@ -285,89 +290,12 @@ const inkItems   = req.ink_items   ?? []
 
         {/* Right: Outputs history */}
         <div className="space-y-4">
-          <section className="border border-[#1A1A1A]/15">
-            <div className="px-4 py-2.5 border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30 flex items-center gap-2">
-              <Package className="size-3.5 text-[#5f5e59]" />
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
-                Historial de salidas
-              </p>
-            </div>
-
-            {inkOuts.length === 0 && paperOuts.length === 0 ? (
-              <div className="px-4 py-6 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]/60">
-                  Sin salidas registradas
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[#1A1A1A]/08">
-                {inkOuts.map(out => (
-                  <div key={out.id} className="px-4 py-3 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-[11px] font-bold text-[#1A1A1A]">
-                          {out.ink_inventory?.ink_catalog?.name ?? 'Tinta'}
-                        </p>
-                        <p className="text-[10px] font-mono text-[#5f5e59]">
-                          Lote: {out.ink_inventory?.internal_batch ?? '—'}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[11px] font-mono font-bold text-[#1A1A1A]">
-                          {out.kg_delivered.toFixed(2)} kg
-                        </p>
-                        {(out.kg_returned ?? 0) > 0 && (
-                          <p className="text-[9px] font-bold text-green-700 flex items-center gap-0.5">
-                            <RotateCcw className="size-2.5" />
-                            {(out.kg_returned ?? 0).toFixed(2)} kg devueltos
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-[#5f5e59]">
-                      {fmtDateTime(out.output_date)} · {out.delivered_by_user
-                        ? `${out.delivered_by_user.first_name} ${out.delivered_by_user.last_name}`
-                        : '—'}
-                    </p>
-                  </div>
-                ))}
-
-                {paperOuts.map(out => (
-                  <div key={out.id} className="px-4 py-3 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-[11px] font-bold text-[#1A1A1A]">
-                          {out.paper_inventory?.paper_catalog?.name ?? 'Papel'}
-                        </p>
-                        <p className="text-[10px] font-mono text-[#5f5e59]">
-                          Lote: {out.paper_inventory?.internal_batch ?? '—'}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[11px] font-mono font-bold text-[#1A1A1A]">
-                          {(out.m2_delivered ?? 0).toFixed(3)} m²
-                        </p>
-                        <p className="text-[9px] text-[#5f5e59]">
-                          {out.length_m_delivered.toFixed(3)} × {out.width_m_delivered.toFixed(3)} m
-                        </p>
-                        {(out.m2_returned ?? 0) > 0 && (
-                          <p className="text-[9px] font-bold text-green-700 flex items-center gap-0.5">
-                            <RotateCcw className="size-2.5" />
-                            {(out.m2_returned ?? 0).toFixed(3)} m² devueltos
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-[#5f5e59]">
-                      {fmtDateTime(out.output_date)} · {out.delivered_by_user
-                        ? `${out.delivered_by_user.first_name} ${out.delivered_by_user.last_name}`
-                        : '—'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <OutputsHistory
+            inkOutputs={inkOuts}
+            paperOutputs={paperOuts}
+            canManage={isManager}
+            onReturnDone={refetch}
+          />
         </div>
       </div>
 
@@ -410,12 +338,20 @@ const inkItems   = req.ink_items   ?? []
         </div>
       )}
 
-      {/* Fulfill form */}
-      <FulfillForm
-        open={fulfillOpen}
-        onClose={() => { setFulfillOpen(false); refetch() }}
-        requisition={req}
-      />
+      {/* Output forms */}
+      {req.material_type === 'INK' ? (
+        <InkOutputForm
+          open={fulfillOpen}
+          onClose={() => { setFulfillOpen(false); refetch() }}
+          requisition={req}
+        />
+      ) : (
+        <PaperOutputForm
+          open={fulfillOpen}
+          onClose={() => { setFulfillOpen(false); refetch() }}
+          requisition={req}
+        />
+      )}
     </>
   )
 }

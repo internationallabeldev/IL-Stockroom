@@ -177,10 +177,11 @@ export type Database = {
           created_at: string | null
           delivered_by: string
           id: number
-          inventory_id: number
+          ink_inventory_id: number
           kg_delivered: number
           kg_requested: number
           kg_returned: number | null
+          notes: string | null
           output_date: string
           received_by: string
           requisition_id: number
@@ -190,10 +191,11 @@ export type Database = {
           created_at?: string | null
           delivered_by: string
           id?: number
-          inventory_id: number
+          ink_inventory_id: number
           kg_delivered: number
           kg_requested: number
           kg_returned?: number | null
+          notes?: string | null
           output_date?: string
           received_by: string
           requisition_id: number
@@ -203,10 +205,11 @@ export type Database = {
           created_at?: string | null
           delivered_by?: string
           id?: number
-          inventory_id?: number
+          ink_inventory_id?: number
           kg_delivered?: number
           kg_requested?: number
           kg_returned?: number | null
+          notes?: string | null
           output_date?: string
           received_by?: string
           requisition_id?: number
@@ -222,7 +225,7 @@ export type Database = {
           },
           {
             foreignKeyName: "ink_outputs_inventory_id_fkey"
-            columns: ["inventory_id"]
+            columns: ["ink_inventory_id"]
             isOneToOne: false
             referencedRelation: "ink_inventory"
             referencedColumns: ["id"]
@@ -403,6 +406,7 @@ export type Database = {
           internal_batch: string
           location: string | null
           paper_catalog_id: number
+          parent_inventory_id: number | null
           receipt_id: number
           remaining_length_m: number | null
           remaining_m2: number | null
@@ -422,6 +426,7 @@ export type Database = {
           internal_batch: string
           location?: string | null
           paper_catalog_id: number
+          parent_inventory_id?: number | null
           receipt_id: number
           remaining_length_m?: number | null
           remaining_m2?: number | null
@@ -441,6 +446,7 @@ export type Database = {
           internal_batch?: string
           location?: string | null
           paper_catalog_id?: number
+          parent_inventory_id?: number | null
           receipt_id?: number
           remaining_length_m?: number | null
           remaining_m2?: number | null
@@ -459,6 +465,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "paper_inventory_parent_inventory_id_fkey"
+            columns: ["parent_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "paper_inventory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "paper_inventory_receipt_id_fkey"
             columns: ["receipt_id"]
             isOneToOne: false
@@ -472,14 +485,15 @@ export type Database = {
           created_at: string | null
           delivered_by: string
           id: number
-          inventory_id: number
           length_m_delivered: number
           length_m_requested: number
           length_m_returned: number | null
           m2_delivered: number | null
           m2_requested: number | null
           m2_returned: number | null
+          notes: string | null
           output_date: string
+          paper_inventory_id: number
           received_by: string
           requisition_id: number
           updated_at: string | null
@@ -491,14 +505,15 @@ export type Database = {
           created_at?: string | null
           delivered_by: string
           id?: number
-          inventory_id: number
           length_m_delivered: number
           length_m_requested: number
           length_m_returned?: number | null
           m2_delivered?: number | null
           m2_requested?: number | null
           m2_returned?: number | null
+          notes?: string | null
           output_date?: string
+          paper_inventory_id: number
           received_by: string
           requisition_id: number
           updated_at?: string | null
@@ -510,14 +525,15 @@ export type Database = {
           created_at?: string | null
           delivered_by?: string
           id?: number
-          inventory_id?: number
           length_m_delivered?: number
           length_m_requested?: number
           length_m_returned?: number | null
           m2_delivered?: number | null
           m2_requested?: number | null
           m2_returned?: number | null
+          notes?: string | null
           output_date?: string
+          paper_inventory_id?: number
           received_by?: string
           requisition_id?: number
           updated_at?: string | null
@@ -535,7 +551,7 @@ export type Database = {
           },
           {
             foreignKeyName: "paper_outputs_inventory_id_fkey"
-            columns: ["inventory_id"]
+            columns: ["paper_inventory_id"]
             isOneToOne: false
             referencedRelation: "paper_inventory"
             referencedColumns: ["id"]
@@ -632,6 +648,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          attended_by: string | null
           created_at: string | null
           fulfilled_at: string | null
           fulfilled_by: string | null
@@ -639,7 +656,9 @@ export type Database = {
           material_type: Database["public"]["Enums"]["material_type"]
           notes: string | null
           production_order: string
+          rejection_reason: string | null
           request_date: string
+          requested_at: string | null
           requested_by: string
           requisition_number: number
           status: Database["public"]["Enums"]["requisition_status"] | null
@@ -648,6 +667,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          attended_by?: string | null
           created_at?: string | null
           fulfilled_at?: string | null
           fulfilled_by?: string | null
@@ -655,7 +675,9 @@ export type Database = {
           material_type: Database["public"]["Enums"]["material_type"]
           notes?: string | null
           production_order: string
+          rejection_reason?: string | null
           request_date?: string
+          requested_at?: string | null
           requested_by: string
           requisition_number: number
           status?: Database["public"]["Enums"]["requisition_status"] | null
@@ -664,6 +686,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          attended_by?: string | null
           created_at?: string | null
           fulfilled_at?: string | null
           fulfilled_by?: string | null
@@ -671,7 +694,9 @@ export type Database = {
           material_type?: Database["public"]["Enums"]["material_type"]
           notes?: string | null
           production_order?: string
+          rejection_reason?: string | null
           request_date?: string
+          requested_at?: string | null
           requested_by?: string
           requisition_number?: number
           status?: Database["public"]["Enums"]["requisition_status"] | null
@@ -681,6 +706,13 @@ export type Database = {
           {
             foreignKeyName: "production_requisitions_approved_by_fkey"
             columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_requisitions_attended_by_fkey"
+            columns: ["attended_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -1110,8 +1142,14 @@ export type Database = {
       material_type: "INK" | "PAPER"
       provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "BOTH"
       purchase_order_status: "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED"
-      quality_certificate: "PENDING" | "APPROVED" | "REJECTED" | "CONDITIONAL"
-      requisition_status: "PENDING" | "APPROVED" | "FULFILLED" | "REJECTED"
+      quality_certificate: "PENDING" | "APPROVED" | "REJECTED"
+      requisition_status:
+        | "PENDING"
+        | "APPROVED"
+        | "PARTIAL"
+        | "FULFILLED"
+        | "REJECTED"
+        | "CANCELLED"
       user_role:
         | "ADMIN"
         | "PURCHASER"
@@ -1248,8 +1286,15 @@ export const Constants = {
       material_type: ["INK", "PAPER"],
       provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "BOTH"],
       purchase_order_status: ["PENDING", "PARTIAL", "COMPLETED", "CANCELLED"],
-      quality_certificate: ["PENDING", "APPROVED", "REJECTED", "CONDITIONAL"],
-      requisition_status: ["PENDING", "APPROVED", "FULFILLED", "REJECTED"],
+      quality_certificate: ["PENDING", "APPROVED", "REJECTED"],
+      requisition_status: [
+        "PENDING",
+        "APPROVED",
+        "PARTIAL",
+        "FULFILLED",
+        "REJECTED",
+        "CANCELLED",
+      ],
       user_role: [
         "ADMIN",
         "PURCHASER",

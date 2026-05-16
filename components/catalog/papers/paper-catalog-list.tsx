@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { PaperCatalogCard } from './paper-catalog-card'
 import { PaperCatalogForm } from './paper-catalog-form'
 import { getPaperCatalog, type PaperCatalogItem } from '@/actions/paper-catalog.actions'
@@ -89,62 +90,66 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar papel..."
-            className="h-9 w-64 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-3 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 w-56 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-7 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
           />
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Stock filter */}
-          <div className="flex border border-[#1A1A1A]/20">
-            {STOCK_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setStockFilter(f.value)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  stockFilter === f.value
-                    ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                    : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Page size */}
-          <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-9">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">
-              Por página
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={pageSizeInput}
-              onChange={handlePageSizeChange}
-              onBlur={handlePageSizeBlur}
-              className="w-10 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
-            />
-          </div>
-
-          {canEdit && (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-2 px-4 py-1.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
-            >
-              <Plus className="size-3.5" />
-              Nuevo papel
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]">
+              <X className="size-3.5" />
             </button>
           )}
         </div>
+
+        {/* Stock filter */}
+        <div className="flex border border-[#1A1A1A]/20">
+          {STOCK_FILTERS.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setStockFilter(f.value)}
+              className={cn(
+                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                stockFilter === f.value
+                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
+                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Page size */}
+        <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-8">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">Por página</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={pageSizeInput}
+            onChange={handlePageSizeChange}
+            onBlur={handlePageSizeBlur}
+            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
+          />
+        </div>
+
+        {canEdit && (
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+          >
+            <Plus className="size-3.5" />
+            Nuevo papel
+          </button>
+        )}
       </div>
 
       {/* Count + pagination info */}

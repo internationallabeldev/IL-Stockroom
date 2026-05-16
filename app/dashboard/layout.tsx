@@ -5,6 +5,7 @@ import { SidebarNav } from './_components/sidebar-nav'
 import { StatusBar } from './_components/status-bar'
 import { SidebarProvider, DashboardShell } from './_components/sidebar-context'
 import { MaterialProvider } from './_components/material-context'
+import { DashboardNextStepProvider } from './_components/nextstep-provider'
 
 export default async function DashboardLayout({
   children,
@@ -17,15 +18,17 @@ export default async function DashboardLayout({
   const displayName = user.email ?? 'Operador'
 
   return (
-    <MaterialProvider>
-      <SidebarProvider>
-        <div className="min-h-screen bg-[#F5F2EA]">
-          <TopNav userName={displayName} />
-          <SidebarNav role={user.role} />
-          <DashboardShell>{children}</DashboardShell>
-          <StatusBar />
-        </div>
-      </SidebarProvider>
-    </MaterialProvider>
+    <DashboardNextStepProvider>
+      <MaterialProvider>
+        <SidebarProvider>
+          <div className="min-h-screen bg-[#F5F2EA]">
+            <TopNav userName={displayName} />
+            <SidebarNav role={user.role} />
+            <DashboardShell>{children}</DashboardShell>
+            <StatusBar />
+          </div>
+        </SidebarProvider>
+      </MaterialProvider>
+    </DashboardNextStepProvider>
   )
 }

@@ -28,8 +28,8 @@ type TabValue = 'pending' | 'active' | 'closed' | 'all'
 
 const TABS: { value: TabValue; label: string; statuses: RequisitionStatus[] }[] = [
   { value: 'pending', label: 'Pendientes', statuses: ['PENDING'] },
-  { value: 'active',  label: 'En proceso', statuses: ['APPROVED'] },
-  { value: 'closed',  label: 'Cerradas',   statuses: ['FULFILLED', 'REJECTED'] },
+  { value: 'active',  label: 'En proceso', statuses: ['APPROVED', 'PARTIAL'] },
+  { value: 'closed',  label: 'Cerradas',   statuses: ['FULFILLED', 'REJECTED', 'CANCELLED'] },
   { value: 'all',     label: 'Todas',      statuses: [] },
 ]
 
@@ -119,20 +119,20 @@ export function RequisitionsList({
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 py-3 mb-4 flex flex-wrap items-center gap-3">
 
         {/* Search */}
-        <div className="relative flex-1 min-w-48 max-w-72">
+        <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             placeholder="Buscar #, orden, solicitante…"
-            className="w-full h-8 pl-8 pr-8 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 w-56 pl-8 pr-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
           />
           {search && (
             <button
-              onClick={() => setSearch('')}
+              onClick={() => { setSearch(''); setPage(1) }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]"
             >
               <X className="size-3.5" />
@@ -147,7 +147,7 @@ export function RequisitionsList({
               key={t.value}
               onClick={() => { setTab(t.value); setPage(1) }}
               className={cn(
-                'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors relative',
+                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors relative',
                 tab === t.value
                   ? 'bg-[#1A1A1A] text-[#F5F2EA]'
                   : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
@@ -168,10 +168,30 @@ export function RequisitionsList({
 
         <div className="flex-1" />
 
+        {/* Page size */}
+        <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-8">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">Por página</span>
+          <input
+            type="number"
+            min={1}
+            value={pageSizeInp}
+            onChange={e => {
+              setPageSizeInp(e.target.value)
+              const n = parseInt(e.target.value, 10)
+              if (n > 0) { setPageSize(n); setPage(1) }
+            }}
+            onBlur={() => {
+              const n = parseInt(pageSizeInp, 10)
+              if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
+            }}
+            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
+          />
+        </div>
+
         {canCreate && (
           <button
             onClick={() => setFormOpen(true)}
-            className="flex items-center gap-2 px-4 py-1.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
           >
             <Plus className="size-3.5" />
             Nueva requisición
@@ -270,29 +290,9 @@ export function RequisitionsList({
 
       {/* Bottom bar */}
       <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
-            {filtered.length} requisición{filtered.length !== 1 ? 'es' : ''}
-          </p>
-          <span className="text-[#1A1A1A]/20">|</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Mostrar</span>
-          <input
-            type="number"
-            min={1}
-            value={pageSizeInp}
-            onChange={e => {
-              setPageSizeInp(e.target.value)
-              const n = parseInt(e.target.value, 10)
-              if (n > 0) { setPageSize(n); setPage(1) }
-            }}
-            onBlur={() => {
-              const n = parseInt(pageSizeInp, 10)
-              if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
-            }}
-            className="w-14 border border-[#1A1A1A]/20 px-2 py-1 text-[10px] font-bold text-center bg-transparent focus:outline-none focus:border-[#1A1A1A]"
-          />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">filas</span>
-        </div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          {filtered.length} requisición{filtered.length !== 1 ? 'es' : ''}
+        </p>
 
         {totalPages > 1 && (
           <div className="flex items-center gap-1">

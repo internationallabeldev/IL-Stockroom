@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, UserPlus } from 'lucide-react'
+import { Search, UserPlus, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { RoleBadge } from './role-badge'
 import { InviteUserForm } from './invite-user-form'
 import { UserDetailSheet } from './user-detail-sheet'
@@ -97,55 +98,62 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40" />
-            <input
-              type="search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o email..."
-              className="h-9 w-64 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-3 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
-            />
-          </div>
-
-          <div className="flex border border-[#1A1A1A]/20">
-            {ROLE_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setRoleFilter(f.value)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  roleFilter === f.value
-                    ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                    : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex border border-[#1A1A1A]/20">
-            {STATUS_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  statusFilter === f.value
-                    ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                    : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40 pointer-events-none" />
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o email..."
+            className="h-8 w-56 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-7 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]">
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
+
+        <div className="flex border border-[#1A1A1A]/20">
+          {ROLE_FILTERS.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setRoleFilter(f.value)}
+              className={cn(
+                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                roleFilter === f.value
+                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
+                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex border border-[#1A1A1A]/20">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={cn(
+                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                statusFilter === f.value
+                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
+                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1" />
 
         <button
           onClick={() => setInviteOpen(true)}
-          className="flex items-center gap-2 px-4 py-1.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
         >
           <UserPlus className="size-3.5" />
           Invitar usuario
