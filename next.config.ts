@@ -10,10 +10,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
-  dest: "public",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development",
-})(nextConfig);
+const isDev = process.env.NODE_ENV === 'development';
+
+export default isDev
+  ? nextConfig
+  : withPWA({
+      dest: "public",
+      cacheOnFrontEndNav: true,
+      aggressiveFrontEndNavCaching: true,
+      reloadOnOnline: true,
+    })(nextConfig);

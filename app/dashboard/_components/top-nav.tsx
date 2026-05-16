@@ -6,24 +6,29 @@ import { useMaterial } from './material-context'
 import { usePathname } from 'next/navigation'
 
 const PAGE_TITLES: Record<string, string> = {
-  '/dashboard/orders/ink':        'Órdenes de compra — Tintas',
-  '/dashboard/orders/paper':      'Órdenes de compra — Papel',
-  '/dashboard/requisitions':      'Requisiciones de producción',
-  '/dashboard/requisitions/inks': 'Requisiciones — Tintas',
-  '/dashboard/requisitions/paper':'Requisiciones — Papel',
-  '/dashboard/catalog/inks':      'Catálogo de Tintas',
-  '/dashboard/catalog/papers':    'Catálogo de Papel',
-  '/dashboard/providers':         'Proveedores',
-  '/dashboard/inventory/inks':    'Inventario — Tintas',
-  '/dashboard/inventory/paper':   'Inventario — Papel',
-  '/dashboard/receipts/ink':      'Recepciones — Tintas',
-  '/dashboard/receipts/paper':    'Recepciones — Papel',
+  '/dashboard/orders/ink':         'Órdenes de compra — Tintas',
+  '/dashboard/orders/paper':       'Órdenes de compra — Papel',
+  '/dashboard/requisitions':       'Requisiciones de producción',
+  '/dashboard/requisitions/inks':  'Requisiciones — Tintas',
+  '/dashboard/requisitions/paper': 'Requisiciones — Papel',
+  '/dashboard/catalog/inks':       'Catálogo de Tintas',
+  '/dashboard/catalog/papers':     'Catálogo de Papel',
+  '/dashboard/providers':          'Proveedores',
+  '/dashboard/inventory/inks':     'Inventario — Tintas',
+  '/dashboard/inventory/paper':    'Inventario — Papel',
+  '/dashboard/receipts/ink':       'Recepciones — Tintas',
+  '/dashboard/receipts/paper':     'Recepciones — Papel',
+  '/dashboard/users':              'Usuarios',
+  '/dashboard/settings':           'Configuración',
+  '/dashboard/audit':              'Auditoría',
+  '/dashboard/historial-salidas':  'Salidas de material',
 }
 
 export function TopNav({ userName }: { userName: string }) {
   const { material, setMaterial } = useMaterial()
   const pathname = usePathname()
   const pageTitle = PAGE_TITLES[pathname] ?? null
+  const showMaterialToggle = pathname !== '/dashboard/providers'
 
   return (
     <header className="fixed top-0 z-50 h-16 w-full bg-[#F5F2EA] border-b border-[#1A1A1A]/15 flex items-center justify-between px-8">
@@ -45,7 +50,7 @@ export function TopNav({ userName }: { userName: string }) {
       <div className="flex items-center gap-4">
 
         {/* Material toggle */}
-        <div className="flex h-8 bg-[#1A1A1A]/8 p-0.5">
+        {showMaterialToggle && <div className="flex h-8 bg-[#1A1A1A]/8 p-0.5">
           <button
             onClick={() => setMaterial('ink')}
             className={cn(
@@ -70,7 +75,7 @@ export function TopNav({ userName }: { userName: string }) {
             <FileText className="size-3" />
             Papel
           </button>
-        </div>
+        </div>}
 
         {/* Search */}
         <div className="relative">

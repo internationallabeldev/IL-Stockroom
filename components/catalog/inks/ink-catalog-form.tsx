@@ -118,7 +118,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative ml-auto h-full w-full max-w-md bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
 

@@ -322,6 +322,7 @@ function ReceiptRow({
             title="Editar datos administrativos"
           >
             <Pencil className="size-3" />
+
           </button>
         )}
       </div>

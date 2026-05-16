@@ -7,7 +7,7 @@ import { logoutAction } from '@/actions/auth.actions'
 import {
   LayoutDashboard, Package, ClipboardList,
   Truck, BookOpen, ClipboardCheck, ShoppingCart, LogOut,
-  PackagePlus, Users, Settings, ShieldCheck,
+  PackagePlus, Users, Settings, ShieldCheck, History,
   type LucideIcon,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -38,7 +38,8 @@ const I = {
   complement: { kind: 'material' as const, base: '/dashboard/complement', label: 'Complemento', icon: PackagePlus },
   receipts: { kind: 'material' as const, base: '/dashboard/receipts', label: 'Recepciones', icon: ClipboardCheck },
   orders: { kind: 'material' as const, base: '/dashboard/orders', label: 'Órdenes', icon: ShoppingCart },
-  catalog: { kind: 'material' as const, base: '/dashboard/catalog', label: 'Catálogo', icon: BookOpen },
+  catalog:          { kind: 'material' as const, base: '/dashboard/catalog',          label: 'Catálogo',          icon: BookOpen  },
+  historialSalidas: { kind: 'static'   as const, href: '/dashboard/historial-salidas', label: 'Salidas',           icon: History   },
 }
 
 // ── Sections per role ─────────────────────────────────────────────────────────
@@ -47,13 +48,13 @@ const NAV_SECTIONS: Record<Role, NavSection[]> = {
   ADMIN: [
     { label: 'General', items: [I.dashboard, I.providers] },
     { label: 'Inventario', items: [I.inventory, I.complement, I.catalog] },
-    { label: 'Flujo', items: [I.requisitions, I.receipts, I.orders] },
+    { label: 'Flujo', items: [I.requisitions, I.receipts, I.orders, I.historialSalidas] },
     { label: 'Sistema', items: [I.users, I.settings, I.audit] },
   ],
   WAREHOUSE_MANAGER: [
     { label: 'General', items: [I.dashboard] },
     { label: 'Inventario', items: [I.inventory, I.complement, I.catalog] },
-    { label: 'Flujo', items: [I.requisitions, I.receipts] },
+    { label: 'Flujo', items: [I.requisitions, I.receipts, I.historialSalidas] },
     { label: 'Sistema', items: [I.audit] },
   ],
   PURCHASER: [
@@ -62,26 +63,12 @@ const NAV_SECTIONS: Record<Role, NavSection[]> = {
   ],
   PRODUCER: [
     { label: 'General', items: [I.dashboard] },
-    { label: 'Operaciones', items: [I.requisitions, I.inventory] },
+    { label: 'Operaciones', items: [I.requisitions, I.inventory, I.historialSalidas] },
   ],
   USER: [
     { label: 'General', items: [I.dashboard] },
     { label: 'Consulta', items: [I.inventory] },
   ],
-}
-
-// ── Uptime ────────────────────────────────────────────────────────────────────
-
-function SystemUptime() {
-  const [secs, setSecs] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setSecs(s => s + 1), 1000)
-    return () => clearInterval(id)
-  }, [])
-  const h = String(Math.floor(secs / 3600)).padStart(3, '0')
-  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0')
-  const s = String(secs % 60).padStart(2, '0')
-  return <span className="font-mono text-xs tracking-wider">{h}:{m}:{s}</span>
 }
 
 // ── Nav link ──────────────────────────────────────────────────────────────────
@@ -113,7 +100,7 @@ function NavLink({
 
   return (
     <Link href={href} className={cn(cls, 'flex items-center gap-4 px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest')}>
-      <Icon className="size-3.75 shrink-0" />
+      <Icon className="size-4.5 shrink-0" />
       {label}
     </Link>
   )
@@ -166,7 +153,7 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
           expanded ? 'px-6 py-5' : 'px-2 py-4 flex justify-center'
         )}>
           {expanded ? (
-            <h2 className="font-heading text-base font-black uppercase tracking-tight whitespace-nowrap">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 whitespace-nowrap">
               Operaciones
             </h2>
           ) : (
@@ -205,21 +192,13 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
           'shrink-0 pt-4 border-t border-[#1A1A1A]/10',
           expanded ? 'px-6 space-y-3' : 'px-2 space-y-1'
         )}>
-          <div className={cn(
-            'bg-[#1A1A1A] text-[#F5F2EA] px-3 py-2 flex items-center justify-between',
-            !expanded && 'hidden'
-          )}>
-            <p className="text-[8px] font-bold uppercase tracking-widest text-[#F5F2EA]/40">Uptime</p>
-            <SystemUptime />
-          </div>
-
           <form action={logoutAction}>
             {expanded ? (
               <button
                 type="submit"
-                className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
               >
-                <LogOut className="size-3.5 shrink-0" />
+                <LogOut className="size-3 shrink-0" />
                 Cerrar sesión
               </button>
             ) : (
@@ -227,9 +206,9 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
                 <TooltipTrigger asChild>
                   <button
                     type="submit"
-                    className="flex justify-center items-center h-10 w-full text-[#1A1A1A]/50 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
+                    className="flex justify-center items-center h-8 w-full text-[#1A1A1A]/40 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
                   >
-                    <LogOut className="size-4 shrink-0" />
+                    <LogOut className="size-3 shrink-0" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Cerrar sesión</TooltipContent>

@@ -56,7 +56,7 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-heading font-bold text-base truncate">{provider.name}</p>
+            <p className="cursor-pointer font-heading font-bold text-base truncate">{provider.name}</p>
             {provider.contact_person && (
               <p className="text-[11px] text-[#5f5e59] truncate">{provider.contact_person}</p>
             )}
