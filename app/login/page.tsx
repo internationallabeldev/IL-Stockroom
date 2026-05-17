@@ -7,9 +7,9 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#F5F2EA] flex">
+    <div className="min-h-screen bg-background flex">
 
-      {/* Left — brand panel */}
+      {/* Left — brand panel (intentionally always dark) */}
       <div className="hidden lg:flex w-80 shrink-0 flex-col justify-between bg-[#1A1A1A] text-[#F5F2EA] p-10">
         <div>
           <span className="font-heading font-bold text-xl tracking-tighter">IL_STOCKROOM</span>
@@ -47,19 +47,19 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="font-heading text-3xl font-bold tracking-tight text-[#1A1A1A]">
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
               Iniciar sesión
             </h1>
-            <p className="mt-1.5 text-sm text-[#5f5e59]">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Ingresa tus credenciales de acceso
             </p>
           </div>
 
-          <div className="border border-[#1A1A1A]/15 bg-[#fdf9f0] p-8">
+          <div className="border border-border bg-card p-8">
             <LoginForm />
           </div>
 
-          <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/30">
+          <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-foreground/30">
             IL Stockroom · Sistema de Inventario
           </p>
         </div>

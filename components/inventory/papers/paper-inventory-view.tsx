@@ -97,15 +97,15 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
       <div className="flex flex-wrap items-center gap-3 mb-4">
 
         <div className="relative flex-1 min-w-48 max-w-72">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59]" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar bobina, papel…"
-            className="w-full h-8 pl-8 pr-8 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="w-full h-8 pl-8 pr-8 border border-border bg-card text-sm outline-none focus:border-foreground/40 transition-colors"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]">
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               <X className="size-3.5" />
             </button>
           )}
@@ -117,7 +117,7 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
             'flex items-center gap-1.5 h-8 px-3 border text-[9px] font-bold uppercase tracking-widest transition-colors',
             lowStock
               ? 'border-yellow-400 bg-yellow-50 text-yellow-700'
-              : 'border-[#1A1A1A]/20 text-[#5f5e59] hover:border-[#1A1A1A]/40'
+              : 'border-border text-muted-foreground hover:border-foreground/40'
           )}
         >
           <AlertTriangle className="size-3" />
@@ -134,8 +134,8 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
           className={cn(
             'flex items-center gap-1.5 h-8 px-3 border text-[9px] font-bold uppercase tracking-widest transition-colors',
             showDisabled
-              ? 'border-[#1A1A1A]/40 bg-[#E5E1D8]/60 text-[#1A1A1A]'
-              : 'border-[#1A1A1A]/20 text-[#5f5e59] hover:border-[#1A1A1A]/40'
+              ? 'border-foreground/40 bg-muted/60 text-foreground'
+              : 'border-border text-muted-foreground hover:border-foreground/40'
           )}
         >
           {showDisabled ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
@@ -147,18 +147,18 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
 
         <div className="flex-1" />
 
-        <p className="text-[10px] font-mono text-[#5f5e59]">
+        <p className="text-[10px] font-mono text-muted-foreground">
           {filtered.length} / {totalActive} bobinas activas
         </p>
 
-        <div className="flex border border-[#1A1A1A]/20">
+        <div className="flex border border-border">
           <button
             onClick={() => switchView('table')}
             className={cn(
               'flex items-center gap-1 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors',
               view === 'table'
-                ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                : 'text-[#5f5e59] hover:bg-[#E5E1D8]/60'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-muted/60'
             )}
           >
             <LayoutList className="size-3" />
@@ -167,10 +167,10 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
           <button
             onClick={() => switchView('group')}
             className={cn(
-              'flex items-center gap-1 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors border-l border-[#1A1A1A]/20',
+              'flex items-center gap-1 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors border-l border-border',
               view === 'group'
-                ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                : 'text-[#5f5e59] hover:bg-[#E5E1D8]/60'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-muted/60'
             )}
           >
             <Layers className="size-3" />

@@ -21,17 +21,6 @@ const TYPE_ICON: Record<SearchResultType, React.ReactNode> = {
   output: <ArrowRightFromLine className="size-3.5" />,
 }
 
-const TYPE_COLOR: Record<SearchResultType, string> = {
-  provider: 'bg-blue-100 text-blue-700',
-  ink_catalog: 'bg-violet-100 text-violet-700',
-  paper_catalog: 'bg-amber-100 text-amber-700',
-  ink_inventory: 'bg-violet-50 text-violet-600',
-  paper_inventory: 'bg-amber-50 text-amber-600',
-  purchase_order: 'bg-emerald-100 text-emerald-700',
-  requisition: 'bg-orange-100 text-orange-700',
-  output: 'bg-slate-100 text-slate-600',
-}
-
 interface Props {
   result: SearchResult
   isSelected: boolean
@@ -46,31 +35,26 @@ export function SearchResultItem({ result, isSelected, onClick, onMouseEnter }: 
       onMouseEnter={onMouseEnter}
       className={cn(
         'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
-        isSelected ? 'bg-[#1A1A1A]/8' : 'hover:bg-[#1A1A1A]/4'
+        isSelected ? 'bg-foreground/8' : 'hover:bg-foreground/4'
       )}
     >
-      <span
-        className={cn(
-          'flex size-6 shrink-0 items-center justify-center',
-          TYPE_COLOR[result.type]
-        )}
-      >
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground text-background">
         {TYPE_ICON[result.type]}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium text-[#1A1A1A]">
+        <span className="block truncate text-xs font-medium text-foreground">
           {result.title}
         </span>
         {result.subtitle && (
-          <span className="block truncate text-[11px] text-[#1A1A1A]/50">
+          <span className="block truncate text-[11px] text-muted-foreground">
             {result.subtitle}
           </span>
         )}
       </span>
 
       {result.badge && (
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#1A1A1A]/40">
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {result.badge}
         </span>
       )}

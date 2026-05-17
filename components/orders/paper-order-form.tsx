@@ -49,7 +49,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
   const [address, setAddress] = useState<DeliveryAddress>(EMPTY_ADDRESS)
 
   const {
-    register, handleSubmit, reset, setValue, watch,
+    register, handleSubmit, reset, setValue,
     control, formState: { errors, isSubmitting },
   } = useForm<CreatePurchaseOrderValues>({
     resolver: zodResolver(createPurchaseOrderSchema),
@@ -93,18 +93,18 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={handleClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-3xl bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
+      <div className="relative ml-auto h-full w-full max-w-3xl bg-background border-l border-border flex flex-col overflow-hidden">
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A]/15 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold tracking-tight">Nueva orden — Papel</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               Completa los datos
             </p>
           </div>
-          <button onClick={handleClose} className="size-8 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors">
+          <button onClick={handleClose} className="size-8 flex items-center justify-center hover:bg-muted transition-colors">
             <X className="size-4" />
           </button>
         </div>
@@ -112,7 +112,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
           {/* Proveedor */}
-          <div className="border border-[#1A1A1A]/10">
+          <div className="border border-border/50">
             <p className={sectionHeader}>Proveedor</p>
             <div className="px-4 py-3">
               <FormField label="Proveedor *" error={errors.provider_id?.message}>
@@ -131,7 +131,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
           </div>
 
           {/* Detalles */}
-          <div className="border border-[#1A1A1A]/10">
+          <div className="border border-border/50">
             <p className={sectionHeader}>Detalles de la orden</p>
             <div className="px-4 py-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -175,7 +175,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
           </div>
 
           {/* Artículos */}
-          <div className="border border-[#1A1A1A]/10">
+          <div className="border border-border/50">
             <p className={sectionHeader}>
               Papeles a ordenar
               {(errors as any).items && (
@@ -189,19 +189,19 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
               {fields.map((field, idx) => {
                 const paper = paperCatalog.find(p => p.id === (field as any).paper_catalog_id)
                 return (
-                  <div key={field.id} className="border border-[#1A1A1A]/10 bg-[#fdf9f0] p-3 space-y-2">
+                  <div key={field.id} className="border border-border/50 bg-card p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="font-mono text-[10px] text-[#5f5e59]">{paper?.code}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">{paper?.code}</span>
                         <p className="text-sm font-bold truncate">{paper?.name}</p>
-                        <p className="text-[10px] text-[#5f5e59]">
+                        <p className="text-[10px] text-muted-foreground">
                           Stock: {(paper?.current_stock_m2 ?? 0).toFixed(1)} m²
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => remove(idx)}
-                        className="shrink-0 size-6 flex items-center justify-center text-[#1A1A1A]/40 hover:text-red-600 transition-colors"
+                        className="shrink-0 size-6 flex items-center justify-center text-muted-foreground/40 hover:text-red-600 transition-colors"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -261,11 +261,11 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
           </div>
         </form>
 
-        <div className="px-6 py-4 border-t border-[#1A1A1A]/15 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-border/50 flex gap-3 shrink-0">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+            className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
           >
             Cancelar
           </button>
@@ -273,7 +273,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
             type="button"
             onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
-            className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {isSubmitting && <Loader2 className="size-3 animate-spin" />}
             {isSubmitting ? 'Guardando...' : 'Crear orden'}
@@ -300,7 +300,7 @@ function PaperSelector({
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-2 border border-dashed border-[#1A1A1A]/30 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 hover:border-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors"
+        className="w-full flex items-center gap-2 border border-dashed border-border/50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:border-border hover:text-foreground transition-colors"
       >
         <Plus className="size-3.5" />
         Agregar papel
@@ -308,31 +308,31 @@ function PaperSelector({
       </button>
 
       {open && (
-        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-[#F5F2EA] border border-[#1A1A1A]/20 max-h-52 overflow-y-auto">
-          <div className="p-2 border-b border-[#1A1A1A]/10 sticky top-0 bg-[#F5F2EA]">
+        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-background border border-border max-h-52 overflow-y-auto">
+          <div className="p-2 border-b border-border/50 sticky top-0 bg-background">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-[#1A1A1A]/40" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
               <input
                 autoFocus
                 value={search}
                 onChange={e => onSearch(e.target.value)}
                 placeholder="Buscar papel..."
-                className="w-full h-7 bg-[#fdf9f0] border border-[#1A1A1A]/20 pl-7 pr-2 text-xs outline-none"
+                className="w-full h-7 bg-card border border-foreground/20 pl-7 pr-2 text-xs outline-none focus:border-foreground/50"
               />
             </div>
           </div>
           {items.length === 0
-            ? <p className="px-3 py-4 text-[10px] text-[#5f5e59] text-center">Sin resultados</p>
+            ? <p className="px-3 py-4 text-[10px] text-muted-foreground text-center">Sin resultados</p>
             : items.map(paper => (
               <button
                 key={paper.id}
                 type="button"
                 onClick={() => { onSelect(paper); setOpen(false) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[#E5E1D8] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/60 transition-colors"
               >
-                <span className="font-mono text-[9px] text-[#5f5e59] shrink-0">{paper.code}</span>
+                <span className="font-mono text-[9px] text-muted-foreground shrink-0">{paper.code}</span>
                 <span className="text-xs truncate">{paper.name}</span>
-                <span className="ml-auto text-[9px] text-[#5f5e59] shrink-0">
+                <span className="ml-auto text-[9px] text-muted-foreground shrink-0">
                   {(paper.current_stock_m2 ?? 0).toFixed(1)} m²
                 </span>
               </button>
@@ -347,15 +347,15 @@ function PaperSelector({
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 const sectionHeader =
-  'px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30'
+  'px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30'
 
 function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">{label}</label>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">{label}</label>
       {children}
       {error && <p className="text-[10px] text-destructive mt-1">{error}</p>}
     </div>

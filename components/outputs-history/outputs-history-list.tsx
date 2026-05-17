@@ -110,21 +110,21 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
       </div>
 
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 py-3 mb-4 flex flex-wrap items-center gap-3">
+      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 py-3 mb-4 flex flex-wrap items-center gap-3">
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             placeholder="Buscar #, orden, solicitante…"
-            className="h-8 w-56 pl-8 pr-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 w-56 pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors"
           />
           {search && (
             <button
               onClick={() => { setSearch(''); setPage(1) }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
@@ -132,7 +132,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
         </div>
 
         {/* Material type */}
-        <div className="flex border border-[#1A1A1A]/20">
+        <div className="flex border border-border">
           {MAT_TABS.map(t => (
             <button
               key={t.value}
@@ -140,8 +140,8 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
               className={cn(
                 'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
                 matFilter === t.value
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
               )}
             >
               {t.label}
@@ -155,19 +155,19 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             type="date"
             value={dateFrom}
             onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-            className="h-8 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-[11px] outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
           />
-          <span className="text-[10px] text-[#5f5e59]">—</span>
+          <span className="text-[10px] text-muted-foreground">—</span>
           <input
             type="date"
             value={dateTo}
             onChange={e => { setDateTo(e.target.value); setPage(1) }}
-            className="h-8 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-[11px] outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
           />
           {(dateFrom || dateTo) && (
             <button
               onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-              className="text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="size-3.5" />
             </button>
@@ -177,8 +177,8 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
         <div className="flex-1" />
 
         {/* Page size */}
-        <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-8">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">Por página</span>
+        <div className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
           <input
             type="number"
             min={1}
@@ -192,60 +192,60 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
               const n = parseInt(pageSizeInp, 10)
               if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
             }}
-            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
+            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
           />
         </div>
       </div>
 
       {/* Table */}
       {paginated.length === 0 ? (
-        <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <div className="border border-dashed border-border p-16 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             No hay salidas para mostrar
           </p>
         </div>
       ) : (
-        <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+        <div className="border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+              <tr className="border-b border-border/50 bg-muted/40">
                 <th
                   onClick={() => toggleSort('number')}
-                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none cursor-pointer hover:text-[#1A1A1A] transition-colors"
+                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground select-none cursor-pointer hover:text-foreground transition-colors"
                 >
                   <span className="inline-flex items-center gap-1"># <SortIcon k="number" /></span>
                 </th>
                 <th
                   onClick={() => toggleSort('type')}
-                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none cursor-pointer hover:text-[#1A1A1A] transition-colors"
+                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground select-none cursor-pointer hover:text-foreground transition-colors"
                 >
                   <span className="inline-flex items-center gap-1">Tipo <SortIcon k="type" /></span>
                 </th>
                 <th
                   onClick={() => toggleSort('order')}
-                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none cursor-pointer hover:text-[#1A1A1A] transition-colors"
+                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground select-none cursor-pointer hover:text-foreground transition-colors"
                 >
                   <span className="inline-flex items-center gap-1">O. Prod. <SortIcon k="order" /></span>
                 </th>
-                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   Materiales
                 </th>
-                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   Entregado
                 </th>
-                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   Devuelto
                 </th>
                 <th
                   onClick={() => toggleSort('date')}
-                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none cursor-pointer hover:text-[#1A1A1A] transition-colors"
+                  className="px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground select-none cursor-pointer hover:text-foreground transition-colors"
                 >
                   <span className="inline-flex items-center gap-1">Completado <SortIcon k="date" /></span>
                 </th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1A1A1A]/08">
+            <tbody className="divide-y divide-border/30">
               {paginated.map(req => {
                 const isInk = req.material_type === 'INK'
                 const kgNet = req.ink_outputs.reduce((s, o) => s + o.kg_delivered, 0)
@@ -257,12 +257,12 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
                   : [...new Set(req.paper_items.map(i => i.paper_catalog?.name).filter(Boolean))].join(', ')
 
                 return (
-                  <tr key={req.id} className="hover:bg-[#E5E1D8]/20 transition-colors">
+                  <tr key={req.id} className="hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold text-sm">
                       #{req.requisition_number}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {isInk
                           ? <Droplet  className="size-3" />
                           : <FileText className="size-3" />}
@@ -272,36 +272,36 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
                     <td className="px-4 py-3 text-sm max-w-[160px] truncate font-mono">
                       {req.production_order}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-[#5f5e59] max-w-[200px] truncate">
+                    <td className="px-4 py-3 text-[11px] text-muted-foreground max-w-50 truncate">
                       {names || '—'}
                     </td>
-                    <td className="px-4 py-3 font-mono text-sm font-bold text-[#1A1A1A]">
+                    <td className="px-4 py-3 font-mono text-sm font-bold">
                       {isInk
                         ? kgNet > 0 ? `${kgNet.toFixed(2)} kg`   : '—'
                         : m2Net > 0 ? `${m2Net.toFixed(3)} m²` : '—'}
                     </td>
                     <td className="px-4 py-3">
                       {isInk && kgRet > 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700">
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 dark:text-green-400">
                           <RotateCcw className="size-3" />
                           {kgRet.toFixed(2)} kg
                         </span>
                       ) : !isInk && m2Ret > 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700">
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 dark:text-green-400">
                           <RotateCcw className="size-3" />
                           {m2Ret.toFixed(3)} m²
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#5f5e59]/40">—</span>
+                        <span className="text-[10px] text-muted-foreground/40">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-[#5f5e59]">
+                    <td className="px-4 py-3 text-[11px] text-muted-foreground">
                       {req.fulfilled_at ? fmtDate(req.fulfilled_at) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setSelectedReq(req)}
-                        className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+                        className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Eye className="size-3.5" />
                         Ver
@@ -317,7 +317,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
 
       {/* Bottom bar */}
       <div className="flex items-center justify-between mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {filtered.length} salida{filtered.length !== 1 ? 's' : ''}
         </p>
 
@@ -326,7 +326,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="size-3.5" />
             </button>
@@ -338,7 +338,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
                 return acc
               }, [])
               .map((n, i) => n === '…'
-                ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-[#5f5e59]">…</span>
+                ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
                 : (
                   <button
                     key={n}
@@ -346,8 +346,8 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
                     className={cn(
                       'size-7 text-[10px] font-bold border transition-colors',
                       safePage === n
-                        ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
-                        : 'border-[#1A1A1A]/20 hover:bg-[#E5E1D8]',
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'border-border hover:bg-muted',
                     )}
                   >{n}</button>
                 )
@@ -355,7 +355,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="size-3.5" />
             </button>
@@ -377,11 +377,11 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-[#1A1A1A]/15 p-4">
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">
+    <div className="border border-border p-4">
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
         {label}
       </p>
-      <p className="font-heading text-2xl font-black text-[#1A1A1A] tabular-nums">
+      <p className="font-heading text-2xl font-black tabular-nums">
         {value}
       </p>
     </div>

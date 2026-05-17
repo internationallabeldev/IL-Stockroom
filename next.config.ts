@@ -3,6 +3,7 @@ import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@react-pdf/renderer'],
+  allowedDevOrigins: ['192.168.0.12'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

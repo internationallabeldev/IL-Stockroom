@@ -131,21 +131,21 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-md bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
+      <div className="relative ml-auto h-full w-full max-w-md bg-background border-l border-border flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A]/15 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold tracking-tight">
               {mode === 'create' ? 'Nuevo sustrato' : mode === 'view' ? 'Detalle de sustrato' : 'Editar sustrato'}
             </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               {item ? item.code : 'Completa los datos'}
             </p>
           </div>
-          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors">
+          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-muted transition-colors">
             <X className="size-4" />
           </button>
         </div>
@@ -156,45 +156,45 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-mono text-[9px] font-bold text-[#5f5e59] uppercase tracking-widest">{item.code}</p>
+                  <p className="font-mono text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.code}</p>
                   <h3 className="font-heading text-2xl font-bold tracking-tight leading-tight mt-1">{item.name}</h3>
                 </div>
                 {item.substrate_category && (
-                  <span className="shrink-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#1A1A1A] text-[#F5F2EA] mt-1">
+                  <span className="shrink-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-foreground text-background mt-1">
                     {SUBSTRATE_CATEGORY_LABELS[item.substrate_category as SubstrateCategory]}
                   </span>
                 )}
               </div>
               {item.material && (
-                <p className="font-mono text-xs text-[#5f5e59] mt-1">{item.material}</p>
+                <p className="font-mono text-xs text-muted-foreground mt-1">{item.material}</p>
               )}
               {item.description && (
-                <p className="text-sm text-[#5f5e59] mt-2">{item.description}</p>
+                <p className="text-sm text-muted-foreground mt-2">{item.description}</p>
               )}
             </div>
 
             {/* Stock */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                 Stock actual
               </p>
               <div className="px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <StockBadge current={item.current_stock_m2} min={item.min_stock_m2} unit={stockUnitLabel} />
-                  <span className="font-mono text-sm text-[#1A1A1A]">
+                  <span className="font-mono text-sm text-foreground">
                     {(item.current_stock_m2 ?? 0).toFixed(2)} {stockUnitLabel}
                   </span>
                 </div>
                 <StockBar current={item.current_stock_m2} min={item.min_stock_m2} />
                 {item.min_stock_m2 != null && (
-                  <p className="text-[10px] text-[#5f5e59]">Mínimo: {item.min_stock_m2} {stockUnitLabel}</p>
+                  <p className="text-[10px] text-muted-foreground">Mínimo: {item.min_stock_m2} {stockUnitLabel}</p>
                 )}
               </div>
             </div>
 
             {/* Propiedades físicas */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                 Propiedades físicas
               </p>
               <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -205,17 +205,17 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </div>
 
             {/* Propiedades técnicas */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                 Propiedades técnicas
               </p>
               <div className="px-4 py-3 space-y-3">
                 {item.ink_compatibility && item.ink_compatibility.length > 0 && (
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70 mb-1.5">Compatibilidad de tinta</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Compatibilidad de tinta</p>
                     <div className="flex gap-1.5 flex-wrap">
                       {(item.ink_compatibility as InkCompat[]).map(c => (
-                        <span key={c} className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-[#1A1A1A]/20 text-[#1A1A1A]">
+                        <span key={c} className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-border text-foreground">
                           {INK_COMPAT_LABELS[c]}
                         </span>
                       ))}
@@ -230,8 +230,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
 
             {/* Producción */}
             {(item.reel_diameter_mm != null || item.core_mm != null || provider || item.last_purchase_date) && (
-              <div className="border border-[#1A1A1A]/10">
-                <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+              <div className="border border-border/50">
+                <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                   Logística
                 </p>
                 <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -285,13 +285,13 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </Field>
 
             {/* 2. Material y categoría */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
                 Material y categoría
               </p>
               <div className="px-4 py-3 space-y-3">
                 <Field label="Categoría" error={errors.substrate_category?.message}>
-                  <div className="flex border border-[#1A1A1A]/20">
+                  <div className="flex border border-border">
                     {SUBSTRATE_CATEGORIES.map(cat => (
                       <button
                         key={cat}
@@ -300,8 +300,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
                         className={cn(
                           'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                           substrateCategoryValue === cat
-                            ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                            : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                       >
                         {SUBSTRATE_CATEGORY_LABELS[cat]}
@@ -320,8 +320,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </div>
 
             {/* 3. Propiedades físicas */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
                 Propiedades físicas
               </p>
               <div className="px-4 py-3 space-y-3">
@@ -379,13 +379,13 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </div>
 
             {/* 4. Propiedades técnicas */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
                 Propiedades técnicas
               </p>
               <div className="px-4 py-3 space-y-3">
                 <Field label="Compatibilidad de tinta" error={errors.ink_compatibility?.message}>
-                  <div className="flex border border-[#1A1A1A]/20">
+                  <div className="flex border border-border">
                     {INK_COMPAT_OPTIONS.map(opt => (
                       <button
                         key={opt}
@@ -394,8 +394,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
                         className={cn(
                           'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                           inkCompatValue.includes(opt)
-                            ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                            : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                       >
                         {INK_COMPAT_LABELS[opt]}
@@ -425,13 +425,13 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </div>
 
             {/* 5. Inventario */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
                 Inventario
               </p>
               <div className="px-4 py-3 space-y-3">
                 <Field label="Unidad de stock *" error={errors.stock_unit?.message}>
-                  <div className="flex border border-[#1A1A1A]/20">
+                  <div className="flex border border-border">
                     {STOCK_UNITS.map(u => (
                       <button
                         key={u}
@@ -440,8 +440,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
                         className={cn(
                           'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                           stockUnitValue === u
-                            ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                            : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                       >
                         {STOCK_UNIT_LABELS[u]}
@@ -466,8 +466,8 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
             </div>
 
             {/* 6. Parámetros de producción */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/60 border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/20">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 border-b border-border/50 bg-muted/20">
                 Parámetros de bobina
               </p>
               <div className="px-4 py-3 grid grid-cols-2 gap-3">
@@ -510,13 +510,13 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
         )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#1A1A1A]/15 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-border/50 flex gap-3 shrink-0">
           {mode === 'view' ? (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cerrar
               </button>
@@ -524,7 +524,7 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
                 <button
                   type="button"
                   onClick={() => setMode('edit')}
-                  className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
                 >
                   <Pencil className="size-3" />
                   Editar
@@ -536,7 +536,7 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cancelar
               </button>
@@ -544,7 +544,7 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
                 type="button"
                 onClick={handleSubmit(onSubmit)}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {isSubmitting && <Loader2 className="size-3 animate-spin" />}
                 {isSubmitting ? 'Guardando...' : mode === 'edit' ? 'Actualizar' : 'Crear sustrato'}
@@ -560,7 +560,7 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 type FieldInfoData = { what: string; why: string; example: string }
 
@@ -592,7 +592,7 @@ function InfoPopover({ info }: { info: FieldInfoData }) {
         aria-label="Más información"
         className={cn(
           'size-4 flex items-center justify-center transition-colors shrink-0',
-          open ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60'
+          open ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/60'
         )}
       >
         <Info className="size-3.5" />
@@ -601,18 +601,18 @@ function InfoPopover({ info }: { info: FieldInfoData }) {
       {open && (
         <div
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: 272, zIndex: 200 }}
-          className="bg-[#F5F2EA] border border-[#1A1A1A]/20 px-3.5 py-3 space-y-2"
+          className="bg-background border border-border px-3.5 py-3 space-y-2"
         >
           <div
             style={{
               position: 'absolute', top: -5,
               left: Math.min(Math.max((btnRef.current?.getBoundingClientRect().left ?? 0) + 8 - pos.left, 10), 252),
             }}
-            className="size-2.5 rotate-45 bg-[#F5F2EA] border-l border-t border-[#1A1A1A]/20"
+            className="size-2.5 rotate-45 bg-background border-l border-t border-border"
           />
-          <p className="text-[11px] text-[#1A1A1A]/80 leading-snug">{info.what}</p>
-          <p className="text-[11px] text-[#5f5e59] leading-snug">{info.why}</p>
-          <p className="font-mono text-[10px] text-[#1A1A1A]/40 pt-2 border-t border-[#1A1A1A]/10 leading-relaxed">
+          <p className="text-[11px] text-foreground/80 leading-snug">{info.what}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">{info.why}</p>
+          <p className="font-mono text-[10px] text-muted-foreground/60 pt-2 border-t border-border leading-relaxed">
             {info.example}
           </p>
         </div>
@@ -630,7 +630,7 @@ function Field({ label, error, info, children }: {
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">{label}</label>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
         {info && <InfoPopover info={info} />}
       </div>
       {children}
@@ -642,8 +642,8 @@ function Field({ label, error, info, children }: {
 function ViewField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70 mb-0.5">{label}</p>
-      <p className="text-sm text-[#1A1A1A]">{value}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-0.5">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
     </div>
   )
 }

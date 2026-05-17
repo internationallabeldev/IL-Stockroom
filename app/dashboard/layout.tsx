@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   return (
     <MaterialProvider>
       <SidebarProvider>
-        <div className="min-h-screen bg-[#F5F2EA]">
+        <div className="min-h-screen bg-background">
           <TopNav userName={displayName} />
           <SidebarNav role={user.role} />
           <DashboardShell>{children}</DashboardShell>

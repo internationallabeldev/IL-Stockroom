@@ -12,21 +12,21 @@ function StockRow({ item }: { item: StockOverviewItem }) {
   const crit = item.current_stock === 0
 
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-[#1A1A1A]/8 last:border-0">
+    <div className="flex items-center gap-3 py-2.5 border-b border-border/50 last:border-0">
       {item.color_code && (
         <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color_code }} />
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <p className="text-[11px] font-bold truncate">{item.name}</p>
-          <span className={cn('font-mono text-[10px] shrink-0 ml-2', crit ? 'text-[#ba1a1a] font-bold' : low ? 'text-yellow-600' : 'text-[#1A1A1A]/50')}>
+          <span className={cn('font-mono text-[10px] shrink-0 ml-2', crit ? 'text-destructive font-bold' : low ? 'text-yellow-600' : 'text-foreground/50')}>
             {item.current_stock.toLocaleString('es-MX', { maximumFractionDigits: 1 })} {item.unit}
           </span>
         </div>
         {item.min_stock > 0 && (
-          <div className="h-1 bg-[#E5E1D8] overflow-hidden">
+          <div className="h-1 bg-muted overflow-hidden">
             <div
-              className={cn('h-full transition-all', crit ? 'bg-[#ba1a1a]' : low ? 'bg-yellow-500' : 'bg-green-500')}
+              className={cn('h-full transition-all', crit ? 'bg-destructive' : low ? 'bg-yellow-500' : 'bg-green-500')}
               style={{ width: `${Math.min(pct, 100)}%` }}
             />
           </div>
@@ -46,9 +46,9 @@ export function StockOverviewWidget({ materialType }: { materialType: 'INK' | 'P
   const items = materialType === 'INK' ? (data?.inks ?? []) : (data?.papers ?? [])
 
   return (
-    <div className="bg-[#fdf9f0] border border-[#1A1A1A]/10 p-5 flex flex-col">
+    <div className="bg-card border border-border p-5 flex flex-col">
       <div className="flex items-center gap-2 mb-4">
-        <Package className="size-3.5 text-[#1A1A1A]/60" />
+        <Package className="size-3.5 text-foreground/60" />
         <h3 className="text-[10px] font-bold uppercase tracking-widest">
           {materialType === 'INK' ? 'Stock de tintas' : 'Stock de papel'}
         </h3>
@@ -56,11 +56,11 @@ export function StockOverviewWidget({ materialType }: { materialType: 'INK' | 'P
 
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-[#E5E1D8] animate-pulse" />)}
+          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 bg-muted animate-pulse" />)}
         </div>
       ) : items.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40">Sin materiales</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40">Sin materiales</p>
         </div>
       ) : (
         <div>

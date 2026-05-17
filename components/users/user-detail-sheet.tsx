@@ -56,8 +56,8 @@ function UserAvatar({ user }: { user: AppUser }) {
     )
   }
   return (
-    <div className="size-16 bg-[#1A1A1A] flex items-center justify-center shrink-0">
-      <span className="text-[#F5F2EA] text-xl font-bold">{initials}</span>
+    <div className="size-16 bg-foreground flex items-center justify-center shrink-0">
+      <span className="text-background text-xl font-bold">{initials}</span>
     </div>
   )
 }
@@ -126,14 +126,18 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
 
   if (!user) return null
 
+  const inputCls = 'w-full h-9 border border-foreground/20 bg-card px-3 text-xs outline-none focus:border-foreground/50 transition-colors'
+  const labelCls = 'block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5'
+  const sectionHeadingCls = 'text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4'
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md bg-[#F5F2EA] border-l border-[#1A1A1A]/15 overflow-y-auto p-0"
+        className="w-full sm:max-w-md bg-background border-l border-border overflow-y-auto p-0"
       >
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-[#1A1A1A]/10">
+        <div className="px-8 pt-8 pb-6 border-b border-border">
           <SheetHeader>
             <SheetTitle className="sr-only">Detalle de usuario</SheetTitle>
           </SheetHeader>
@@ -143,7 +147,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
               <h2 className="font-heading text-lg font-black uppercase tracking-tight leading-tight">
                 {user.first_name} {user.last_name}
               </h2>
-              <div className="flex items-center gap-1.5 mt-0.5 text-[#5f5e59]">
+              <div className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
                 <Mail className="size-3 shrink-0" />
                 <span className="text-[11px] truncate">{user.email}</span>
               </div>
@@ -152,8 +156,8 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 <span
                   className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 border ${
                     user.enabled
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : 'bg-red-50 text-red-700 border-red-200'
+                      ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
                   }`}
                 >
                   {user.enabled ? 'Activo' : 'Inactivo'}
@@ -163,12 +167,12 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {user.phone && (
-              <div className="flex items-center gap-1.5 text-[#5f5e59]">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Phone className="size-3 shrink-0" />
                 <span className="text-[11px]">{user.phone}</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 text-[#5f5e59]">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="size-3 shrink-0" />
               <span className="text-[11px]">{formatDate(user.last_sign_in_at)}</span>
             </div>
@@ -178,18 +182,14 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
         <div className="px-8 py-6 space-y-8">
           {/* Info básica */}
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
-              Información
-            </h3>
+            <h3 className={sectionHeadingCls}>Información</h3>
             <form onSubmit={profileForm.handleSubmit(handleProfileSave)} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                    Nombre
-                  </label>
+                  <label className={labelCls}>Nombre</label>
                   <input
                     {...profileForm.register('first_name')}
-                    className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                    className={inputCls}
                   />
                   {profileForm.formState.errors.first_name && (
                     <p className="mt-1 text-[10px] text-red-600">
@@ -198,29 +198,25 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                    Apellido
-                  </label>
+                  <label className={labelCls}>Apellido</label>
                   <input
                     {...profileForm.register('last_name')}
-                    className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                    className={inputCls}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                  Teléfono
-                </label>
+                <label className={labelCls}>Teléfono</label>
                 <input
                   {...profileForm.register('phone')}
-                  className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                  className={inputCls}
                   placeholder="Opcional"
                 />
               </div>
               <button
                 type="submit"
                 disabled={profileForm.formState.isSubmitting}
-                className="h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                className="h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-2"
               >
                 {profileForm.formState.isSubmitting && (
                   <Loader2 className="size-3 animate-spin" />
@@ -232,7 +228,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
 
           {/* Rol */}
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
+            <h3 className={sectionHeadingCls}>
               <span className="flex items-center gap-1.5">
                 <Shield className="size-3" />
                 Rol
@@ -243,7 +239,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 value={selectedRole}
                 onChange={e => setSelectedRole(e.target.value as UserRole)}
                 disabled={isSelf}
-                className="flex-1 h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className={inputCls + ' appearance-none disabled:opacity-50 disabled:cursor-not-allowed'}
               >
                 {ROLE_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -252,13 +248,13 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
               <button
                 onClick={handleRoleSave}
                 disabled={isSelf || selectedRole === user.role}
-                className="h-9 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                className="h-9 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Guardar
               </button>
             </div>
             {isSelf && (
-              <p className="mt-2 text-[10px] text-[#5f5e59]">
+              <p className="mt-2 text-[10px] text-muted-foreground">
                 No puedes cambiar tu propio rol.
               </p>
             )}
@@ -266,18 +262,14 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
 
           {/* Contraseña */}
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
-              Nueva contraseña
-            </h3>
+            <h3 className={sectionHeadingCls}>Nueva contraseña</h3>
             <form onSubmit={passwordForm.handleSubmit(handlePasswordReset)} className="space-y-3">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                  Contraseña
-                </label>
+                <label className={labelCls}>Contraseña</label>
                 <input
                   {...passwordForm.register('password')}
                   type="password"
-                  className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                  className={inputCls}
                   placeholder="Mínimo 8 caracteres"
                 />
                 {passwordForm.formState.errors.password && (
@@ -287,13 +279,11 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                  Confirmar
-                </label>
+                <label className={labelCls}>Confirmar</label>
                 <input
                   {...passwordForm.register('confirm')}
                   type="password"
-                  className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                  className={inputCls}
                 />
                 {passwordForm.formState.errors.confirm && (
                   <p className="mt-1 text-[10px] text-red-600">
@@ -304,7 +294,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
               <button
                 type="submit"
                 disabled={passwordForm.formState.isSubmitting}
-                className="h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                className="h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-2"
               >
                 {passwordForm.formState.isSubmitting && (
                   <Loader2 className="size-3 animate-spin" />
@@ -316,14 +306,12 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
 
           {/* Estado */}
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
-              Estado de la cuenta
-            </h3>
+            <h3 className={sectionHeadingCls}>Estado de la cuenta</h3>
             {isSelf ? (
-              <p className="text-[11px] text-[#5f5e59]">No puedes desactivar tu propia cuenta.</p>
+              <p className="text-[11px] text-muted-foreground">No puedes desactivar tu propia cuenta.</p>
             ) : confirmDisable ? (
-              <div className="border border-[#1A1A1A]/20 p-4 bg-white">
-                <p className="text-xs text-[#1A1A1A] mb-3">
+              <div className="border border-border p-4 bg-card">
+                <p className="text-xs text-foreground mb-3">
                   ¿Confirmas que deseas{' '}
                   <strong>{user.enabled ? 'desactivar' : 'activar'}</strong> la cuenta de{' '}
                   <strong>{user.first_name} {user.last_name}</strong>?
@@ -331,7 +319,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setConfirmDisable(false)}
-                    className="flex-1 h-8 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] transition-colors"
+                    className="flex-1 h-8 border border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted transition-colors"
                   >
                     Cancelar
                   </button>
@@ -354,8 +342,8 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 onClick={() => setConfirmDisable(true)}
                 className={`h-9 px-4 text-[10px] font-bold uppercase tracking-widest border transition-colors ${
                   user.enabled
-                    ? 'border-red-300 text-red-700 hover:bg-red-50'
-                    : 'border-green-300 text-green-700 hover:bg-green-50'
+                    ? 'border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40'
+                    : 'border-green-300 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40'
                 }`}
               >
                 {user.enabled ? 'Desactivar cuenta' : 'Activar cuenta'}

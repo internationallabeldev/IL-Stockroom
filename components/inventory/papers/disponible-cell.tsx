@@ -31,11 +31,11 @@ export function DisponibleCell({ lot }: { lot: PaperLot }) {
           <div className="space-y-1.5 min-w-36 cursor-default">
             <div className="flex items-baseline gap-1.5">
               <span className="font-mono font-bold text-[12px]">{lengthRem.toFixed(1)} m</span>
-              <span className="font-mono text-[10px] text-[#5f5e59]">{remaining.toFixed(1)} m²</span>
+              <span className="font-mono text-[10px] text-muted-foreground">{remaining.toFixed(1)} m²</span>
             </div>
-            <p className="font-mono text-[9px] text-[#5f5e59]">{width.toFixed(2)} m ancho</p>
+            <p className="font-mono text-[9px] text-muted-foreground">{width.toFixed(2)} m ancho</p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-[#E5E1D8]">
+              <div className="flex-1 h-1.5 bg-muted">
                 <div className={cn('h-full transition-all', barColor)} style={{ width: `${Math.min(pct * 100, 100)}%` }} />
               </div>
               <span className={cn('font-mono text-[9px] font-bold tabular-nums w-8 text-right', pctColor)}>

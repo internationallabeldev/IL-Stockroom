@@ -275,14 +275,14 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
       type: 'output' as const,
       title: `Salida de tinta #${o.id}`,
       subtitle: `${o.output_date} · ${o.kg_delivered} kg`,
-      url: '/dashboard/historial-salidas',
+      url: '/dashboard/outputs/history',
     })),
     ...paperOutputs.map(o => ({
       id: `paper-output-${o.id}`,
       type: 'output' as const,
       title: `Salida de papel #${o.id}`,
       subtitle: `${o.output_date} · ${o.m2_delivered} m²`,
-      url: '/dashboard/historial-salidas',
+      url: '/dashboard/outputs/history',
     })),
   ]
   if (allOutputs.length) {

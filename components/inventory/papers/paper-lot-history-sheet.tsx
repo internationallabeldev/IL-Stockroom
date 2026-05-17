@@ -43,20 +43,20 @@ export function PaperLotHistorySheet({ open, onClose, inventoryId }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
-      <SheetContent side="right" className="w-full max-w-lg overflow-y-auto bg-[#F5F2EA] border-l border-[#1A1A1A]/15 p-0">
-        <SheetHeader className="px-6 py-5 border-b border-[#1A1A1A]/10">
+      <SheetContent side="right" className="w-full max-w-lg overflow-y-auto bg-background border-l border-border p-0">
+        <SheetHeader className="px-6 py-5 border-b border-border/50">
           <SheetTitle className="font-heading text-xl font-bold tracking-tight">
             Historial de bobina
           </SheetTitle>
           {lot && (
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {lot.internal_batch} · {lot.paper_catalog?.name}
             </p>
           )}
         </SheetHeader>
 
         {isLoading && (
-          <div className="p-8 text-center text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          <div className="p-8 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Cargando…
           </div>
         )}
@@ -75,8 +75,8 @@ function LotHistoryBody({ lot }: { lot: PaperLotHistory }) {
     <div className="px-6 py-5 space-y-6">
 
       {/* ── Stock summary ───────────────────────────────────────────────────── */}
-      <div className="border border-[#1A1A1A]/10 p-4 space-y-3">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Estado de la bobina</p>
+      <div className="border border-border/50 p-4 space-y-3">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Estado de la bobina</p>
         <LotProgressBar initial={lot.initial_m2 ?? 0} used={lot.used_m2 ?? 0} unit="m²" />
         <div className="grid grid-cols-2 gap-2 text-center">
           {[
@@ -85,14 +85,14 @@ function LotHistoryBody({ lot }: { lot: PaperLotHistory }) {
             { label: 'M² iniciales',     val: `${(lot.initial_m2 ?? 0).toFixed(2)} m²`       },
             { label: 'M² restantes',     val: `${(lot.remaining_m2 ?? 0).toFixed(2)} m²`     },
           ].map(({ label, val }) => (
-            <div key={label} className="bg-[#E5E1D8]/40 px-2 py-2">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">{label}</p>
+            <div key={label} className="bg-muted/40 px-2 py-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
               <p className="font-mono text-sm font-bold mt-0.5">{val}</p>
             </div>
           ))}
         </div>
         {lot.location && (
-          <p className="text-[10px] text-[#5f5e59] font-mono">Ubicación: {lot.location}</p>
+          <p className="text-[10px] text-muted-foreground font-mono">Ubicación: {lot.location}</p>
         )}
         {!lot.enabled && (
           <p className="text-[9px] font-bold uppercase tracking-widest text-red-600">Bobina deshabilitada</p>
@@ -101,8 +101,8 @@ function LotHistoryBody({ lot }: { lot: PaperLotHistory }) {
 
       {/* ── Receipt details ─────────────────────────────────────────────────── */}
       {r && (
-        <div className="border border-[#1A1A1A]/10 p-4 space-y-3">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Recepción</p>
+        <div className="border border-border/50 p-4 space-y-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Recepción</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
             <DataRow label="Remisión/Factura" value={(r as any).invoice_remission ?? '—'} />
             <DataRow label="Lote proveedor"   value={(r as any).provider_batch ?? '—'} />
@@ -128,19 +128,19 @@ function LotHistoryBody({ lot }: { lot: PaperLotHistory }) {
             )}
           </div>
           {(r as any).quality_notes && (
-            <p className="text-[10px] text-[#5f5e59] italic">{(r as any).quality_notes}</p>
+            <p className="text-[10px] text-muted-foreground italic">{(r as any).quality_notes}</p>
           )}
         </div>
       )}
 
       {/* ── Timeline ────────────────────────────────────────────────────────── */}
       <div>
-        <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">Línea de tiempo</p>
-        <ol className="relative border-l border-[#1A1A1A]/15 space-y-5 ml-1">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Línea de tiempo</p>
+        <ol className="relative border-l border-border space-y-5 ml-1">
 
           <TimelineItem
             icon={Truck}
-            color="bg-[#1A1A1A]"
+            color="bg-foreground"
             label="Recibida"
             date={fmtDate((r as any)?.receipt_date)}
             detail={r ? `${(r as any).length_m}m × ${(r as any).width_m}m` : undefined}
@@ -177,7 +177,7 @@ function LotHistoryBody({ lot }: { lot: PaperLotHistory }) {
 
           <TimelineItem
             icon={Package}
-            color={lot.enabled ? 'bg-[#1A1A1A]' : 'bg-[#5f5e59]'}
+            color={lot.enabled ? 'bg-foreground' : 'bg-muted-foreground'}
             label={lot.enabled ? 'En inventario' : 'Deshabilitada'}
             date="Ahora"
             detail={`${(lot.remaining_m2 ?? 0).toFixed(2)} m² restantes`}
@@ -203,9 +203,9 @@ function TimelineItem({
       <span className={cn('absolute -left-2.5 flex size-5 items-center justify-center rounded-full', color)}>
         <Icon className="size-2.5 text-white" />
       </span>
-      <p className="text-[11px] font-bold text-[#1A1A1A]">{label}</p>
-      <p className="text-[10px] font-mono text-[#5f5e59]">{date}</p>
-      {detail && <p className="text-[10px] text-[#5f5e59]">{detail}</p>}
+      <p className="text-[11px] font-bold text-foreground">{label}</p>
+      <p className="text-[10px] font-mono text-muted-foreground">{date}</p>
+      {detail && <p className="text-[10px] text-muted-foreground">{detail}</p>}
       {sub    && <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">{sub}</p>}
     </li>
   )
@@ -214,7 +214,7 @@ function TimelineItem({
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">{label}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
       <p className="font-mono mt-0.5">{value}</p>
     </div>
   )

@@ -29,7 +29,7 @@ export function DisponibleCellInk({ lot }: { lot: InkLot }) {
           <div className="space-y-1.5 min-w-32 cursor-default">
             <span className="font-mono font-bold text-[12px]">{remaining.toFixed(2)} kg</span>
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-[#E5E1D8]">
+              <div className="flex-1 h-1.5 bg-muted">
                 <div className={cn('h-full transition-all', barColor)} style={{ width: `${Math.min(pct * 100, 100)}%` }} />
               </div>
               <span className={cn('font-mono text-[9px] font-bold tabular-nums w-8 text-right', pctColor)}>

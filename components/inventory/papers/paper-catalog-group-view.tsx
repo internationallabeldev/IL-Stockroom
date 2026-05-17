@@ -97,8 +97,8 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
 
   if (groups.length === 0) {
     return (
-      <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+      <div className="border border-dashed border-border p-16 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           No hay bobinas para mostrar
         </p>
       </div>
@@ -106,7 +106,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
   }
 
   return (
-    <div className="border border-[#1A1A1A]/15 divide-y divide-[#1A1A1A]/10">
+    <div className="border border-border divide-y divide-border/50">
       {groups.map(g => {
         const open  = expanded.has(g.catalogId)
         const badge = stockBadge(g.totalM2, g.minStockM2)
@@ -116,23 +116,23 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
             {/* ── Catalog header ─────────────────────────────────────────────── */}
             <button
               onClick={() => toggle(g.catalogId)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#E5E1D8]/40 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
             >
-              <ChevronRight className={cn('size-3.5 text-[#5f5e59] transition-transform shrink-0', open && 'rotate-90')} />
+              <ChevronRight className={cn('size-3.5 text-muted-foreground transition-transform shrink-0', open && 'rotate-90')} />
 
               <span className="flex-1 flex items-baseline gap-2 min-w-0">
-                <span className="font-mono text-[10px] text-[#5f5e59] shrink-0">{g.code}</span>
+                <span className="font-mono text-[10px] text-muted-foreground shrink-0">{g.code}</span>
                 <span className="font-medium text-sm truncate">{g.name}</span>
                 {g.weightGsm && (
-                  <span className="font-mono text-[9px] text-[#5f5e59] shrink-0">{g.weightGsm} g/m²</span>
+                  <span className="font-mono text-[9px] text-muted-foreground shrink-0">{g.weightGsm} g/m²</span>
                 )}
               </span>
 
               <span className="flex items-center gap-3 shrink-0">
-                <span className="text-[10px] font-mono text-[#5f5e59]">
+                <span className="text-[10px] font-mono text-muted-foreground">
                   {g.totalM2.toFixed(1)} m²
                 </span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   {g.activeCount} {g.activeCount === 1 ? 'bobina' : 'bobinas'}
                 </span>
                 <span className={cn('text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border', badge.cls)}>
@@ -143,24 +143,24 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
 
             {/* ── Expanded sub-table ─────────────────────────────────────────── */}
             {open && (
-              <div className="border-t border-[#1A1A1A]/8 bg-[#E5E1D8]/15 overflow-x-auto">
+              <div className="border-t border-border/30 bg-muted/15 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-[#1A1A1A]/10">
+                    <tr className="border-b border-border/50">
                       {['Lote interno', 'Lote prov.', 'Disponible', 'Recepción', 'Estado', ''].map(h => (
-                        <th key={h} className="pl-8 pr-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap first:pl-12">
+                        <th key={h} className="pl-8 pr-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap first:pl-12">
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1A1A1A]/8">
+                  <tbody className="divide-y divide-border/30">
                     {g.lots.map(lot => (
                       <tr
                         key={lot.id}
                         className={cn(
                           'transition-colors',
-                          lot.enabled ? 'hover:bg-[#E5E1D8]/30' : 'opacity-50 bg-[#E5E1D8]/10'
+                          lot.enabled ? 'hover:bg-muted/30' : 'opacity-50 bg-muted/10'
                         )}
                       >
                         <td className="pl-12 pr-4 py-2.5 font-mono font-bold text-[11px]">
@@ -169,14 +169,14 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
 
                         <td className="px-4 py-2.5">
                           <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                          <p className="font-mono text-[10px] text-[#5f5e59]">{lot.receipt?.provider_batch ?? '—'}</p>
+                          <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
                         </td>
 
                         <td className="px-4 py-2.5">
                           <DisponibleCell lot={lot} />
                         </td>
 
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">
+                        <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
                           {fmtDate((lot.receipt as any)?.receipt_date)}
                         </td>
 
@@ -185,7 +185,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                             'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
                             lot.enabled
                               ? 'border-green-200 text-green-700 bg-green-50'
-                              : 'border-[#1A1A1A]/20 text-[#5f5e59] bg-[#E5E1D8]/40'
+                              : 'border-border text-muted-foreground bg-muted/40'
                           )}>
                             {lot.enabled ? 'Activa' : 'Deshabilitada'}
                           </span>
@@ -196,7 +196,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                             <div className="flex items-center gap-0.5">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button onClick={() => onHistory(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-[#1A1A1A] transition-colors rounded">
+                                  <button onClick={() => onHistory(lot.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
                                     <History className="size-3.5" />
                                   </button>
                                 </TooltipTrigger>
@@ -217,14 +217,14 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                               {canManage && lot.enabled && (
                                 confirming === lot.id ? (
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">¿Confirmar?</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">¿Confirmar?</span>
                                     <button onClick={() => handleDisable(lot.id)} disabled={disabling === lot.id} className="text-[9px] font-bold uppercase tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50">Sí</button>
-                                    <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A]">No</button>
+                                    <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">No</button>
                                   </div>
                                 ) : (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-red-600 transition-colors rounded">
+                                      <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors rounded">
                                         <PowerOff className="size-3.5" />
                                       </button>
                                     </TooltipTrigger>

@@ -12,7 +12,7 @@ import {
 import type { AvailableInkLot, AvailablePaperLot, RequisitionStatus } from './requisitions.actions'
 
 const CAN_MANAGE = ['ADMIN', 'WAREHOUSE_MANAGER']
-const PATHS      = ['/dashboard/requisitions', '/dashboard/historial-salidas']
+const PATHS      = ['/dashboard/requisitions', '/dashboard/outputs/history']
 
 function invalidate(requisitionId: number) {
   PATHS.forEach(p => revalidatePath(p))

@@ -103,51 +103,53 @@ export function CommandPalette({ isOpen, onClose }: Props) {
   const hasQuery = query.length >= 2
   const hasResults = categories.length > 0
 
+  const kbdCls = 'rounded border border-border bg-foreground/6 px-1 py-0.5 font-mono'
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-24"
+      className="fixed inset-0 z-100 flex items-start justify-center pt-24"
       onClick={onClose}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-[#1A1A1A]/20 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-black/25 dark:bg-gray-700/40 backdrop-blur-[2px]" />
 
       {/* Panel */}
       <div
-        className="relative z-10 w-full max-w-xl border border-[#1A1A1A]/15 bg-[#F5F2EA] shadow-2xl"
+        className="relative z-10 w-full max-w-xl border border-border bg-background shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Input row */}
-        <div className="flex items-center gap-2 border-b border-[#1A1A1A]/10 px-4">
+        <div className="flex items-center gap-2 border-b border-border px-4">
           {isPending
-            ? <Loader2 className="size-4 shrink-0 animate-spin text-[#1A1A1A]/40" />
-            : <Search className="size-4 shrink-0 text-[#1A1A1A]/40" />
+            ? <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+            : <Search className="size-4 shrink-0 text-muted-foreground" />
           }
           <input
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Buscar en el sistema..."
-            className="h-12 flex-1 bg-transparent text-sm text-[#1A1A1A] outline-none placeholder:text-[#1A1A1A]/40"
+            className="h-12 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {query && (
             <button
               onClick={() => { setQuery(''); setCategories([]) }}
-              className="flex size-5 items-center justify-center text-[#1A1A1A]/40 hover:text-[#1A1A1A]"
+              className="flex size-5 items-center justify-center text-muted-foreground hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
           )}
-          <kbd className="hidden shrink-0 rounded border border-[#1A1A1A]/20 bg-[#1A1A1A]/6 px-1.5 py-0.5 text-[10px] font-medium text-[#1A1A1A]/50 sm:block">
+          <kbd className={`hidden shrink-0 px-1.5 text-[10px] font-medium text-muted-foreground sm:block ${kbdCls}`}>
             ESC
           </kbd>
         </div>
 
         {/* Results */}
-        <div className="max-h-[420px] overflow-y-auto py-2">
+        <div className="max-h-105 overflow-y-auto py-2">
           {/* No query → quick links */}
           {!hasQuery && (
             <>
-              <p className="px-4 pb-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40">
+              <p className="px-4 pb-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Accesos rápidos
               </p>
               {QUICK_LINKS.map((r, i) => (
@@ -164,14 +166,14 @@ export function CommandPalette({ isOpen, onClose }: Props) {
 
           {/* Has query, loading, no results yet */}
           {hasQuery && isPending && !hasResults && (
-            <div className="flex items-center justify-center py-10 text-sm text-[#1A1A1A]/40">
+            <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
               Buscando...
             </div>
           )}
 
           {/* Has query, done, no results */}
           {hasQuery && !isPending && !hasResults && (
-            <div className="flex items-center justify-center py-10 text-sm text-[#1A1A1A]/40">
+            <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
               Sin resultados para &ldquo;{query}&rdquo;
             </div>
           )}
@@ -181,7 +183,7 @@ export function CommandPalette({ isOpen, onClose }: Props) {
             let globalIdx = 0
             return categories.map(category => (
               <div key={category.label}>
-                <p className="px-4 pb-1 pt-3 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40">
+                <p className="px-4 pb-1 pt-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {category.label}
                 </p>
                 {category.results.map(result => {
@@ -202,17 +204,17 @@ export function CommandPalette({ isOpen, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 border-t border-[#1A1A1A]/10 px-4 py-2">
-          <span className="text-[10px] text-[#1A1A1A]/40">
-            <kbd className="rounded border border-[#1A1A1A]/20 bg-[#1A1A1A]/6 px-1 py-0.5 font-mono">↑↓</kbd>
+        <div className="flex items-center gap-4 border-t border-border px-4 py-2">
+          <span className="text-[10px] text-muted-foreground">
+            <kbd className={kbdCls}>↑↓</kbd>
             {' '}navegar
           </span>
-          <span className="text-[10px] text-[#1A1A1A]/40">
-            <kbd className="rounded border border-[#1A1A1A]/20 bg-[#1A1A1A]/6 px-1 py-0.5 font-mono">↵</kbd>
+          <span className="text-[10px] text-muted-foreground">
+            <kbd className={kbdCls}>↵</kbd>
             {' '}ir
           </span>
-          <span className="text-[10px] text-[#1A1A1A]/40">
-            <kbd className="rounded border border-[#1A1A1A]/20 bg-[#1A1A1A]/6 px-1 py-0.5 font-mono">Ctrl K</kbd>
+          <span className="text-[10px] text-muted-foreground">
+            <kbd className={kbdCls}>Ctrl K</kbd>
             {' '}abrir/cerrar
           </span>
         </div>

@@ -94,7 +94,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
   }
 
   if (lotsQuery.isLoading) {
-    return <div className="py-12 text-center text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Cargando lotes…</div>
+    return <div className="py-12 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cargando lotes…</div>
   }
 
   return (
@@ -108,20 +108,20 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
           const overAlloc  = allocated > remaining
 
           return (
-            <div key={item.id} className="border border-[#1A1A1A]/15 bg-[#E5E1D8]/10 p-4 space-y-3">
+            <div key={item.id} className="border border-border bg-muted/10 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-[#1A1A1A]">{item.ink_catalog?.name}</p>
-                  <p className="text-[10px] font-mono text-[#5f5e59]">{item.ink_catalog?.code}</p>
+                  <p className="text-sm font-bold">{item.ink_catalog?.name}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground">{item.ink_catalog?.code}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Por surtir</p>
-                  <p className="text-sm font-mono font-bold text-[#1A1A1A]">{remaining.toFixed(2)} kg</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Por surtir</p>
+                  <p className="text-sm font-mono font-bold">{remaining.toFixed(2)} kg</p>
                 </div>
               </div>
 
               {lots.length === 0 ? (
-                <div className="flex items-center gap-2 text-amber-700 text-[10px] font-bold bg-amber-50 border border-amber-200 px-3 py-2">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-2">
                   <PackageSearch className="size-3.5 shrink-0" />
                   Sin lotes disponibles con calidad APROBADA
                 </div>
@@ -133,14 +133,14 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
                       <div key={idx} className="grid grid-cols-[1fr_120px_auto] gap-2 items-end">
                         <div>
                           {idx === 0 && (
-                            <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                            <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                               Lote
                             </label>
                           )}
                           <select
                             value={alloc.inventory_id}
                             onChange={e => updateAlloc(item.id, idx, { inventory_id: Number(e.target.value) })}
-                            className="w-full h-8 px-2 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-[11px] outline-none focus:border-[#1A1A1A]/40"
+                            className="w-full h-8 px-2 border border-foreground/20 bg-card text-[11px] outline-none focus:border-foreground/50"
                           >
                             <option value={0}>Seleccionar lote…</option>
                             {lots.map(l => (
@@ -151,7 +151,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
                             ))}
                           </select>
                           {selectedLot && (
-                            <p className="text-[9px] text-[#5f5e59] mt-0.5">
+                            <p className="text-[9px] text-muted-foreground mt-0.5">
                               Disponible: {selectedLot.remaining_kg.toFixed(2)} kg
                             </p>
                           )}
@@ -159,7 +159,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
 
                         <div>
                           {idx === 0 && (
-                            <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                            <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                               Kg a entregar
                             </label>
                           )}
@@ -170,7 +170,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
                             value={alloc.kg_delivered}
                             onChange={e => updateAlloc(item.id, idx, { kg_delivered: e.target.value })}
                             placeholder="0.00"
-                            className="w-full h-8 px-2 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-[11px] outline-none focus:border-[#1A1A1A]/40 font-mono"
+                            className="w-full h-8 px-2 border border-foreground/20 bg-card text-[11px] outline-none focus:border-foreground/50 font-mono"
                           />
                         </div>
 
@@ -179,7 +179,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
                             <button
                               type="button"
                               onClick={() => removeAlloc(item.id, idx)}
-                              className="h-8 px-2 text-[#5f5e59] hover:text-red-600 transition-colors border border-[#1A1A1A]/20"
+                              className="h-8 px-2 text-muted-foreground hover:text-red-600 transition-colors border border-border"
                             >
                               ×
                             </button>
@@ -195,13 +195,13 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
                 <button
                   type="button"
                   onClick={() => addAlloc(item.id)}
-                  className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
                 >
                   + Otro lote
                 </button>
                 <div className={cn(
                   'text-[10px] font-bold uppercase tracking-widest',
-                  overAlloc ? 'text-red-600' : 'text-[#5f5e59]',
+                  overAlloc ? 'text-red-600' : 'text-muted-foreground',
                 )}>
                   Asignado: {allocated.toFixed(2)} / {remaining.toFixed(2)} kg
                   {overAlloc && <span className="ml-1">(excede lo solicitado)</span>}
@@ -212,17 +212,17 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
         })}
       </div>
 
-      <div className="px-6 py-4 border-t border-[#1A1A1A]/10 flex items-center justify-between">
+      <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
         <button
           onClick={onClose}
-          className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A]"
+          className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
         >
           Cancelar
         </button>
         <button
           disabled={submitting}
           onClick={handleSubmit}
-          className="flex items-center gap-2 px-5 py-2 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 disabled:opacity-40"
+          className="flex items-center gap-2 px-5 py-2 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 disabled:opacity-40"
         >
           {submitting ? 'Registrando…' : 'Registrar surtido'}
         </button>
@@ -288,7 +288,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
   }
 
   if (lotsQuery.isLoading) {
-    return <div className="py-12 text-center text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Cargando bobinas…</div>
+    return <div className="py-12 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cargando bobinas…</div>
   }
 
   return (
@@ -305,36 +305,36 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
           const widthOk  = !selLot || delWid <= selLot.initial_width_m
 
           return (
-            <div key={item.id} className="border border-[#1A1A1A]/15 bg-[#E5E1D8]/10 p-4 space-y-3">
+            <div key={item.id} className="border border-border bg-muted/10 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-[#1A1A1A]">{item.paper_catalog?.name}</p>
-                  <p className="text-[10px] font-mono text-[#5f5e59]">{item.paper_catalog?.code}</p>
+                  <p className="text-sm font-bold">{item.paper_catalog?.name}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground">{item.paper_catalog?.code}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Por surtir</p>
-                  <p className="text-sm font-mono font-bold text-[#1A1A1A]">{m2Remain.toFixed(3)} m²</p>
-                  <p className="text-[9px] text-[#5f5e59]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Por surtir</p>
+                  <p className="text-sm font-mono font-bold">{m2Remain.toFixed(3)} m²</p>
+                  <p className="text-[9px] text-muted-foreground">
                     {item.length_m_requested.toFixed(3)} × {item.width_m_requested.toFixed(3)} m
                   </p>
                 </div>
               </div>
 
               {lots.length === 0 ? (
-                <div className="flex items-center gap-2 text-amber-700 text-[10px] font-bold bg-amber-50 border border-amber-200 px-3 py-2">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-2">
                   <PackageSearch className="size-3.5 shrink-0" />
                   Sin bobinas disponibles con calidad APROBADA
                 </div>
               ) : (
                 <>
                   <div>
-                    <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                       Bobina
                     </label>
                     <select
                       value={alloc?.inventory_id ?? 0}
                       onChange={e => updateAlloc(item.id, { inventory_id: Number(e.target.value) })}
-                      className="w-full h-8 px-2 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-[11px] outline-none focus:border-[#1A1A1A]/40"
+                      className="w-full h-8 px-2 border border-foreground/20 bg-card text-[11px] outline-none focus:border-foreground/50"
                     >
                       <option value={0}>Seleccionar bobina…</option>
                       {lots.map(l => (
@@ -349,7 +349,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                      <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                         Largo (m)
                       </label>
                       <input
@@ -358,16 +358,16 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
                         step={0.001}
                         value={alloc?.length_m ?? ''}
                         onChange={e => updateAlloc(item.id, { length_m: e.target.value })}
-                        className="w-full h-8 px-2 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-[11px] outline-none focus:border-[#1A1A1A]/40 font-mono"
+                        className="w-full h-8 px-2 border border-foreground/20 bg-card text-[11px] outline-none focus:border-foreground/50 font-mono"
                       />
                       {selLot && (
-                        <p className="text-[9px] text-[#5f5e59] mt-0.5">
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
                           Disp: {selLot.remaining_length_m.toFixed(3)} m
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                      <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                         Ancho (m)
                       </label>
                       <input
@@ -377,21 +377,21 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
                         value={alloc?.width_m ?? ''}
                         onChange={e => updateAlloc(item.id, { width_m: e.target.value })}
                         className={cn(
-                          'w-full h-8 px-2 border bg-[#fdf9f0] text-[11px] outline-none transition-colors font-mono',
-                          !widthOk ? 'border-red-400' : 'border-[#1A1A1A]/20 focus:border-[#1A1A1A]/40',
+                          'w-full h-8 px-2 border bg-card text-[11px] outline-none transition-colors font-mono',
+                          !widthOk ? 'border-red-400' : 'border-foreground/20 focus:border-foreground/50',
                         )}
                       />
                       {selLot && (
-                        <p className="text-[9px] text-[#5f5e59] mt-0.5">
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
                           Ancho bobina: {selLot.initial_width_m.toFixed(3)} m
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1">
+                      <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                         M² a entregar
                       </label>
-                      <div className="h-8 px-2 border border-[#1A1A1A]/10 bg-[#E5E1D8]/40 flex items-center text-[11px] font-mono font-bold">
+                      <div className="h-8 px-2 border border-border/50 bg-muted/40 flex items-center text-[11px] font-mono font-bold">
                         {delM2 > 0 ? delM2.toFixed(3) : '—'}
                       </div>
                     </div>
@@ -409,17 +409,17 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
         })}
       </div>
 
-      <div className="px-6 py-4 border-t border-[#1A1A1A]/10 flex items-center justify-between">
+      <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
         <button
           onClick={onClose}
-          className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A]"
+          className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
         >
           Cancelar
         </button>
         <button
           disabled={submitting}
           onClick={handleSubmit}
-          className="flex items-center gap-2 px-5 py-2 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 disabled:opacity-40"
+          className="flex items-center gap-2 px-5 py-2 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 disabled:opacity-40"
         >
           {submitting ? 'Registrando…' : 'Registrar surtido'}
         </button>
@@ -433,12 +433,12 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 export function FulfillForm({ open, onClose, requisition }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-2xl bg-[#F5F2EA] border border-[#1A1A1A]/20 p-0 gap-0">
-        <DialogHeader className="px-6 py-5 border-b border-[#1A1A1A]/10">
-          <DialogTitle className="font-heading text-lg font-bold tracking-tight text-[#1A1A1A]">
+      <DialogContent className="max-w-2xl bg-background border border-border p-0 gap-0">
+        <DialogHeader className="px-6 py-5 border-b border-border/50">
+          <DialogTitle className="font-heading text-lg font-bold tracking-tight">
             Surtir requisición #{requisition.requisition_number}
           </DialogTitle>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
             {requisition.production_order}
           </p>
         </DialogHeader>

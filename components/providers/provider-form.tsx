@@ -35,7 +35,7 @@ type Props = {
 }
 
 export function ProviderForm({ open, onClose, provider, mode: initialMode = 'create', canEdit = false }: Props) {
-  const [mode, setMode] = useState<DrawerMode>(initialMode)
+  const [mode, setMode]           = useState<DrawerMode>(initialMode)
   const [uploading, setUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -52,11 +52,10 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
     defaultValues: { provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null },
   })
 
-  const lat = watch('latitude')
-  const lng = watch('longitude')
+  const lat    = watch('latitude')
+  const lng    = watch('longitude')
   const logoUrl = watch('logo_url')
 
-  // Sync mode and form when drawer opens
   useEffect(() => {
     if (!open) {
       reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null })
@@ -66,16 +65,16 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
     setMode(initialMode)
     if (provider) {
       reset({
-        name: provider.name,
-        email: provider.email,
-        phone: provider.phone,
-        whatsapp: provider.whatsapp ?? undefined,
-        address: provider.address,
+        name:           provider.name,
+        email:          provider.email,
+        phone:          provider.phone,
+        whatsapp:       provider.whatsapp ?? undefined,
+        address:        provider.address,
         contact_person: provider.contact_person ?? undefined,
-        provider_type: provider.provider_type,
-        logo_url: provider.logo_url ?? undefined,
-        latitude: provider.latitude,
-        longitude: provider.longitude,
+        provider_type:  provider.provider_type,
+        logo_url:       provider.logo_url ?? undefined,
+        latitude:       provider.latitude,
+        longitude:      provider.longitude,
       })
       setLogoPreview(provider.logo_url)
     } else {
@@ -88,7 +87,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const ext = file.name.split('.').pop()
+    const ext  = file.name.split('.').pop()
     const path = `providers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const supabase = createClient()
     const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true })
@@ -114,21 +113,19 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 
   function handleCancel() {
     if (mode === 'edit' && initialMode === 'view') {
-      // Came from view → go back to view
       setMode('view')
-      // Restore original values
       if (provider) {
         reset({
-          name: provider.name,
-          email: provider.email,
-          phone: provider.phone,
-          whatsapp: provider.whatsapp ?? undefined,
-          address: provider.address,
+          name:           provider.name,
+          email:          provider.email,
+          phone:          provider.phone,
+          whatsapp:       provider.whatsapp ?? undefined,
+          address:        provider.address,
           contact_person: provider.contact_person ?? undefined,
-          provider_type: provider.provider_type,
-          logo_url: provider.logo_url ?? undefined,
-          latitude: provider.latitude,
-          longitude: provider.longitude,
+          provider_type:  provider.provider_type,
+          logo_url:       provider.logo_url ?? undefined,
+          latitude:       provider.latitude,
+          longitude:      provider.longitude,
         })
         setLogoPreview(provider.logo_url)
       }
@@ -143,21 +140,21 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-lg bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
+      <div className="relative ml-auto h-full w-full max-w-lg bg-background border-l border-border flex flex-col overflow-hidden">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A]/15 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold tracking-tight">
               {mode === 'create' ? 'Nuevo Proveedor' : mode === 'view' ? 'Detalle del proveedor' : 'Editar proveedor'}
             </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               {provider ? provider.name : 'Completa los datos'}
             </p>
           </div>
-          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors">
+          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-muted transition-colors">
             <X className="size-4" />
           </button>
         </div>
@@ -165,18 +162,17 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
         {/* ── VIEW MODE ── */}
         {mode === 'view' && provider && (
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-            {/* Logo + name + badges */}
             <div className="flex items-start gap-4">
               {provider.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={provider.logo_url}
                   alt={provider.name}
-                  className="size-16 object-contain border border-[#1A1A1A]/15 bg-white shrink-0"
+                  className="size-16 object-contain border border-border bg-white shrink-0"
                 />
               ) : (
-                <div className="size-16 shrink-0 bg-[#E5E1D8] border border-[#1A1A1A]/10 flex items-center justify-center">
-                  <span className="font-heading font-bold text-2xl text-[#1A1A1A]/30">
+                <div className="size-16 shrink-0 bg-muted border border-border flex items-center justify-center">
+                  <span className="font-heading font-bold text-2xl text-foreground/30">
                     {provider.name.charAt(0)}
                   </span>
                 </div>
@@ -198,7 +194,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                     className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border ${
                       provider.enabled
                         ? 'text-[#008dc2] border-[#008dc2]/30'
-                        : 'text-[#5f5e59] border-[#5f5e59]/30'
+                        : 'text-muted-foreground border-border'
                     }`}
                   >
                     {provider.enabled ? 'Activo' : 'Inactivo'}
@@ -208,19 +204,19 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
             </div>
 
             {/* Contacto */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/40">
                 Contacto
               </p>
               <div className="px-4 py-3 space-y-3">
                 {provider.contact_person && (
-                  <p className="text-sm font-medium text-[#1A1A1A]">{provider.contact_person}</p>
+                  <p className="text-sm font-medium text-foreground">{provider.contact_person}</p>
                 )}
-                <a href={`mailto:${provider.email}`} className="flex items-center gap-2.5 text-sm text-[#5f5e59] hover:text-[#1A1A1A] transition-colors">
+                <a href={`mailto:${provider.email}`} className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Mail className="size-3.5 shrink-0" />
                   {provider.email}
                 </a>
-                <a href={`tel:${provider.phone}`} className="flex items-center gap-2.5 text-sm text-[#5f5e59] hover:text-[#1A1A1A] transition-colors">
+                <a href={`tel:${provider.phone}`} className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Phone className="size-3.5 shrink-0" />
                   {provider.phone}
                 </a>
@@ -229,7 +225,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                     href={`https://wa.me/${provider.whatsapp.replace(/\D/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 text-sm text-[#5f5e59] hover:text-[#25D366] transition-colors"
+                    className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-[#25D366] transition-colors"
                   >
                     <MessageCircle className="size-3.5 shrink-0" />
                     {provider.whatsapp}
@@ -239,20 +235,20 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
             </div>
 
             {/* Dirección */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border bg-muted/40">
                 Dirección
               </p>
-              <p className="px-4 py-3 text-sm text-[#1A1A1A]">{provider.address}</p>
+              <p className="px-4 py-3 text-sm text-foreground">{provider.address}</p>
             </div>
 
             {/* Mapa */}
             {provider.latitude !== null && provider.longitude !== null && (
-              <div className="border border-[#1A1A1A]/10">
-                <div className="px-4 py-2 flex items-center justify-between border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+              <div className="border border-border">
+                <div className="px-4 py-2 flex items-center justify-between border-b border-border bg-muted/40">
                   <div className="flex items-center gap-3">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Ubicación</p>
-                    <span className="font-mono text-[9px] text-[#5f5e59]">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Ubicación</p>
+                    <span className="font-mono text-[9px] text-muted-foreground">
                       {provider.latitude.toFixed(6)}, {provider.longitude.toFixed(6)}
                     </span>
                   </div>
@@ -276,7 +272,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
             )}
 
             {provider.latitude === null && (
-              <div className="flex items-center gap-2 text-[#5f5e59]/60">
+              <div className="flex items-center gap-2 text-muted-foreground/60">
                 <MapPin className="size-3.5" />
                 <p className="text-[11px]">Sin ubicación registrada</p>
               </div>
@@ -289,21 +285,21 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
             {/* Logo */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">Logo</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Logo</p>
               <div className="flex items-center gap-3">
                 {(logoPreview || logoUrl) ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={(logoPreview || logoUrl)!} alt="logo" className="size-14 object-contain border border-[#1A1A1A]/15 bg-white" />
+                  <img src={(logoPreview || logoUrl)!} alt="logo" className="size-14 object-contain border border-border bg-white" />
                 ) : (
-                  <div className="size-14 border border-dashed border-[#1A1A1A]/25 bg-[#E5E1D8] flex items-center justify-center">
-                    <Upload className="size-5 text-[#1A1A1A]/30" />
+                  <div className="size-14 border border-dashed border-border bg-muted flex items-center justify-center">
+                    <Upload className="size-5 text-foreground/30" />
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="px-4 py-2 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {uploading && <Loader2 className="size-3 animate-spin" />}
                   {uploading ? 'Subiendo...' : 'Subir imagen'}
@@ -314,12 +310,12 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 
             {/* Tipo */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">
                 Tipo de proveedor
               </label>
               <select
                 {...register('provider_type')}
-                className="w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40"
+                className="w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50"
               >
                 {TYPE_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -354,11 +350,11 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 
             {/* Mapa */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
                 Ubicación — click o arrastra el marcador
               </p>
               {lat !== null && lng !== null && (
-                <p className="text-[10px] font-mono text-[#5f5e59] mb-1.5">
+                <p className="text-[10px] font-mono text-muted-foreground mb-1.5">
                   {lat?.toFixed(6)}, {lng?.toFixed(6)}
                 </p>
               )}
@@ -372,13 +368,13 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
         )}
 
         {/* ── Footer ── */}
-        <div className="px-6 py-4 border-t border-[#1A1A1A]/15 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-border flex gap-3 shrink-0">
           {mode === 'view' ? (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cerrar
               </button>
@@ -386,7 +382,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                 <button
                   type="button"
                   onClick={() => setMode('edit')}
-                  className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
                 >
                   <Pencil className="size-3" />
                   Editar
@@ -398,7 +394,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cancelar
               </button>
@@ -406,7 +402,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                 type="button"
                 onClick={handleSubmit(onSubmit)}
                 disabled={isSubmitting || uploading}
-                className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {isSubmitting && <Loader2 className="size-3 animate-spin" />}
                 {isSubmitting ? 'Guardando...' : mode === 'edit' ? 'Actualizar' : 'Crear proveedor'}
@@ -420,12 +416,12 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 }
 
 const inputCls =
-  'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">{label}</label>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">{label}</label>
       {children}
       {error && <p className="text-[10px] text-destructive mt-1">{error}</p>}
     </div>

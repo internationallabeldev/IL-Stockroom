@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { logoutAction } from '@/actions/auth.actions'
@@ -39,7 +40,7 @@ const I = {
   receipts: { kind: 'material' as const, base: '/dashboard/receipts', label: 'Recepciones', icon: ClipboardCheck },
   orders: { kind: 'material' as const, base: '/dashboard/orders', label: 'Órdenes', icon: ShoppingCart },
   catalog:          { kind: 'material' as const, base: '/dashboard/catalog',          label: 'Catálogo',          icon: BookOpen  },
-  historialSalidas: { kind: 'static'   as const, href: '/dashboard/historial-salidas', label: 'Salidas',           icon: History   },
+  outputsHistory:   { kind: 'static'   as const, href: '/dashboard/outputs/history',   label: 'Salidas',           icon: History   },
 }
 
 // ── Sections per role ─────────────────────────────────────────────────────────
@@ -48,13 +49,13 @@ const NAV_SECTIONS: Record<Role, NavSection[]> = {
   ADMIN: [
     { label: 'General', items: [I.dashboard, I.providers] },
     { label: 'Inventario', items: [I.inventory, I.complement, I.catalog] },
-    { label: 'Flujo', items: [I.requisitions, I.receipts, I.orders, I.historialSalidas] },
+    { label: 'Flujo', items: [I.requisitions, I.receipts, I.orders, I.outputsHistory] },
     { label: 'Sistema', items: [I.users, I.settings, I.audit] },
   ],
   WAREHOUSE_MANAGER: [
     { label: 'General', items: [I.dashboard] },
     { label: 'Inventario', items: [I.inventory, I.complement, I.catalog] },
-    { label: 'Flujo', items: [I.requisitions, I.receipts, I.historialSalidas] },
+    { label: 'Flujo', items: [I.requisitions, I.receipts, I.outputsHistory] },
     { label: 'Sistema', items: [I.audit] },
   ],
   PURCHASER: [
@@ -63,7 +64,7 @@ const NAV_SECTIONS: Record<Role, NavSection[]> = {
   ],
   PRODUCER: [
     { label: 'General', items: [I.dashboard] },
-    { label: 'Operaciones', items: [I.requisitions, I.inventory, I.historialSalidas] },
+    { label: 'Operaciones', items: [I.requisitions, I.inventory, I.outputsHistory] },
   ],
   USER: [
     { label: 'General', items: [I.dashboard] },
@@ -81,8 +82,8 @@ function NavLink({
   const cls = cn(
     'transition-colors duration-150',
     isActive
-      ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-      : 'text-[#1A1A1A]/60 hover:bg-[#D1CDC1] hover:text-[#1A1A1A]'
+      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
   )
 
   if (!expanded) {
@@ -139,7 +140,7 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
     <TooltipProvider>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen bg-[#E5E1D8] border-r border-[#1A1A1A]/15 flex flex-col pt-18 pb-8',
+          'fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border flex flex-col pt-18 pb-8',
           'transition-[width] duration-300 ease-in-out overflow-x-hidden',
           expanded ? 'w-64' : 'w-16'
         )}
@@ -149,17 +150,18 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
 
         {/* ── Header ──────────────────────────────────────────────────────────── */}
         <div className={cn(
-          'shrink-0 border-b border-[#1A1A1A]/10',
+          'shrink-0 border-b border-sidebar-border',
           expanded ? 'px-6 py-5' : 'px-2 py-4 flex justify-center'
         )}>
           {expanded ? (
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 whitespace-nowrap">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/50 whitespace-nowrap">
               Operaciones
             </h2>
           ) : (
-            <div className="size-8 bg-[#1A1A1A] flex items-center justify-center shrink-0">
-              <span className="font-heading text-[9px] font-black text-[#F5F2EA] tracking-tight">IL</span>
-            </div>
+            <>
+              <Image src="/logo.svg" alt="IL" width={32} height={32} className="shrink-0 dark:hidden" />
+              <Image src="/LogoDark.svg" alt="IL" width={32} height={32} className="shrink-0 hidden dark:block" />
+            </>
           )}
         </div>
 
@@ -189,14 +191,14 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
 
         {/* ── Bottom ──────────────────────────────────────────────────────────── */}
         <div className={cn(
-          'shrink-0 pt-4 border-t border-[#1A1A1A]/10',
+          'shrink-0 pt-4 border-t border-sidebar-border',
           expanded ? 'px-6 space-y-3' : 'px-2 space-y-1'
         )}>
           <form action={logoutAction}>
             {expanded ? (
               <button
                 type="submit"
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
               >
                 <LogOut className="size-3 shrink-0" />
                 Cerrar sesión
@@ -206,7 +208,7 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
                 <TooltipTrigger asChild>
                   <button
                     type="submit"
-                    className="flex justify-center items-center h-8 w-full text-[#1A1A1A]/40 hover:bg-[#D1CDC1] hover:text-[#1A1A1A] transition-colors"
+                    className="flex justify-center items-center h-8 w-full text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
                   >
                     <LogOut className="size-3 shrink-0" />
                   </button>

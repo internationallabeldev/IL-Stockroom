@@ -19,11 +19,11 @@ export function LotProgressBar({ initial, used, unit = 'kg' }: Props) {
 
   return (
     <div className="space-y-1 min-w-28">
-      <div className="flex items-center justify-between text-[10px] font-mono text-[#5f5e59]">
+      <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
         <span>{remaining.toFixed(1)} {unit}</span>
         <span>{(pct * 100).toFixed(0)}%</span>
       </div>
-      <div className="h-1.5 bg-[#E5E1D8] overflow-hidden">
+      <div className="h-1.5 bg-muted overflow-hidden">
         <div className={cn('h-full transition-all', color)} style={{ width: `${pct * 100}%` }} />
       </div>
     </div>

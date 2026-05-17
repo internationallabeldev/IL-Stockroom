@@ -3,7 +3,7 @@
 import { type DeliveryAddress, MEXICAN_STATES } from '@/lib/validations/purchase-order.schema'
 
 const BASE_CLS =
-  'w-full h-9 border border-[#1A1A1A]/20 px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+  'w-full h-9 border border-foreground/20 px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 type Props = {
   address: DeliveryAddress
@@ -18,12 +18,12 @@ export function DeliveryAddressFields({
   onChange,
   error,
   required = false,
-  bg = 'bg-[#fdf9f0]',
+  bg = 'bg-card',
 }: Props) {
   const cls = `${BASE_CLS} ${bg}`
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
         Dirección de entrega{required ? ' *' : ''}
       </p>
       {error && <p className="text-[10px] text-destructive mb-1">{error}</p>}

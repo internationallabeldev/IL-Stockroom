@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { QueryProvider } from "./query-provider";
+import { QueryProvider } from "./query-provider"
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -42,16 +43,17 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        <ThemeProvider>
         <QueryProvider>
           {children}
           <Toaster
             position="bottom-right"
             toastOptions={{
               classNames: {
-                toast:       '!bg-[#F5F2EA] !border !border-[#1A1A1A]/20 !rounded-none !shadow-none font-sans',
-                title:       '!text-[10px] !font-bold !uppercase !tracking-widest !text-[#1A1A1A]',
-                description: '!text-[10px] !text-[#5f5e59] !font-normal',
-                icon:        '!text-[#1A1A1A]/50',
+                toast:       '!bg-card !border !border-border !rounded-none !shadow-none font-sans',
+                title:       '!text-[10px] !font-bold !uppercase !tracking-widest !text-foreground',
+                description: '!text-[10px] !text-muted-foreground !font-normal',
+                icon:        '!text-foreground/50',
                 success:     '!border-l-2 !border-l-green-600',
                 error:       '!border-l-2 !border-l-red-600',
                 warning:     '!border-l-2 !border-l-yellow-500',
@@ -60,6 +62,7 @@ export default function RootLayout({
             }}
           />
         </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
