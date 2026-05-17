@@ -1,8 +1,9 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
+import { createAdminClient }  from '@/lib/supabase/admin'
+import { getSessionUser }     from './auth.actions'
+import { revalidatePath }     from 'next/cache'
+import { setAuditUser }       from '@/lib/supabase/audit'
 import {
   createPurchaseOrderSchema,
   updatePurchaseOrderSchema,
@@ -98,6 +99,7 @@ export async function createPurchaseOrder(
 
   const { ink_items, paper_items, ...header } = parsed.data
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // Derive next order_number from current max
   const { data: last } = await supabase
@@ -171,6 +173,7 @@ export async function updatePurchaseOrder(
 
   const { ink_items, paper_items, ...headerFields } = parsed.data
 
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('purchase_orders')
     .update({ ...headerFields, updated_at: new Date().toISOString() })
@@ -220,6 +223,7 @@ export async function cancelPurchaseOrder(
   if (!current) return { error: 'Orden no encontrada' }
   if (current.status !== 'PENDING') return { error: 'Solo se pueden cancelar órdenes en estado PENDIENTE' }
 
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('purchase_orders')
     .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })

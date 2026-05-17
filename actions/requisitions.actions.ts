@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
+import { setAuditUser }      from '@/lib/supabase/audit'
 import {
   createInkRequisitionSchema,
   createPaperRequisitionSchema,
@@ -346,6 +347,7 @@ export async function createInkRequisition(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { count } = await (supabase as any)
@@ -392,6 +394,7 @@ export async function createPaperRequisition(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { count } = await (supabase as any)
@@ -446,6 +449,7 @@ export async function approveRequisition(
 
   if (req?.status !== 'PENDING') return { error: 'Solo se pueden aprobar requisiciones pendientes' }
 
+  await setAuditUser(supabase, user.id)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('production_requisitions')
@@ -481,6 +485,7 @@ export async function rejectRequisition(
 
   if (req?.status !== 'PENDING') return { error: 'Solo se pueden rechazar requisiciones pendientes' }
 
+  await setAuditUser(supabase, user.id)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('production_requisitions')
@@ -517,6 +522,7 @@ export async function fulfillInkRequisition(
   if (!req) return { error: 'Requisición no encontrada' }
   if (!['APPROVED', 'PARTIAL'].includes(req.status)) return { error: 'La requisición debe estar aprobada o parcial' }
 
+  await setAuditUser(supabase, user.id)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: outErr } = await (supabase as any)
     .from('ink_outputs')
@@ -601,6 +607,7 @@ export async function fulfillPaperRequisition(
   if (!req) return { error: 'Requisición no encontrada' }
   if (!['APPROVED', 'PARTIAL'].includes(req.status)) return { error: 'La requisición debe estar aprobada o parcial' }
 
+  await setAuditUser(supabase, user.id)
   // Pre-fetch lot catalog IDs
   const { data: origLots } = await (supabase as any)
     .from('paper_inventory')
@@ -681,6 +688,7 @@ export async function registerInkReturn(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
@@ -701,6 +709,7 @@ export async function registerPaperReturn(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)

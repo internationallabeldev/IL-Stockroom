@@ -1,9 +1,10 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
-import type { Database } from '@/types/database.types'
+import { getSessionUser }    from './auth.actions'
+import { revalidatePath }    from 'next/cache'
+import { setAuditUser }      from '@/lib/supabase/audit'
+import type { Database }     from '@/types/database.types'
 
 type InkInventoryRow = Database['public']['Tables']['ink_inventory']['Row']
 type InkCatalogRow   = Database['public']['Tables']['ink_catalog']['Row']
@@ -106,6 +107,7 @@ export async function updateLotLocation(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('ink_inventory')
     .update({ location: location.trim() || null, updated_at: new Date().toISOString() })
@@ -123,6 +125,7 @@ export async function disableLot(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('ink_inventory')
     .update({ enabled: false, updated_at: new Date().toISOString() })

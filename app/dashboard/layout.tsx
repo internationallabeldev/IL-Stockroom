@@ -14,14 +14,12 @@ export default async function DashboardLayout({
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const displayName = user.email ?? 'Operador'
-
   return (
     <MaterialProvider>
       <SidebarProvider>
         <div className="min-h-screen bg-background">
-          <TopNav userName={displayName} />
-          <SidebarNav role={user.role} />
+          <TopNav user={user} />
+          <SidebarNav user={user} />
           <DashboardShell>{children}</DashboardShell>
           <StatusBar />
         </div>

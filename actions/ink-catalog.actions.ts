@@ -1,10 +1,11 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
-import { inkCatalogSchema } from '@/lib/validations/ink-catalog.schema'
-import type { Database } from '@/types/database.types'
+import { getSessionUser }    from './auth.actions'
+import { revalidatePath }    from 'next/cache'
+import { inkCatalogSchema }  from '@/lib/validations/ink-catalog.schema'
+import { setAuditUser }      from '@/lib/supabase/audit'
+import type { Database }     from '@/types/database.types'
 
 export type InkCatalogItem = Database['public']['Tables']['ink_catalog']['Row']
 type InkInsert = Database['public']['Tables']['ink_catalog']['Insert']
@@ -33,6 +34,7 @@ export async function createInkCatalogItem(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase.from('ink_catalog').insert(parsed.data as InkInsert)
   if (error) return { error: error.message }
 
@@ -51,6 +53,7 @@ export async function updateInkCatalogItem(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const update: InkUpdate = { ...parsed.data, updated_at: new Date().toISOString() }
   const { error } = await supabase.from('ink_catalog').update(update).eq('id', id)
   if (error) return { error: error.message }
@@ -67,6 +70,7 @@ export async function toggleInkCatalogStatus(
 
   const supabase = createAdminClient()
   const { data } = await supabase.from('ink_catalog').select('enabled').eq('id', id).single()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('ink_catalog')
     .update({ enabled: !data?.enabled, updated_at: new Date().toISOString() })

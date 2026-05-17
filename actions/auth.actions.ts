@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { z } from 'zod'
 
 const loginSchema = z.object({
@@ -26,9 +27,20 @@ export async function loginAction(formData: FormData) {
   if (error) return { error: 'Credenciales incorrectas' }
   const { data: profile } = await supabase
     .from('users')
-    .select('role')
+    .select('role, theme')
     .eq('id', user!.id)
     .single()
+
+  const theme = (profile as { theme?: string | null })?.theme
+  if (theme === 'light' || theme === 'dark') {
+    const cookieStore = await cookies()
+    cookieStore.set('preferred-theme', theme, {
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      path: '/',
+    })
+  }
 
   const roleRedirects: Record<string, string> = {
     ADMIN:             '/dashboard',

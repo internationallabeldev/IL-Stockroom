@@ -1,12 +1,16 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient }    from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
+import { getSessionUser }   from './auth.actions'
+import { revalidatePath }   from 'next/cache'
+import { cookies }          from 'next/headers'
+import { setAuditUser }     from '@/lib/supabase/audit'
 import {
   inviteUserSchema,
   updateProfileSchema,
+  updateOwnProfileSchema,
+  notificationPreferencesSchema,
 } from '@/lib/validations/user.schema'
 import type { Database } from '@/types/database.types'
 
@@ -94,6 +98,7 @@ export async function updateUserRole(
   if (currentUser.id === id) return { error: 'No puedes cambiar tu propio rol' }
 
   const admin = createAdminClient()
+  await setAuditUser(admin, currentUser.id)
   const { error } = await admin
     .from('users')
     .update({ role, updated_at: new Date().toISOString() })
@@ -116,6 +121,7 @@ export async function updateUserProfile(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const admin = createAdminClient()
+  await setAuditUser(admin, currentUser.id)
   const { error } = await admin
     .from('users')
     .update({
@@ -138,6 +144,7 @@ export async function disableUser(id: string): Promise<{ success?: boolean; erro
   if (currentUser.id === id) return { error: 'No puedes desactivarte a ti mismo' }
 
   const admin = createAdminClient()
+  await setAuditUser(admin, currentUser.id)
 
   const { error: dbError } = await admin
     .from('users')
@@ -159,6 +166,7 @@ export async function enableUser(id: string): Promise<{ success?: boolean; error
   if (!currentUser || currentUser.role !== 'ADMIN') return { error: 'Sin permisos' }
 
   const admin = createAdminClient()
+  await setAuditUser(admin, currentUser.id)
 
   const { error: dbError } = await admin
     .from('users')
@@ -217,44 +225,107 @@ export async function updateOwnPassword(
   return { success: true }
 }
 
-export async function updateOwnProfile(
-  formData: FormData
-): Promise<{ success?: boolean; error?: string }> {
+export async function updateOwnProfile(data: {
+  nickname?:  string | null
+  phone?:     string | null
+  job_title?: string | null
+}): Promise<{ success?: boolean; error?: string }> {
   const currentUser = await getSessionUser()
   if (!currentUser) return { error: 'Sin permisos' }
 
-  const parsed = updateProfileSchema.safeParse({
-    first_name: formData.get('first_name'),
-    last_name: formData.get('last_name'),
-    phone: formData.get('phone') || null,
-  })
+  const parsed = updateOwnProfileSchema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const admin = createAdminClient()
-
-  let avatar_url: string | undefined
-  const file = formData.get('avatar') as File | null
-  if (file && file.size > 0) {
-    const ext = file.name.split('.').pop()
-    const path = `${currentUser.id}/avatar.${ext}`
-    const { error: uploadError } = await admin.storage
-      .from('avatars')
-      .upload(path, file, { upsert: true })
-    if (uploadError) return { error: uploadError.message }
-    const { data: urlData } = admin.storage.from('avatars').getPublicUrl(path)
-    avatar_url = urlData.publicUrl
-  }
+  await setAuditUser(admin, currentUser.id)
 
   const { error } = await admin.from('users').update({
-    first_name: parsed.data.first_name,
-    last_name: parsed.data.last_name,
-    phone: parsed.data.phone ?? null,
+    nickname:  parsed.data.nickname  ?? null,
+    phone:     parsed.data.phone     ?? null,
+    job_title: parsed.data.job_title ?? null,
     updated_at: new Date().toISOString(),
-    ...(avatar_url !== undefined && { avatar_url }),
-  }).eq('id', currentUser.id)
+  } as never).eq('id', currentUser.id)
   if (error) return { error: error.message }
 
   revalidatePath('/dashboard/settings')
   revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function uploadAvatar(
+  formData: FormData
+): Promise<{ success?: boolean; url?: string; error?: string }> {
+  const currentUser = await getSessionUser()
+  if (!currentUser) return { error: 'Sin permisos' }
+
+  const file = formData.get('avatar') as File | null
+  if (!file || file.size === 0) return { error: 'No se recibió archivo' }
+  if (file.size > 2_097_152) return { error: 'Máximo 2 MB' }
+
+  const admin = createAdminClient()
+  const ext  = file.name.split('.').pop() ?? 'jpg'
+  const path = `${currentUser.id}/avatar.${ext}`
+
+  const { error: uploadError } = await admin.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+  if (uploadError) return { error: uploadError.message }
+
+  const { data: urlData } = admin.storage.from('avatars').getPublicUrl(path)
+  const avatar_url = `${urlData.publicUrl}?t=${Date.now()}`
+
+  await setAuditUser(admin, currentUser.id)
+  const { error } = await admin.from('users')
+    .update({ avatar_url, updated_at: new Date().toISOString() })
+    .eq('id', currentUser.id)
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
+  return { success: true, url: avatar_url }
+}
+
+export async function updateNotificationPreferences(
+  prefs: Record<string, boolean>
+): Promise<{ success?: boolean; error?: string }> {
+  const currentUser = await getSessionUser()
+  if (!currentUser) return { error: 'Sin permisos' }
+
+  const parsed = notificationPreferencesSchema.safeParse(prefs)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const admin = createAdminClient()
+  await setAuditUser(admin, currentUser.id)
+  const { error } = await admin.from('users').update({
+    notifications: parsed.data,
+    updated_at: new Date().toISOString(),
+  } as never).eq('id', currentUser.id)
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function updateUserTheme(
+  theme: 'light' | 'dark'
+): Promise<{ success?: boolean; error?: string }> {
+  const currentUser = await getSessionUser()
+  if (!currentUser) return { error: 'Sin permisos' }
+
+  const cookieStore = await cookies()
+  cookieStore.set('preferred-theme', theme, {
+    httpOnly: false,
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+    path: '/',
+  })
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('users').update({
+    theme,
+    updated_at: new Date().toISOString(),
+  } as never).eq('id', currentUser.id)
+  if (error) return { error: error.message }
+
   return { success: true }
 }

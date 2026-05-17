@@ -1,13 +1,17 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
+import { getSessionUser }    from './auth.actions'
+import { revalidatePath }    from 'next/cache'
+import { setAuditUser }      from '@/lib/supabase/audit'
 import {
   createInkReceiptSchema,
   createPaperReceiptSchema,
   updateQualitySchema,
-  updateReceiptAdminSchema,
+  updateInkReceiptAdminSchema,
+  updatePaperReceiptAdminSchema,
+  correctInkLotSchema,
+  correctPaperLotSchema,
 } from '@/lib/validations/receipt.schema'
 import type { Database } from '@/types/database.types'
 import { logger } from '@/lib/logger'
@@ -45,6 +49,9 @@ export type PaperReceiptWithContext = PaperReceiptRow & {
   } | null
 }
 
+export type InkReceiptWithInventory   = InkReceiptRow   & { inventory_id: number | null }
+export type PaperReceiptWithInventory = PaperReceiptRow & { inventory_id: number | null }
+
 export type OrderWithReceipts = {
   id: number
   order_number: number
@@ -62,7 +69,7 @@ export type OrderWithReceipts = {
     is_complete: boolean | null
     item_notes: string | null
     ink_catalog: { id: number; code: string; name: string; color_code: string | null } | null
-    ink_receipts: InkReceiptRow[]
+    ink_receipts: InkReceiptWithInventory[]
   }>
   paper_items: Array<{
     id: number
@@ -76,7 +83,7 @@ export type OrderWithReceipts = {
     is_complete: boolean | null
     item_notes: string | null
     paper_catalog: { id: number; code: string; name: string; material: string | null; weight_gsm: number | null } | null
-    paper_receipts: PaperReceiptRow[]
+    paper_receipts: PaperReceiptWithInventory[]
   }>
 }
 
@@ -220,13 +227,13 @@ export async function getOrderWithReceipts(orderId: number): Promise<OrderWithRe
         id, ink_catalog_id, units_ordered, units_received, kg_per_unit,
         total_kg_ordered, total_kg_received, is_complete, item_notes,
         ink_catalog ( id, code, name, color_code ),
-        ink_receipts (*)
+        ink_receipts (*, ink_inventory:ink_inventory!ink_inventory_receipt_id_fkey(id))
       ),
       paper_items:purchase_order_paper_items (
         id, paper_catalog_id, units_ordered, units_received, length_m_per_unit, width_m,
         total_m2_ordered, total_m2_received, is_complete, item_notes,
         paper_catalog ( id, code, name, material, weight_gsm ),
-        paper_receipts (*)
+        paper_receipts (*, paper_inventory:paper_inventory!paper_inventory_receipt_id_fkey(id))
       )
     `)
     .eq('id', orderId)
@@ -273,6 +280,7 @@ export async function createInkReceipt(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const d = parsed.data
 
   // Check internal_batch uniqueness
@@ -328,6 +336,7 @@ export async function createPaperReceipt(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const d = parsed.data
 
   // Check internal_batch uniqueness
@@ -385,6 +394,17 @@ export async function updateInkReceiptQuality(
 
   const supabase = createAdminClient()
 
+  const { data: current } = await supabase
+    .from('ink_receipts')
+    .select('quality_certificate')
+    .eq('id', receiptId)
+    .single()
+
+  if (current?.quality_certificate !== 'PENDING') {
+    return { error: 'Esta recepción ya fue procesada. No se puede cambiar la decisión de calidad.' }
+  }
+
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('ink_receipts')
     .update({
@@ -417,6 +437,17 @@ export async function updatePaperReceiptQuality(
 
   const supabase = createAdminClient()
 
+  const { data: current } = await supabase
+    .from('paper_receipts')
+    .select('quality_certificate')
+    .eq('id', receiptId)
+    .single()
+
+  if (current?.quality_certificate !== 'PENDING') {
+    return { error: 'Esta recepción ya fue procesada. No se puede cambiar la decisión de calidad.' }
+  }
+
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('paper_receipts')
     .update({
@@ -444,21 +475,40 @@ export async function updateInkReceiptAdmin(
   const user = await getSessionUser()
   if (!user || !CAN_RECEIVE.includes(user.role)) return { error: 'Sin permisos' }
 
-  const parsed = updateReceiptAdminSchema.safeParse(values)
+  const parsed = updateInkReceiptAdminSchema.safeParse(values)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+
+  const { data: current } = await supabase
+    .from('ink_receipts')
+    .select('quality_certificate')
+    .eq('id', receiptId)
+    .single()
+
+  if (!current) return { error: 'Recepción no encontrada' }
+
+  const isPending = current.quality_certificate === 'PENDING'
+
+  const updatePayload: Record<string, unknown> = {
+    receipt_date:      parsed.data.receipt_date,
+    invoice_remission: parsed.data.invoice_remission,
+    provider_batch:    parsed.data.provider_batch,
+    quality_notes:     parsed.data.quality_notes ?? null,
+    certificate_url:   parsed.data.certificate_url ?? null,
+    updated_at:        new Date().toISOString(),
+  }
+
+  if (isPending) {
+    if (parsed.data.internal_batch  !== undefined) updatePayload.internal_batch  = parsed.data.internal_batch
+    if (parsed.data.kg_received     !== undefined) updatePayload.kg_received     = parsed.data.kg_received
+    if (parsed.data.units_received  !== undefined) updatePayload.units_received  = parsed.data.units_received
+  }
+
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('ink_receipts')
-    .update({
-      receipt_date:        parsed.data.receipt_date,
-      invoice_remission:   parsed.data.invoice_remission,
-      provider_batch:      parsed.data.provider_batch,
-      quality_certificate: parsed.data.quality_certificate as QualityCertificate,
-      quality_notes:       parsed.data.quality_notes ?? null,
-      certificate_url:     parsed.data.certificate_url ?? null,
-      updated_at:          new Date().toISOString(),
-    })
+    .update(updatePayload as any)
     .eq('id', receiptId)
 
   if (error) return { error: error.message }
@@ -475,26 +525,131 @@ export async function updatePaperReceiptAdmin(
   const user = await getSessionUser()
   if (!user || !CAN_RECEIVE.includes(user.role)) return { error: 'Sin permisos' }
 
-  const parsed = updateReceiptAdminSchema.safeParse(values)
+  const parsed = updatePaperReceiptAdminSchema.safeParse(values)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+
+  const { data: current } = await supabase
+    .from('paper_receipts')
+    .select('quality_certificate')
+    .eq('id', receiptId)
+    .single()
+
+  if (!current) return { error: 'Recepción no encontrada' }
+
+  const isPending = current.quality_certificate === 'PENDING'
+
+  const updatePayload: Record<string, unknown> = {
+    receipt_date:      parsed.data.receipt_date,
+    invoice_remission: parsed.data.invoice_remission,
+    provider_batch:    parsed.data.provider_batch,
+    quality_notes:     parsed.data.quality_notes ?? null,
+    certificate_url:   parsed.data.certificate_url ?? null,
+    updated_at:        new Date().toISOString(),
+  }
+
+  if (isPending) {
+    if (parsed.data.internal_batch !== undefined) updatePayload.internal_batch = parsed.data.internal_batch
+    if (parsed.data.length_m       !== undefined) updatePayload.length_m       = parsed.data.length_m
+    if (parsed.data.width_m        !== undefined) updatePayload.width_m        = parsed.data.width_m
+    if (parsed.data.units_received !== undefined) updatePayload.units_received = parsed.data.units_received
+  }
+
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('paper_receipts')
-    .update({
-      receipt_date:        parsed.data.receipt_date,
-      invoice_remission:   parsed.data.invoice_remission,
-      provider_batch:      parsed.data.provider_batch,
-      quality_certificate: parsed.data.quality_certificate as QualityCertificate,
-      quality_notes:       parsed.data.quality_notes ?? null,
-      certificate_url:     parsed.data.certificate_url ?? null,
-      updated_at:          new Date().toISOString(),
-    })
+    .update(updatePayload as any)
     .eq('id', receiptId)
 
   if (error) return { error: error.message }
 
   PATHS.forEach(p => revalidatePath(p))
+  revalidatePath('/dashboard/inventory/papers')
+  return { success: true }
+}
+
+// ─── Lot quantity corrections (solo ADMIN) ────────────────────────────────────
+
+export async function correctInkLotQuantity(
+  inventoryId: number,
+  values: unknown
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await getSessionUser()
+  if (!user || user.role !== 'ADMIN') return { error: 'Solo administradores pueden corregir lotes' }
+
+  const parsed = correctInkLotSchema.safeParse(values)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const supabase = createAdminClient()
+
+  const { data: lot } = await supabase
+    .from('ink_inventory')
+    .select('initial_kg, used_kg')
+    .eq('id', inventoryId)
+    .single()
+
+  if (!lot) return { error: 'Lote no encontrado' }
+
+  const used_kg      = lot.used_kg ?? 0
+  const remaining_kg = parsed.data.new_kg - used_kg
+
+  await setAuditUser(supabase, user.id)
+  const { error } = await supabase
+    .from('ink_inventory')
+    .update({
+      initial_kg:   parsed.data.new_kg,
+      remaining_kg: remaining_kg > 0 ? remaining_kg : 0,
+      updated_at:   new Date().toISOString(),
+    })
+    .eq('id', inventoryId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard/inventory/inks')
+  return { success: true }
+}
+
+export async function correctPaperLotQuantity(
+  inventoryId: number,
+  values: unknown
+): Promise<{ success?: boolean; error?: string }> {
+  const user = await getSessionUser()
+  if (!user || user.role !== 'ADMIN') return { error: 'Solo administradores pueden corregir lotes' }
+
+  const parsed = correctPaperLotSchema.safeParse(values)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const supabase = createAdminClient()
+
+  const { data: lot } = await supabase
+    .from('paper_inventory')
+    .select('initial_length_m, initial_width_m, used_m2')
+    .eq('id', inventoryId)
+    .single()
+
+  if (!lot) return { error: 'Lote no encontrado' }
+
+  const new_m2       = parsed.data.new_length_m * parsed.data.new_width_m
+  const used_m2      = lot.used_m2 ?? 0
+  const remaining_m2 = new_m2 - used_m2
+
+  await setAuditUser(supabase, user.id)
+  const { error } = await supabase
+    .from('paper_inventory')
+    .update({
+      initial_length_m:   parsed.data.new_length_m,
+      initial_width_m:    parsed.data.new_width_m,
+      initial_m2:         new_m2,
+      remaining_m2:       remaining_m2 > 0 ? remaining_m2 : 0,
+      remaining_length_m: parsed.data.new_length_m,
+      remaining_width_m:  parsed.data.new_width_m,
+      updated_at:         new Date().toISOString(),
+    })
+    .eq('id', inventoryId)
+
+  if (error) return { error: error.message }
+
   revalidatePath('/dashboard/inventory/papers')
   return { success: true }
 }
