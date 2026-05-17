@@ -43,7 +43,7 @@ export function StockBar({ current, min }: { current: number | null; min: number
   const color = curr === 0 ? 'bg-destructive' : curr < minimum ? 'bg-amber-400' : 'bg-emerald-400'
 
   return (
-    <div className="w-full h-1 bg-[#E5E1D8] overflow-hidden">
+    <div className="w-full h-1 bg-muted overflow-hidden">
       <div className={`h-full transition-all ${color}`} style={{ width: `${pct}%` }} />
     </div>
   )

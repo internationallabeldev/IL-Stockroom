@@ -11,8 +11,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 type Indicator = 'none' | 'minor' | 'major' | 'critical'
 type CompStatus = 'operational' | 'degraded_performance' | 'partial_outage' | 'major_outage' | 'under_maintenance'
 
@@ -23,8 +21,6 @@ interface SupabaseStatusData {
   components:  SupabaseComponent[]
   incidents:   Array<{ name: string; status: string }>
 }
-
-// ── Maps ──────────────────────────────────────────────────────────────────────
 
 const INDICATOR_DOT: Record<Indicator, string> = {
   none:     'bg-green-500',
@@ -58,8 +54,6 @@ const INDICATOR_DESC: Record<Indicator, string> = {
 
 const CORE_SERVICES = ['Database', 'Auth', 'Storage', 'Realtime', 'Edge Functions', 'API']
 
-// ── Uptime ────────────────────────────────────────────────────────────────────
-
 function SystemUptime() {
   const [secs, setSecs] = useState(0)
   useEffect(() => {
@@ -71,8 +65,6 @@ function SystemUptime() {
   const s = String(secs % 60).padStart(2, '0')
   return <span className="font-mono text-[11px] tracking-wider">{h}:{m}:{s}</span>
 }
-
-// ── MetricCard ────────────────────────────────────────────────────────────────
 
 type Accent = 'green' | 'amber' | 'red' | 'neutral'
 
@@ -88,23 +80,23 @@ function MetricCard({ label, value, sub, tooltip, accent, loading }: {
     green:   'text-green-600',
     amber:   'text-yellow-500',
     red:     'text-red-600',
-    neutral: 'text-[#1A1A1A]',
+    neutral: 'text-foreground',
   }
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="bg-[#E5E1D8] px-4 py-3 flex flex-col gap-1 cursor-default select-none">
-          <p className="text-[8px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 leading-none">{label}</p>
+        <div className="bg-muted px-4 py-3 flex flex-col gap-1 cursor-default select-none">
+          <p className="text-[8px] font-bold uppercase tracking-widest text-foreground/40 leading-none">{label}</p>
           {loading ? (
-            <div className="h-7 w-10 bg-[#1A1A1A]/10 animate-pulse mt-0.5" />
+            <div className="h-7 w-10 bg-foreground/10 animate-pulse mt-0.5" />
           ) : (
             <p className={cn('text-2xl font-bold font-mono tracking-tight leading-none mt-0.5', valueColor[accent])}>
               {value}
             </p>
           )}
           {sub && (
-            <p className="text-[8px] text-[#1A1A1A]/40 uppercase tracking-wider leading-none">{sub}</p>
+            <p className="text-[8px] text-foreground/40 uppercase tracking-wider leading-none">{sub}</p>
           )}
         </div>
       </TooltipTrigger>
@@ -114,8 +106,6 @@ function MetricCard({ label, value, sub, tooltip, accent, loading }: {
     </Tooltip>
   )
 }
-
-// ── StatusBar ─────────────────────────────────────────────────────────────────
 
 export function StatusBar() {
   const [time, setTime]               = useState('')
@@ -128,7 +118,6 @@ export function StatusBar() {
   const [stats, setStats]             = useState<SystemStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(false)
 
-  // Clock
   useEffect(() => {
     const update = () => setTime(new Date().toLocaleTimeString('es-MX', { hour12: false }))
     update()
@@ -136,7 +125,6 @@ export function StatusBar() {
     return () => clearInterval(id)
   }, [])
 
-  // Online / offline
   useEffect(() => {
     setIsOnline(navigator.onLine)
     const on  = () => setIsOnline(true)
@@ -146,7 +134,6 @@ export function StatusBar() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
 
-  // Supabase platform status — poll every 60 s
   useEffect(() => {
     async function load() {
       try {
@@ -204,35 +191,32 @@ export function StatusBar() {
   return (
     <TooltipProvider>
       {/* ── Status bar ──────────────────────────────────────────────────────── */}
-      <footer className="fixed bottom-0 left-16 right-0 z-30 h-10 bg-[#fdf9f0] border-t border-[#1A1A1A]/15 px-8 flex items-center justify-between">
+      <footer className="fixed bottom-0 left-16 right-0 z-30 h-10 bg-card border-t border-border px-8 flex items-center justify-between">
         <div className="flex gap-6 items-center text-[10px] font-bold uppercase tracking-widest">
 
-          {/* Online / offline */}
           <span className="flex items-center gap-2">
             <span className={cn('size-1.5 rounded-full shrink-0', isOnline ? 'bg-green-500' : 'bg-red-500')} />
             {isOnline ? 'En línea' : 'Sin conexión'}
           </span>
 
-          {/* Supabase status button */}
           <button
             onClick={openDrawer}
-            className="flex items-center gap-2 text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors"
+            className="flex items-center gap-2 text-foreground/50 hover:text-foreground transition-colors"
           >
             <span className={cn(
               'size-1.5 rounded-full shrink-0',
-              status ? INDICATOR_DOT[indicator] : 'bg-[#1A1A1A]/20 animate-pulse'
+              status ? INDICATOR_DOT[indicator] : 'bg-foreground/20 animate-pulse'
             )} />
             Supabase
             <Activity className="size-3" />
           </button>
 
-          {/* Uptime */}
-          <span className="flex items-center gap-2 text-[#1A1A1A]/40">
+          <span className="flex items-center gap-2 text-foreground/40">
             Uptime <SystemUptime />
           </span>
         </div>
 
-        <div className="font-mono text-[11px] text-[#1A1A1A]/50 tracking-wider">
+        <div className="font-mono text-[11px] text-foreground/50 tracking-wider">
           {time}
         </div>
       </footer>
@@ -247,7 +231,7 @@ export function StatusBar() {
 
       {/* ── Drawer ──────────────────────────────────────────────────────────── */}
       <div className={cn(
-        'fixed left-16 right-0 z-50 bg-[#F5F2EA] border-t border-[#1A1A1A]/15 shadow-2xl',
+        'fixed left-16 right-0 z-50 bg-background border-t border-border shadow-2xl',
         'transition-all duration-300 ease-out',
         drawerOpen
           ? 'bottom-10 opacity-100 translate-y-0'
@@ -255,15 +239,15 @@ export function StatusBar() {
       )}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-3 border-b border-[#1A1A1A]/10">
+        <div className="flex items-center justify-between px-8 py-3 border-b border-border">
           <div className="flex items-center gap-3">
             <span className={cn(
               'size-2 rounded-full shrink-0',
-              status ? INDICATOR_DOT[indicator] : 'bg-gray-300 animate-pulse'
+              status ? INDICATOR_DOT[indicator] : 'bg-muted-foreground animate-pulse'
             )} />
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest">Estado del Sistema</p>
-              <p className="text-[9px] text-[#1A1A1A]/50 tracking-wide mt-0.5">
+              <p className="text-[9px] text-foreground/50 tracking-wide mt-0.5">
                 {status ? INDICATOR_DESC[indicator] : 'Consultando estado...'}
               </p>
             </div>
@@ -272,16 +256,16 @@ export function StatusBar() {
             <button
               onClick={refresh}
               disabled={loadingPing || loadingStats}
-              className="flex items-center gap-1.5 h-7 px-3 text-[8px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#E5E1D8] transition-colors disabled:opacity-30"
+              className="flex items-center gap-1.5 h-7 px-3 text-[8px] font-bold uppercase tracking-widest text-foreground/40 hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30"
             >
               <RotateCcw className={cn('size-2.5', (loadingPing || loadingStats) && 'animate-spin')} />
               Actualizar
             </button>
             <button
               onClick={() => setDrawerOpen(false)}
-              className="size-7 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors"
+              className="size-7 flex items-center justify-center hover:bg-muted transition-colors"
             >
-              <X className="size-3.5 text-[#1A1A1A]/50" />
+              <X className="size-3.5 text-foreground/50" />
             </button>
           </div>
         </div>
@@ -289,9 +273,8 @@ export function StatusBar() {
         {/* Body */}
         <div className="px-8 py-5 space-y-5">
 
-          {/* Metrics grid */}
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-3">Métricas de la aplicación</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40 mb-3">Métricas de la aplicación</p>
             <div className="grid grid-cols-6 gap-2">
               <MetricCard
                 label="Latencia DB"
@@ -339,9 +322,8 @@ export function StatusBar() {
             </div>
           </div>
 
-          {/* Services strip */}
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-2">Servicios Supabase</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40 mb-2">Servicios Supabase</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {coreComponents.length > 0
                 ? coreComponents.map(comp => (
@@ -349,7 +331,7 @@ export function StatusBar() {
                       <TooltipTrigger asChild>
                         <div className="flex items-center gap-1.5 cursor-default">
                           <span className={cn('size-1.5 rounded-full shrink-0', COMP_DOT[comp.status])} />
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/60">{comp.name}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/60">{comp.name}</span>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top">
@@ -359,18 +341,17 @@ export function StatusBar() {
                   ))
                 : CORE_SERVICES.map(name => (
                     <div key={name} className="flex items-center gap-1.5">
-                      <span className="size-1.5 rounded-full bg-[#1A1A1A]/15 animate-pulse shrink-0" />
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/30">{name}</span>
+                      <span className="size-1.5 rounded-full bg-foreground/15 animate-pulse shrink-0" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/30">{name}</span>
                     </div>
                   ))
               }
             </div>
           </div>
 
-          {/* Active incidents */}
           {(status?.incidents.length ?? 0) > 0 && (
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-2">Incidentes activos</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40 mb-2">Incidentes activos</p>
               <div className="space-y-1">
                 {status!.incidents.map((inc, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 border border-orange-200">

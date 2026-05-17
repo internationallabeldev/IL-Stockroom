@@ -33,9 +33,8 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
 
   return (
     <div className="px-8 pt-8 pb-16 space-y-8">
-      {/* Urgent banner */}
       {!kpisLoading && urgent && (
-        <div className="bg-[#ba1a1a] text-[#F5F2EA] px-6 py-3 -mx-8 flex items-center gap-3">
+        <div className="bg-destructive text-white px-6 py-3 -mx-8 flex items-center gap-3">
           <ClipboardList className="size-4 shrink-0" />
           <p className="text-[10px] font-bold uppercase tracking-widest">
             {kpis!.pendingReqsCount} requisición{kpis!.pendingReqsCount !== 1 ? 'es' : ''} pendiente{kpis!.pendingReqsCount !== 1 ? 's' : ''} de atender
@@ -44,8 +43,8 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
       )}
 
       <header>
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">Almacén</h1>
-        <p className="text-lg text-[#5f5e59] mt-1">
+        <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">Almacén</h1>
+        <p className="text-lg text-muted-foreground mt-1">
           {greeting}, <span className="text-[#008dc2] font-bold capitalize">{userName}</span>
         </p>
       </header>
@@ -81,7 +80,6 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
         />
       </div>
 
-      {/* Pending requisitions — emphasised */}
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-6">
           <PendingRequisitionsWidget />
@@ -96,7 +94,7 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40">Consumo del período</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Consumo del período</p>
           <DateRangePicker onRangeChange={setDateRange} />
         </div>
         <div className="grid grid-cols-2 gap-4">

@@ -60,7 +60,7 @@ export function OrderDetail({ order, canEdit }: Props) {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Volver
@@ -72,7 +72,7 @@ export function OrderDetail({ order, canEdit }: Props) {
             <>
               <button
                 onClick={() => router.push(`/dashboard/orders/${order.id}/edit`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 <Pencil className="size-3" />
                 Editar
@@ -80,7 +80,7 @@ export function OrderDetail({ order, canEdit }: Props) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-red-300 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-red-400 text-[10px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors disabled:opacity-50"
               >
                 <Ban className="size-3" />
                 {cancelling ? 'Cancelando…' : 'Cancelar orden'}
@@ -91,10 +91,10 @@ export function OrderDetail({ order, canEdit }: Props) {
       </div>
 
       {/* Header card */}
-      <div className="bg-[#fdf9f0] border border-[#1A1A1A]/15">
-        <div className="px-6 py-4 border-b border-[#1A1A1A]/10 flex items-start justify-between gap-4">
+      <div className="bg-card border border-border">
+        <div className="px-6 py-4 border-b border-border/50 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {order.material_type === 'INK' ? 'Orden de tintas' : 'Orden de papel'}
             </p>
             <h1 className="font-heading text-3xl font-bold tracking-tight mt-0.5">
@@ -119,43 +119,43 @@ export function OrderDetail({ order, canEdit }: Props) {
         </div>
 
         {order.notes && (
-          <div className="px-6 py-3 border-t border-[#1A1A1A]/10 bg-[#E5E1D8]/20">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70 mb-1">Notas</p>
-            <p className="text-sm text-[#5f5e59]">{order.notes}</p>
+          <div className="px-6 py-3 border-t border-border/50 bg-muted/20">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-1">Notas</p>
+            <p className="text-sm text-muted-foreground">{order.notes}</p>
           </div>
         )}
       </div>
 
       {/* Items */}
-      <div className="bg-[#fdf9f0] border border-[#1A1A1A]/15">
-        <div className="px-6 py-3 border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+      <div className="bg-card border border-border">
+        <div className="px-6 py-3 border-b border-border/50 bg-muted/30">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
             Artículos — {materialIsInk ? 'Tintas' : 'Papel'}
           </p>
         </div>
 
         {materialIsInk && (
-          <div className="divide-y divide-[#1A1A1A]/08">
+          <div className="divide-y divide-border/30">
             {inkProgress.length === 0
-              ? <p className="px-6 py-8 text-[10px] text-[#5f5e59] text-center">Sin artículos</p>
+              ? <p className="px-6 py-8 text-[10px] text-muted-foreground text-center">Sin artículos</p>
               : inkProgress.map(item => (
                 <div key={item.id} className="px-6 py-4 space-y-2">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       {item.ink_catalog?.color_code?.startsWith('#') && (
                         <span
-                          className="inline-block size-3 rounded-sm mr-1.5 border border-[#1A1A1A]/10 align-middle"
+                          className="inline-block size-3 rounded-sm mr-1.5 border border-border/50 align-middle"
                           style={{ background: item.ink_catalog.color_code }}
                         />
                       )}
-                      <span className="font-mono text-[10px] text-[#5f5e59]">{item.ink_catalog?.code}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">{item.ink_catalog?.code}</span>
                       <div className="flex items-center gap-1.5">
                         <p className="font-bold text-sm">{item.ink_catalog?.name ?? '—'}</p>
                         {item.item_notes && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <FileText className="size-3 text-[#5f5e59] shrink-0 cursor-default" />
+                                <FileText className="size-3 text-muted-foreground shrink-0 cursor-default" />
                               </TooltipTrigger>
                               <TooltipContent side="right" className="max-w-56 text-left">
                                 {item.item_notes}
@@ -166,10 +166,10 @@ export function OrderDetail({ order, canEdit }: Props) {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {item.units_received ?? 0} / {item.units_ordered} uds
                       </p>
-                      <p className="font-mono text-xs text-[#5f5e59]">
+                      <p className="font-mono text-xs text-muted-foreground">
                         {(item.total_kg_received ?? 0).toFixed(2)} / {(item.total_kg_ordered ?? 0).toFixed(2)} kg
                       </p>
                     </div>
@@ -182,21 +182,21 @@ export function OrderDetail({ order, canEdit }: Props) {
         )}
 
         {!materialIsInk && (
-          <div className="divide-y divide-[#1A1A1A]/08">
+          <div className="divide-y divide-border/30">
             {paperProgress.length === 0
-              ? <p className="px-6 py-8 text-[10px] text-[#5f5e59] text-center">Sin artículos</p>
+              ? <p className="px-6 py-8 text-[10px] text-muted-foreground text-center">Sin artículos</p>
               : paperProgress.map(item => (
                 <div key={item.id} className="px-6 py-4 space-y-2">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <span className="font-mono text-[10px] text-[#5f5e59]">{item.paper_catalog?.code}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">{item.paper_catalog?.code}</span>
                       <div className="flex items-center gap-1.5">
                         <p className="font-bold text-sm">{item.paper_catalog?.name ?? '—'}</p>
                         {item.item_notes && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <FileText className="size-3 text-[#5f5e59] shrink-0 cursor-default" />
+                                <FileText className="size-3 text-muted-foreground shrink-0 cursor-default" />
                               </TooltipTrigger>
                               <TooltipContent side="right" className="max-w-56 text-left">
                                 {item.item_notes}
@@ -206,14 +206,14 @@ export function OrderDetail({ order, canEdit }: Props) {
                         )}
                       </div>
                       {item.paper_catalog?.material && (
-                        <p className="text-[10px] text-[#5f5e59]">{item.paper_catalog.material}</p>
+                        <p className="text-[10px] text-muted-foreground">{item.paper_catalog.material}</p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {item.units_received ?? 0} / {item.units_ordered} bobs
                       </p>
-                      <p className="font-mono text-xs text-[#5f5e59]">
+                      <p className="font-mono text-xs text-muted-foreground">
                         {(item.total_m2_received ?? 0).toFixed(2)} / {(item.total_m2_ordered ?? 0).toFixed(2)} m²
                       </p>
                     </div>
@@ -231,9 +231,9 @@ export function OrderDetail({ order, canEdit }: Props) {
 
 function ProgressBar({ pct, complete }: { pct: number; complete: boolean }) {
   return (
-    <div className="h-1.5 w-full bg-[#E5E1D8] overflow-hidden">
+    <div className="h-1.5 w-full bg-muted overflow-hidden">
       <div
-        className={cn('h-full transition-all duration-300', complete ? 'bg-green-500' : 'bg-[#1A1A1A]')}
+        className={cn('h-full transition-all duration-300', complete ? 'bg-green-500' : 'bg-foreground')}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -243,8 +243,8 @@ function ProgressBar({ pct, complete }: { pct: number; complete: boolean }) {
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70 mb-0.5">{label}</p>
-      <p className="text-sm text-[#1A1A1A]">{value}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-0.5">{label}</p>
+      <p className="text-sm">{value}</p>
     </div>
   )
 }

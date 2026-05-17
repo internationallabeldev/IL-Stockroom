@@ -40,9 +40,9 @@ function loadFromStorage(): { range: DateRange; preset: Preset } {
 }
 
 export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: DateRange) => void }) {
-  const [preset, setPreset]   = useState<Preset>('7d')
-  const [range, setRange]     = useState<DateRange>(defaultRange)
-  const [open, setOpen]       = useState(false)
+  const [preset, setPreset]     = useState<Preset>('7d')
+  const [range, setRange]       = useState<DateRange>(defaultRange)
+  const [open, setOpen]         = useState(false)
   const [calRange, setCalRange] = useState<DPRange | undefined>()
   const [hydrated, setHydrated] = useState(false)
 
@@ -84,7 +84,7 @@ export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: Date
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mr-1">Rango</span>
+      <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/40 mr-1">Rango</span>
 
       {(['7d', '30d', '3m'] as const).map(p => (
         <button
@@ -93,8 +93,8 @@ export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: Date
           className={cn(
             'h-7 px-3 text-[9px] font-bold uppercase tracking-widest transition-colors',
             preset === p
-              ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-              : 'bg-[#E5E1D8] text-[#1A1A1A]/60 hover:text-[#1A1A1A]'
+              ? 'bg-foreground text-background'
+              : 'bg-muted text-foreground/60 hover:text-foreground'
           )}
         >
           {p === '7d' ? '7d' : p === '30d' ? '30d' : '3m'}
@@ -107,8 +107,8 @@ export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: Date
             className={cn(
               'h-7 px-3 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors',
               preset === 'custom'
-                ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                : 'bg-[#E5E1D8] text-[#1A1A1A]/60 hover:text-[#1A1A1A]'
+                ? 'bg-foreground text-background'
+                : 'bg-muted text-foreground/60 hover:text-foreground'
             )}
           >
             <CalendarIcon className="size-3" />
@@ -116,7 +116,7 @@ export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: Date
             <ChevronDown className="size-3" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-[#F5F2EA] border border-[#1A1A1A]/15 rounded-none shadow-xl" align="end">
+        <PopoverContent className="w-auto p-0 bg-background border border-border rounded-none shadow-xl" align="end">
           <Calendar
             mode="range"
             selected={calRange}

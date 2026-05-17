@@ -118,21 +118,21 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-md bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
+      <div className="relative ml-auto h-full w-full max-w-md bg-background border-l border-border flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A]/15 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold tracking-tight">
               {mode === 'create' ? 'Nueva Tinta' : mode === 'view' ? 'Detalle de tinta' : 'Editar tinta'}
             </h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               {item ? item.code : 'Completa los datos'}
             </p>
           </div>
-          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors">
+          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-muted transition-colors">
             <X className="size-4" />
           </button>
         </div>
@@ -144,34 +144,34 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               <div className="h-2 w-full rounded-sm" style={{ background: item.color_code! }} />
             )}
             <div>
-              <p className="font-mono text-[9px] font-bold text-[#5f5e59] uppercase tracking-widest">{item.code}</p>
+              <p className="font-mono text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.code}</p>
               <h3 className="font-heading text-2xl font-bold tracking-tight leading-tight mt-1">{item.name}</h3>
               {item.description && (
-                <p className="text-sm text-[#5f5e59] mt-2">{item.description}</p>
+                <p className="text-sm text-muted-foreground mt-2">{item.description}</p>
               )}
             </div>
 
             {/* Stock */}
-            <div className="border border-[#1A1A1A]/10">
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+            <div className="border border-border/50">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                 Stock actual
               </p>
               <div className="px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <StockBadge current={item.current_stock_kg} min={item.min_stock_kg} unit="kg" />
-                  <span className="font-mono text-sm text-[#1A1A1A]">
+                  <span className="font-mono text-sm text-foreground">
                     {(item.current_stock_kg ?? 0).toFixed(2)} kg
                   </span>
                 </div>
                 <StockBar current={item.current_stock_kg} min={item.min_stock_kg} />
-                <p className="text-[10px] text-[#5f5e59]">Mínimo: {item.min_stock_kg} kg</p>
+                <p className="text-[10px] text-muted-foreground">Mínimo: {item.min_stock_kg} kg</p>
               </div>
             </div>
 
             {/* Specs */}
-            <div className="border border-[#1A1A1A]/10">
+            <div className="border border-border/50">
               {/* Impresión */}
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/40">
                 Especificaciones de impresión
               </p>
               <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -184,13 +184,13 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               </div>
 
               {/* Condiciones */}
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-y border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-y border-border/50 bg-muted/40">
                 Condiciones de tinta
               </p>
               <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
                 {item.ink_type && (
                   <ViewField label="Tipo">
-                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-widest bg-[#1A1A1A] text-[#F5F2EA]">
+                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-widest bg-foreground text-background">
                       {INK_TYPE_LABELS[item.ink_type as InkType]}
                     </span>
                   </ViewField>
@@ -202,7 +202,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                   <ViewField label="Color">
                     <div className="flex items-center gap-2">
                       {isHex && (
-                        <span className="size-3.5 rounded-sm border border-[#1A1A1A]/10" style={{ background: item.color_code }} />
+                        <span className="size-3.5 rounded-sm border border-border/50" style={{ background: item.color_code }} />
                       )}
                       <span className="font-mono text-sm">{item.color_code}</span>
                     </div>
@@ -217,7 +217,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               {/* Control de calidad — solo si hay OD */}
               {item.optical_density != null && (
                 <>
-                  <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/60 border-t border-[#1A1A1A]/10 bg-[#E5E1D8]/20">
+                  <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 border-t border-border/50 bg-muted/20">
                     Control de calidad
                   </p>
                   <div className="px-4 py-3">
@@ -262,10 +262,10 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
             </Field>
 
             {/* Especificaciones */}
-            <div className="border border-[#1A1A1A]/10">
+            <div className="border border-border/50">
 
               {/* ── Impresión ── */}
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
                 Especificaciones de impresión
               </p>
               <div className="px-4 py-3 space-y-3">
@@ -301,18 +301,18 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                       placeholder="ej. 75"
                       className={inputCls + ' pr-8'}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#5f5e59] pointer-events-none select-none">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none select-none">%</span>
                   </div>
                 </Field>
               </div>
 
               {/* ── Condiciones de tinta ── */}
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-y border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-y border-border/50 bg-muted/30">
                 Condiciones de tinta
               </p>
               <div className="px-4 py-3 space-y-3">
                 <Field label="Tipo de tinta" error={errors.ink_type?.message}>
-                  <div className="flex border border-[#1A1A1A]/20">
+                  <div className="flex border border-border">
                     {INK_TYPES.map(t => (
                       <button
                         key={t}
@@ -321,8 +321,8 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                         className={cn(
                           'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                           inkTypeValue === t
-                            ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                            : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                       >
                         {INK_TYPE_LABELS[t]}
@@ -351,7 +351,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               </div>
 
               {/* ── Control de calidad ── */}
-              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/60 border-t border-[#1A1A1A]/10 bg-[#E5E1D8]/20">
+              <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 border-t border-border/50 bg-muted/20">
                 Control de calidad
               </p>
               <div className="px-4 py-3">
@@ -401,13 +401,13 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
         )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#1A1A1A]/15 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-border/50 flex gap-3 shrink-0">
           {mode === 'view' ? (
             <>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cerrar
               </button>
@@ -415,7 +415,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                 <button
                   type="button"
                   onClick={() => setMode('edit')}
-                  className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
                 >
                   <Pencil className="size-3" />
                   Editar
@@ -427,7 +427,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+                className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
               >
                 Cancelar
               </button>
@@ -435,7 +435,7 @@ export function InkCatalogForm({ open, onClose, item, mode: initialMode = 'creat
                 type="button"
                 onClick={handleSubmit(onSubmit)}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {isSubmitting && <Loader2 className="size-3 animate-spin" />}
                 {isSubmitting ? 'Guardando...' : mode === 'edit' ? 'Actualizar' : 'Crear tinta'}
@@ -457,7 +457,6 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
   const [hsl, setHsl] = useState({ h: '', s: '', l: '' })
   const nativeRef = useRef<HTMLInputElement>(null)
 
-  // Sync all three formats whenever external value changes
   useEffect(() => {
     if (!value) {
       setHexText('')
@@ -536,12 +535,12 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
           onClick={() => nativeRef.current?.click()}
           style={{ background: previewHex ?? undefined }}
           className={cn(
-            'size-16 border border-[#1A1A1A]/20 flex items-center justify-center transition-colors hover:border-[#1A1A1A]/40',
-            !previewHex && 'bg-[#E5E1D8]'
+            'size-16 border border-border flex items-center justify-center transition-colors hover:border-foreground/40',
+            !previewHex && 'bg-muted'
           )}
           title="Abrir selector de color"
         >
-          {!previewHex && <Palette className="size-4 text-[#1A1A1A]/30" />}
+          {!previewHex && <Palette className="size-4 text-muted-foreground" />}
         </button>
         <input
           ref={nativeRef}
@@ -555,7 +554,7 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
       {/* Tabs + inputs */}
       <div className="flex-1 min-w-0">
         {/* Format tabs */}
-        <div className="flex border border-[#1A1A1A]/20 mb-2">
+        <div className="flex border border-border mb-2">
           {(['HEX', 'RGB', 'HSL'] as ColorFormat[]).map(t => (
             <button
               key={t}
@@ -564,8 +563,8 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
               className={cn(
                 'flex-1 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors',
                 tab === t
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {t}
@@ -588,7 +587,7 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
           <div className="grid grid-cols-3 gap-1.5">
             {(['r', 'g', 'b'] as const).map(ch => (
               <div key={ch}>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[#5f5e59] mb-1">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                   {ch.toUpperCase()}
                 </p>
                 <input
@@ -610,7 +609,7 @@ function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: 
           <div className="grid grid-cols-3 gap-1.5">
             {([['h', 'H°', 360], ['s', 'S%', 100], ['l', 'L%', 100]] as const).map(([ch, label, max]) => (
               <div key={ch}>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[#5f5e59] mb-1">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                   {label}
                 </p>
                 <input
@@ -689,14 +688,13 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 type FieldInfoData = { what: string; why: string; example: string }
 
 function InfoPopover({ info }: { info: FieldInfoData }) {
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
-  const popRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
   function handleEnter() {
@@ -722,7 +720,7 @@ function InfoPopover({ info }: { info: FieldInfoData }) {
         aria-label="Más información"
         className={cn(
           'size-4 flex items-center justify-center transition-colors shrink-0',
-          open ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60'
+          open ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/60'
         )}
       >
         <Info className="size-3.5" />
@@ -731,19 +729,18 @@ function InfoPopover({ info }: { info: FieldInfoData }) {
       {open && (
         <div
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: 272, zIndex: 200 }}
-          className="bg-[#F5F2EA] border border-[#1A1A1A]/20 px-3.5 py-3 space-y-2"
+          className="bg-background border border-border px-3.5 py-3 space-y-2"
         >
-          {/* arrow */}
           <div
             style={{ position: 'absolute', top: -5, left: Math.min(
               Math.max((btnRef.current?.getBoundingClientRect().left ?? 0) + 8 - pos.left, 10),
               252
             ) }}
-            className="size-2.5 rotate-45 bg-[#F5F2EA] border-l border-t border-[#1A1A1A]/20"
+            className="size-2.5 rotate-45 bg-background border-l border-t border-border"
           />
-          <p className="text-[11px] text-[#1A1A1A]/80 leading-snug">{info.what}</p>
-          <p className="text-[11px] text-[#5f5e59] leading-snug">{info.why}</p>
-          <p className="font-mono text-[10px] text-[#1A1A1A]/40 pt-2 border-t border-[#1A1A1A]/10 leading-relaxed">
+          <p className="text-[11px] text-foreground/80 leading-snug">{info.what}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">{info.why}</p>
+          <p className="font-mono text-[10px] text-muted-foreground/60 pt-2 border-t border-border leading-relaxed">
             {info.example}
           </p>
         </div>
@@ -761,7 +758,7 @@ function Field({ label, error, info, children }: {
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">{label}</label>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
         {info && <InfoPopover info={info} />}
       </div>
       {children}
@@ -773,8 +770,8 @@ function Field({ label, error, info, children }: {
 function ViewField({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70 mb-0.5">{label}</p>
-      {children ?? <p className="text-sm text-[#1A1A1A]">{value}</p>}
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-0.5">{label}</p>
+      {children ?? <p className="text-sm text-foreground">{value}</p>}
     </div>
   )
 }

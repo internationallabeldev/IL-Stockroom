@@ -31,7 +31,7 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
   }
 
   return (
-    <div className={`bg-[#fdf9f0] border border-[#1A1A1A]/15 flex flex-col transition-opacity ${!item.enabled ? 'opacity-50' : ''}`}>
+    <div className={`bg-card border border-border flex flex-col transition-opacity ${!item.enabled ? 'opacity-50' : ''}`}>
       {isHex && (
         <div className="h-1.5 w-full shrink-0" style={{ background: item.color_code! }} />
       )}
@@ -43,13 +43,13 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
             onClick={() => onView(item)}
             className="min-w-0 text-left hover:opacity-70 transition-opacity"
           >
-            <p className="font-mono text-[9px] font-bold text-[#5f5e59] uppercase tracking-widest">{item.code}</p>
+            <p className="font-mono text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.code}</p>
             <p className="font-heading font-bold text-base leading-tight mt-0.5">{item.name}</p>
           </button>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <StockBadge current={item.current_stock_kg} min={item.min_stock_kg} unit="kg" />
             {item.ink_type && (
-              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#1A1A1A]/8 text-[#5f5e59] border border-[#1A1A1A]/12">
+              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-muted/60 text-muted-foreground border border-border">
                 {INK_TYPE_LABELS[item.ink_type as InkType]}
               </span>
             )}
@@ -62,20 +62,20 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
             <div className="flex items-center gap-1.5">
               {isHex && (
                 <span
-                  className="size-3 rounded-sm border border-[#1A1A1A]/15 shrink-0"
+                  className="size-3 rounded-sm border border-border/50 shrink-0"
                   style={{ background: item.color_code }}
                 />
               )}
-              <span className="font-mono text-[10px] text-[#5f5e59]">{item.color_code}</span>
+              <span className="font-mono text-[10px] text-muted-foreground">{item.color_code}</span>
             </div>
           )}
           {item.density != null && (
-            <span className="font-mono text-[10px] text-[#5f5e59]">
+            <span className="font-mono text-[10px] text-muted-foreground">
               {item.density} cm³/m²
             </span>
           )}
           {item.viscosity != null && (
-            <span className="font-mono text-[10px] text-[#5f5e59]">
+            <span className="font-mono text-[10px] text-muted-foreground">
               {item.viscosity} cP
             </span>
           )}
@@ -83,14 +83,14 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
 
         {/* Provider */}
         {provider && (
-          <p className="text-[10px] text-[#5f5e59] truncate">{provider.name}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{provider.name}</p>
         )}
 
         {/* Stock bar */}
         <div className="space-y-1.5 mt-auto">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Stock</span>
-            <span className="font-mono text-[10px] text-[#1A1A1A]">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Stock</span>
+            <span className="font-mono text-[10px] text-foreground">
               {(item.current_stock_kg ?? 0).toFixed(1)} / {item.min_stock_kg.toFixed(1)} kg
             </span>
           </div>
@@ -98,10 +98,10 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
         </div>
 
         {canEdit && (
-          <div className="flex gap-2 border-t border-[#1A1A1A]/10 pt-3">
+          <div className="flex gap-2 border-t border-border/50 pt-3">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
             >
               <Pencil className="size-3" />
               Editar
@@ -109,7 +109,7 @@ export function InkCatalogCard({ item, providers, canEdit, onView, onEdit }: Pro
             <button
               onClick={handleToggle}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors disabled:opacity-50"
             >
               <Power className="size-3" />
               {item.enabled ? 'Desactivar' : 'Activar'}

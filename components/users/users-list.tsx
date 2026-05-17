@@ -10,8 +10,6 @@ import { UserDetailSheet } from './user-detail-sheet'
 import { getUsers, type AppUser } from '@/actions/users.actions'
 import type { Database } from '@/types/database.types'
 
-type UserRole = Database['public']['Enums']['user_role']
-
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'Todos' },
   { value: 'ADMIN', label: 'Admin' },
@@ -51,8 +49,8 @@ function UserAvatar({ user }: { user: AppUser }) {
     )
   }
   return (
-    <div className="size-7 bg-[#1A1A1A] flex items-center justify-center shrink-0">
-      <span className="text-[#F5F2EA] text-[9px] font-bold">{initials}</span>
+    <div className="size-7 bg-foreground flex items-center justify-center shrink-0">
+      <span className="text-background text-[9px] font-bold">{initials}</span>
     </div>
   )
 }
@@ -98,24 +96,24 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
+      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#1A1A1A]/40 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nombre o email..."
-            className="h-8 w-56 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-8 pr-7 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 w-56 border border-foreground/20 bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/50 transition-colors"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]">
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               <X className="size-3.5" />
             </button>
           )}
         </div>
 
-        <div className="flex border border-[#1A1A1A]/20">
+        <div className="flex border border-border">
           {ROLE_FILTERS.map(f => (
             <button
               key={f.value}
@@ -123,8 +121,8 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
               className={cn(
                 'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
                 roleFilter === f.value
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
               )}
             >
               {f.label}
@@ -132,7 +130,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           ))}
         </div>
 
-        <div className="flex border border-[#1A1A1A]/20">
+        <div className="flex border border-border">
           {STATUS_FILTERS.map(f => (
             <button
               key={f.value}
@@ -140,8 +138,8 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
               className={cn(
                 'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
                 statusFilter === f.value
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
               )}
             >
               {f.label}
@@ -153,7 +151,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
 
         <button
           onClick={() => setInviteOpen(true)}
-          className="flex items-center gap-2 h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
         >
           <UserPlus className="size-3.5" />
           Invitar usuario
@@ -161,30 +159,30 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
       </div>
 
       {/* Count */}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
         {filtered.length} usuario{filtered.length !== 1 ? 's' : ''}
       </p>
 
       {/* Table */}
       {filtered.length > 0 ? (
-        <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+        <div className="border border-border overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#1A1A1A]/10 bg-[#E5E1D8]">
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] w-10" />
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+              <tr className="border-b border-border/50 bg-muted/40">
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10" />
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Nombre
                 </th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Email
                 </th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Rol
                 </th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Último acceso
                 </th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Estado
                 </th>
               </tr>
@@ -194,32 +192,32 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
                 <tr
                   key={u.id}
                   onClick={() => setSelected(u)}
-                  className={`border-b border-[#1A1A1A]/8 cursor-pointer hover:bg-[#E5E1D8] transition-colors ${
-                    i % 2 === 0 ? 'bg-white' : 'bg-[#fdf9f0]'
+                  className={`border-b border-border/30 cursor-pointer hover:bg-muted/20 transition-colors ${
+                    i % 2 === 0 ? 'bg-background' : 'bg-card'
                   }`}
                 >
                   <td className="px-4 py-3">
                     <UserAvatar user={u} />
                   </td>
-                  <td className="px-4 py-3 font-medium text-[#1A1A1A]">
+                  <td className="px-4 py-3 font-medium text-foreground">
                     {u.first_name} {u.last_name}
                     {u.id === currentUserId && (
-                      <span className="ml-1.5 text-[9px] text-[#5f5e59] font-normal">(tú)</span>
+                      <span className="ml-1.5 text-[9px] text-muted-foreground font-normal">(tú)</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[#5f5e59]">{u.email}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
                     <RoleBadge role={u.role} />
                   </td>
-                  <td className="px-4 py-3 text-[#5f5e59] text-[11px]">
+                  <td className="px-4 py-3 text-muted-foreground text-[11px]">
                     {formatLastAccess(u.last_sign_in_at)}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 border ${
                         u.enabled
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
+                          ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                          : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
                       }`}
                     >
                       {u.enabled ? 'Activo' : 'Inactivo'}
@@ -231,8 +229,8 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           </table>
         </div>
       ) : (
-        <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <div className="border border-dashed border-border/50 p-16 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {search || roleFilter || statusFilter
               ? 'Sin resultados para los filtros aplicados'
               : 'No hay usuarios'}

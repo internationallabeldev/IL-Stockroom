@@ -36,7 +36,7 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
   }
 
   return (
-    <div className={`bg-[#fdf9f0] border border-[#1A1A1A]/15 flex flex-col transition-opacity ${!item.enabled ? 'opacity-50' : ''}`}>
+    <div className={`bg-card border border-border flex flex-col transition-opacity ${!item.enabled ? 'opacity-50' : ''}`}>
       <div className="p-5 flex flex-col gap-3 flex-1">
 
         {/* Header */}
@@ -45,16 +45,16 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
             onClick={() => onView(item)}
             className="min-w-0 text-left hover:opacity-70 transition-opacity"
           >
-            <p className="font-mono text-[9px] font-bold text-[#5f5e59] uppercase tracking-widest">{item.code}</p>
+            <p className="font-mono text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.code}</p>
             <p className="font-heading font-bold text-base leading-tight mt-0.5">{item.name}</p>
             {item.material && (
-              <p className="font-mono text-[10px] text-[#5f5e59] mt-0.5">{item.material}</p>
+              <p className="font-mono text-[10px] text-muted-foreground mt-0.5">{item.material}</p>
             )}
           </button>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <StockBadge current={item.current_stock_m2} min={item.min_stock_m2} unit={stockUnitLabel} />
             {item.substrate_category && (
-              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#1A1A1A] text-[#F5F2EA]">
+              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-foreground text-background">
                 {SUBSTRATE_CATEGORY_LABELS[item.substrate_category as SubstrateCategory]}
               </span>
             )}
@@ -80,7 +80,7 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
             {(item.ink_compatibility as InkCompat[]).map(c => (
               <span
                 key={c}
-                className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-[#1A1A1A]/20 text-[#5f5e59]"
+                className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-border text-muted-foreground"
               >
                 {INK_COMPAT_LABELS[c]}
               </span>
@@ -90,14 +90,14 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
 
         {/* Provider */}
         {provider && (
-          <p className="text-[10px] text-[#5f5e59] truncate">{provider.name}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{provider.name}</p>
         )}
 
         {/* Stock bar */}
         <div className="space-y-1.5 mt-auto">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">Stock</span>
-            <span className="font-mono text-[10px] text-[#1A1A1A]">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Stock</span>
+            <span className="font-mono text-[10px] text-foreground">
               {(item.current_stock_m2 ?? 0).toFixed(1)} / {(item.min_stock_m2 ?? 0).toFixed(1)} {stockUnitLabel}
             </span>
           </div>
@@ -105,10 +105,10 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
         </div>
 
         {canEdit && (
-          <div className="flex gap-2 border-t border-[#1A1A1A]/10 pt-3">
+          <div className="flex gap-2 border-t border-border/50 pt-3">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
             >
               <Pencil className="size-3" />
               Editar
@@ -116,7 +116,7 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
             <button
               onClick={handleToggle}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors disabled:opacity-50"
             >
               <Power className="size-3" />
               {item.enabled ? 'Desactivar' : 'Activar'}
@@ -131,8 +131,8 @@ export function PaperCatalogCard({ item, providers, canEdit, onView, onEdit }: P
 function Spec({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]/70">{label}</p>
-      <p className="font-mono text-[10px] text-[#1A1A1A]">{value}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70">{label}</p>
+      <p className="font-mono text-[10px] text-foreground">{value}</p>
     </div>
   )
 }

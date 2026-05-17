@@ -31,7 +31,7 @@ export function LotLocationEdit({ inventoryId, value, canEdit }: Props) {
 
   if (!canEdit) {
     return (
-      <span className="font-mono text-[11px] text-[#5f5e59]">
+      <span className="font-mono text-[11px] text-muted-foreground">
         {value ?? <span className="opacity-40">—</span>}
       </span>
     )
@@ -51,9 +51,9 @@ export function LotLocationEdit({ inventoryId, value, canEdit }: Props) {
           }}
           disabled={saving}
           placeholder="Ubicación"
-          className="w-28 h-6 border border-[#1A1A1A]/30 bg-[#fdf9f0] px-1.5 font-mono text-[11px] outline-none focus:border-[#1A1A1A] transition-colors disabled:opacity-50"
+          className="w-28 h-6 border border-border bg-card px-1.5 font-mono text-[11px] outline-none focus:border-foreground transition-colors disabled:opacity-50"
         />
-        {saving && <Loader2 className="size-3 animate-spin text-[#5f5e59] shrink-0" />}
+        {saving && <Loader2 className="size-3 animate-spin text-muted-foreground shrink-0" />}
       </div>
     )
   }
@@ -61,7 +61,7 @@ export function LotLocationEdit({ inventoryId, value, canEdit }: Props) {
   return (
     <button
       onClick={() => setEditing(true)}
-      className="flex items-center gap-1 font-mono text-[11px] text-[#5f5e59] hover:text-[#1A1A1A] transition-colors group"
+      className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors group"
     >
       <MapPin className="size-3 opacity-40 group-hover:opacity-80 shrink-0" />
       {value

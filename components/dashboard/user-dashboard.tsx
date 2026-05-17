@@ -10,8 +10,8 @@ export function UserDashboard({ userName }: { userName: string }) {
   return (
     <div className="px-8 pt-8 pb-16 space-y-8">
       <header>
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">Panel</h1>
-        <p className="text-lg text-[#5f5e59] mt-1">
+        <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">Panel</h1>
+        <p className="text-lg text-muted-foreground mt-1">
           {greeting}, <span className="text-[#008dc2] font-bold capitalize">{userName}</span>
         </p>
       </header>

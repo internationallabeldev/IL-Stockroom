@@ -27,7 +27,7 @@ type Props = {
   item: ReceiptItemContext | null
 }
 
-const inputCls = 'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
+const inputCls = 'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
 
 export function ReceiptForm({ open, onClose, item }: Props) {
   if (!open || !item) return null
@@ -151,14 +151,14 @@ function InkReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose: 
               <button
                 type="button"
                 onClick={() => setValue('kg_received', +((item.kgPerUnit! * (unitsVal || 0)).toFixed(3)))}
-                className="shrink-0 h-9 px-3 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] transition-colors"
+                className="shrink-0 h-9 px-3 border border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted transition-colors"
               >
                 Auto
               </button>
             )}
           </div>
           {item.kgPerUnit && (
-            <p className="text-[10px] text-[#5f5e59] mt-1">Esperado: {(item.kgPerUnit * (unitsVal || 0)).toFixed(3)} kg</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Esperado: {(item.kgPerUnit * (unitsVal || 0)).toFixed(3)} kg</p>
           )}
         </Field>
 
@@ -306,7 +306,7 @@ function PaperReceiptForm({ item, onClose }: { item: ReceiptItemContext; onClose
         </div>
 
         {totalM2 > 0 && (
-          <p className="text-[10px] text-[#5f5e59] font-mono">Total recibido: {totalM2.toFixed(2)} m²</p>
+          <p className="text-[10px] text-muted-foreground font-mono">Total recibido: {totalM2.toFixed(2)} m²</p>
         )}
 
         <QualitySection
@@ -343,35 +343,35 @@ function Drawer({
   const remaining = item.unitsOrdered - item.unitsReceived
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-[#1A1A1A]/40" onClick={onClose} />
-      <div className="relative ml-auto h-full w-full max-w-md bg-[#F5F2EA] border-l border-[#1A1A1A]/15 flex flex-col overflow-hidden">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative ml-auto h-full w-full max-w-md bg-background border-l border-border flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A]/15 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold tracking-tight">Registrar recepción</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mt-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
               {item.catalogCode} — {item.catalogName}
             </p>
           </div>
-          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors">
+          <button onClick={onClose} className="size-8 flex items-center justify-center hover:bg-muted transition-colors">
             <X className="size-4" />
           </button>
         </div>
 
         {/* Context bar */}
-        <div className="px-6 py-3 border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40 flex gap-6 text-[10px] shrink-0">
+        <div className="px-6 py-3 border-b border-border/50 bg-muted/40 flex gap-6 text-[10px] shrink-0">
           <div>
-            <p className="font-bold uppercase tracking-widest text-[#5f5e59]">Ordenado</p>
-            <p className="font-mono text-[#1A1A1A] mt-0.5">{item.unitsOrdered} uds</p>
+            <p className="font-bold uppercase tracking-widest text-muted-foreground">Ordenado</p>
+            <p className="font-mono mt-0.5">{item.unitsOrdered} uds</p>
           </div>
           <div>
-            <p className="font-bold uppercase tracking-widest text-[#5f5e59]">Recibido</p>
-            <p className="font-mono text-[#1A1A1A] mt-0.5">{item.unitsReceived} uds</p>
+            <p className="font-bold uppercase tracking-widest text-muted-foreground">Recibido</p>
+            <p className="font-mono mt-0.5">{item.unitsReceived} uds</p>
           </div>
           <div>
-            <p className="font-bold uppercase tracking-widest text-[#5f5e59]">Pendiente</p>
-            <p className={cn('font-mono mt-0.5', remaining > 0 ? 'text-[#1A1A1A]' : 'text-green-600')}>
+            <p className="font-bold uppercase tracking-widest text-muted-foreground">Pendiente</p>
+            <p className={cn('font-mono mt-0.5', remaining > 0 ? '' : 'text-green-600')}>
               {remaining} uds
             </p>
           </div>
@@ -383,11 +383,11 @@ function Drawer({
         </div>
 
         {/* Footer — pinned, not scrollable */}
-        <div className="px-6 py-4 border-t border-[#1A1A1A]/15 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-border/50 flex gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+            className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
           >
             Cancelar
           </button>
@@ -395,7 +395,7 @@ function Drawer({
             type="button"
             onClick={onSubmitClick}
             disabled={isSubmitting}
-            className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {isSubmitting && <Loader2 className="size-3 animate-spin" />}
             {isSubmitting ? 'Guardando...' : 'Registrar'}
@@ -430,14 +430,14 @@ function QualitySection({
   onCertRemove:   () => void
 }) {
   return (
-    <div className="border border-[#1A1A1A]/10">
-      <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/30">
+    <div className="border border-border/50">
+      <p className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30">
         Certificado de calidad
       </p>
       <div className="px-4 py-3 space-y-3">
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">Estado *</label>
-          <div className="flex border border-[#1A1A1A]/20">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">Estado *</label>
+          <div className="flex border border-border">
             {(['PENDING', 'APPROVED', 'REJECTED'] as const).map(q => (
               <button
                 key={q}
@@ -446,8 +446,8 @@ function QualitySection({
                 className={cn(
                   'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
                   quality === q
-                    ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                    : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 {q === 'PENDING' ? 'Pendiente' : q === 'APPROVED' ? 'Aprobado' : 'Rechazado'}
@@ -459,7 +459,7 @@ function QualitySection({
 
         {/* Certificate file — only when approved */}
         {quality === 'APPROVED' && <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">
             Archivo del certificado (PDF / imagen)
           </label>
           <div className="flex items-center gap-2">
@@ -467,7 +467,7 @@ function QualitySection({
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="h-9 px-3 flex items-center gap-1.5 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] hover:text-[#1A1A1A] transition-colors disabled:opacity-50"
+              className="h-9 px-3 flex items-center gap-1.5 border border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
             >
               {uploading ? <Loader2 className="size-3 animate-spin" /> : <Paperclip className="size-3" />}
               {uploading ? 'Subiendo...' : 'Adjuntar'}
@@ -479,7 +479,7 @@ function QualitySection({
                   className="text-[10px] font-bold text-green-700 underline underline-offset-2">
                   Ver certificado
                 </a>
-                <button type="button" onClick={onCertRemove} className="text-[#5f5e59] hover:text-red-600 transition-colors">
+                <button type="button" onClick={onCertRemove} className="text-muted-foreground hover:text-red-600 transition-colors">
                   <XCircle className="size-3.5" />
                 </button>
               </div>
@@ -489,7 +489,7 @@ function QualitySection({
         </div>}
 
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">Notas de calidad</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">Notas de calidad</label>
           <textarea
             {...(notesProps as any)}
             rows={2}
@@ -505,7 +505,7 @@ function QualitySection({
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5">{label}</label>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5">{label}</label>
       {children}
       {error && <p className="text-[10px] text-destructive mt-1">{error}</p>}
     </div>

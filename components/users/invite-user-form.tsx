@@ -66,13 +66,16 @@ export function InviteUserForm({ open, onClose }: Props) {
     onClose()
   }
 
+  const inputCls = 'w-full h-9 border border-foreground/20 bg-card px-3 text-xs outline-none focus:border-foreground/50 transition-colors'
+  const labelCls = 'block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5'
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[#F5F2EA] border border-[#1A1A1A]/15 shadow-xl max-w-md p-0">
+      <DialogContent className="bg-background border border-border shadow-xl max-w-md p-0">
         <DialogHeader className="px-8 pt-8 pb-0">
           <div className="flex items-center gap-3 mb-1">
-            <div className="size-8 bg-[#1A1A1A] flex items-center justify-center shrink-0">
-              <UserPlus className="size-3.5 text-[#F5F2EA]" />
+            <div className="size-8 bg-foreground flex items-center justify-center shrink-0">
+              <UserPlus className="size-3.5 text-background" />
             </div>
             <DialogTitle className="font-heading text-base font-black uppercase tracking-tight">
               Invitar usuario
@@ -84,41 +87,41 @@ export function InviteUserForm({ open, onClose }: Props) {
           {result ? (
             <div className="py-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="size-8 bg-green-100 border border-green-300 flex items-center justify-center shrink-0">
-                  <Check className="size-4 text-green-700" />
+                <div className="size-8 bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-700 flex items-center justify-center shrink-0">
+                  <Check className="size-4 text-green-700 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-[#1A1A1A]">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
                     Usuario creado
                   </p>
-                  <p className="text-[11px] text-[#5f5e59]">{result.email}</p>
+                  <p className="text-[11px] text-muted-foreground">{result.email}</p>
                 </div>
               </div>
 
               {result.inviteLink && (
                 <div className="mt-2">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <Link className="size-3 text-[#5f5e59]" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+                    <Link className="size-3 text-muted-foreground" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Link de activación
                     </p>
                   </div>
-                  <div className="bg-[#E5E1D8] border border-[#1A1A1A]/15 p-3 flex items-start gap-2">
-                    <p className="text-[10px] font-mono text-[#1A1A1A] break-all flex-1 leading-relaxed">
+                  <div className="bg-muted border border-border p-3 flex items-start gap-2">
+                    <p className="text-[10px] font-mono text-foreground break-all flex-1 leading-relaxed">
                       {result.inviteLink}
                     </p>
                     <button
                       onClick={() => copyLink(result.inviteLink!)}
-                      className="shrink-0 size-7 flex items-center justify-center hover:bg-[#D1CDC1] transition-colors"
+                      className="shrink-0 size-7 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
                       title="Copiar link"
                     >
                       {copied
-                        ? <Check className="size-3.5 text-green-600" />
-                        : <Copy className="size-3.5 text-[#5f5e59]" />
+                        ? <Check className="size-3.5 text-green-600 dark:text-green-400" />
+                        : <Copy className="size-3.5 text-muted-foreground" />
                       }
                     </button>
                   </div>
-                  <p className="mt-2 text-[10px] text-[#5f5e59]">
+                  <p className="mt-2 text-[10px] text-muted-foreground">
                     Comparte este link con el usuario por WhatsApp, email u otro medio. Expira en 24 horas.
                   </p>
                 </div>
@@ -126,7 +129,7 @@ export function InviteUserForm({ open, onClose }: Props) {
 
               <button
                 onClick={() => { setResult(null); setCopied(false) }}
-                className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors"
+                className="mt-5 text-[10px] font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground transition-colors"
               >
                 Invitar otro
               </button>
@@ -135,12 +138,10 @@ export function InviteUserForm({ open, onClose }: Props) {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                    Nombre
-                  </label>
+                  <label className={labelCls}>Nombre</label>
                   <input
                     {...register('first_name')}
-                    className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                    className={inputCls}
                     placeholder="Juan"
                   />
                   {errors.first_name && (
@@ -148,12 +149,10 @@ export function InviteUserForm({ open, onClose }: Props) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                    Apellido
-                  </label>
+                  <label className={labelCls}>Apellido</label>
                   <input
                     {...register('last_name')}
-                    className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                    className={inputCls}
                     placeholder="García"
                   />
                   {errors.last_name && (
@@ -163,13 +162,11 @@ export function InviteUserForm({ open, onClose }: Props) {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                  Email
-                </label>
+                <label className={labelCls}>Email</label>
                 <input
                   {...register('email')}
                   type="email"
-                  className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors"
+                  className={inputCls}
                   placeholder="juan@empresa.com"
                 />
                 {errors.email && (
@@ -178,12 +175,10 @@ export function InviteUserForm({ open, onClose }: Props) {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] mb-1.5">
-                  Rol
-                </label>
+                <label className={labelCls}>Rol</label>
                 <select
                   {...register('role')}
-                  className="w-full h-9 border border-[#1A1A1A]/20 bg-white px-3 text-xs outline-none focus:border-[#1A1A1A]/50 transition-colors appearance-none"
+                  className={inputCls + ' appearance-none'}
                 >
                   {ROLE_OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -198,14 +193,14 @@ export function InviteUserForm({ open, onClose }: Props) {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 h-9 border border-[#1A1A1A]/20 text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 hover:text-[#1A1A1A] hover:bg-[#E5E1D8] transition-colors"
+                  className="flex-1 h-9 border border-border text-[10px] font-bold uppercase tracking-widest text-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 h-9 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-9 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <Loader2 className="size-3.5 animate-spin" />

@@ -130,28 +130,28 @@ export function OrdersList({
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-[#F5F2EA] border-b border-[#1A1A1A]/10 -mx-8 px-8 mb-6">
+      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-6">
       <div className="py-3 flex flex-wrap items-center gap-3">
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por # o proveedor..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="h-8 w-56 pl-8 pr-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="h-8 w-56 pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
           />
           {search && (
-            <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5f5e59] hover:text-[#1A1A1A]">
+            <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               <X className="size-3.5" />
             </button>
           )}
         </div>
 
         {/* Status tabs */}
-        <div className="flex border border-[#1A1A1A]/20">
+        <div className="flex border border-border">
           {STATUS_TABS.map(t => (
             <button
               key={t.value}
@@ -159,8 +159,8 @@ export function OrdersList({
               className={cn(
                 'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
                 statusFilter === t.value
-                  ? 'bg-[#1A1A1A] text-[#F5F2EA]'
-                  : 'text-[#1A1A1A]/50 hover:text-[#1A1A1A] border-l border-[#1A1A1A]/20 first:border-l-0',
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
               )}
             >
               {t.label}
@@ -173,8 +173,8 @@ export function OrdersList({
           className={cn(
             'flex items-center gap-1.5 h-8 px-3 border text-[10px] font-bold uppercase tracking-widest transition-colors',
             filtersOpen || activeFilters > 0
-              ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
-              : 'border-[#1A1A1A]/20 text-[#1A1A1A]/60 hover:text-[#1A1A1A]'
+              ? 'bg-foreground text-background border-foreground'
+              : 'border-border text-muted-foreground hover:text-foreground'
           )}
         >
           <SlidersHorizontal className="size-3.5" />
@@ -187,8 +187,8 @@ export function OrdersList({
         <div className="flex-1" />
 
         {/* Page size */}
-        <div className="flex items-center gap-1.5 border border-[#1A1A1A]/20 px-2.5 h-8">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">Por página</span>
+        <div className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
           <input
             type="number"
             min={1}
@@ -202,14 +202,14 @@ export function OrdersList({
               const n = parseInt(pageSizeInput, 10)
               if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
             }}
-            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-[#1A1A1A]"
+            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
           />
         </div>
 
         {canCreate && (
           <button
             onClick={() => setFormOpen(true)}
-            className="flex items-center gap-2 h-8 px-4 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
           >
             <Plus className="size-3.5" />
             Nueva orden
@@ -219,10 +219,10 @@ export function OrdersList({
 
       {/* Filter panel — inside sticky wrapper */}
       {filtersOpen && (
-        <div className="border-t border-[#1A1A1A]/10 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="border-t border-border/50 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Cantidad */}
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
               Cantidad ({materialType === 'INK' ? 'kg' : 'm²'})
             </p>
             <div className="flex items-center gap-2">
@@ -230,54 +230,54 @@ export function OrdersList({
                 type="number" min={0} placeholder="Mín"
                 value={qtyMin}
                 onChange={e => { setQtyMin(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
-              <span className="text-[#5f5e59] text-xs">—</span>
+              <span className="text-muted-foreground text-xs">—</span>
               <input
                 type="number" min={0} placeholder="Máx"
                 value={qtyMax}
                 onChange={e => { setQtyMax(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
             </div>
           </div>
 
           {/* Fecha solicitud */}
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">Fecha solicitud</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Fecha solicitud</p>
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={reqFrom}
                 onChange={e => { setReqFrom(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
-              <span className="text-[#5f5e59] text-xs">—</span>
+              <span className="text-muted-foreground text-xs">—</span>
               <input
                 type="date"
                 value={reqTo}
                 onChange={e => { setReqTo(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
             </div>
           </div>
 
           {/* Fecha entrega esperada */}
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] mb-2">Entrega esperada</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Entrega esperada</p>
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={delFrom}
                 onChange={e => { setDelFrom(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
-              <span className="text-[#5f5e59] text-xs">—</span>
+              <span className="text-muted-foreground text-xs">—</span>
               <input
                 type="date"
                 value={delTo}
                 onChange={e => { setDelTo(e.target.value); setPage(1) }}
-                className="w-full border border-[#1A1A1A]/20 px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
               />
             </div>
           </div>
@@ -286,7 +286,7 @@ export function OrdersList({
             <div className="sm:col-span-3 flex justify-end">
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="size-3" />
                 Limpiar filtros
@@ -299,17 +299,17 @@ export function OrdersList({
 
       {/* Table */}
       {paginated.length === 0 ? (
-        <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <div className="border border-dashed border-border p-16 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             No hay órdenes para mostrar
           </p>
         </div>
       ) : (
         <>
-          <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+          <div className="border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1A1A1A]/10 bg-[#E5E1D8]/40">
+                <tr className="border-b border-border/50 bg-muted/40">
                   {([
                     { label: '#Orden', key: 'order_number' },
                     { label: 'Proveedor', key: 'provider' },
@@ -324,8 +324,8 @@ export function OrdersList({
                       key={col.label}
                       onClick={() => col.key && toggleSort(col.key)}
                       className={cn(
-                        'px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] select-none',
-                        col.key && 'cursor-pointer hover:text-[#1A1A1A] transition-colors'
+                        'px-4 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground select-none',
+                        col.key && 'cursor-pointer hover:text-foreground transition-colors'
                       )}
                     >
                       {col.key ? (
@@ -343,7 +343,7 @@ export function OrdersList({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1A1A1A]/08">
+              <tbody className="divide-y divide-border/30">
                 {paginated.map(order => {
                   const items = materialType === 'INK' ? order.ink_items : order.paper_items
                   const total = materialType === 'INK'
@@ -353,23 +353,23 @@ export function OrdersList({
                   const complete = items.filter(i => i.is_complete).length
 
                   return (
-                    <tr key={order.id} className="hover:bg-[#E5E1D8]/20 transition-colors">
+                    <tr key={order.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3 font-mono font-bold text-sm">
                         #{order.order_number}
                       </td>
                       <td className="px-4 py-3 text-sm max-w-[160px] truncate">
                         {order.providers?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-[11px] text-[#5f5e59]">
+                      <td className="px-4 py-3 text-[11px] text-muted-foreground">
                         {complete}/{items.length} completos
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px]">
                         {total.toFixed(1)} {unit}
                       </td>
-                      <td className="px-4 py-3 text-[11px] text-[#5f5e59]">
+                      <td className="px-4 py-3 text-[11px] text-muted-foreground">
                         {fmtDate(order.request_date)}
                       </td>
-                      <td className="px-4 py-3 text-[11px] text-[#5f5e59]">
+                      <td className="px-4 py-3 text-[11px] text-muted-foreground">
                         {order.expected_delivery_date ? fmtDate(order.expected_delivery_date) : '—'}
                       </td>
                       <td className="px-4 py-3">
@@ -379,7 +379,7 @@ export function OrdersList({
                         <div className="flex items-center gap-3">
                           <Link
                             href={`/dashboard/orders/${order.id}`}
-                            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A] transition-colors"
+                            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Eye className="size-3.5" />
                             Ver
@@ -387,7 +387,7 @@ export function OrdersList({
                           {canReceive && (order.status === 'PENDING' || order.status === 'PARTIAL') && (
                             <Link
                               href={`/dashboard/receipts/${order.id}`}
-                              className="flex items-center gap-1 h-6 px-2 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-75 transition-opacity"
+                              className="flex items-center gap-1 h-6 px-2 bg-foreground text-background text-[9px] font-bold uppercase tracking-widest hover:opacity-75 transition-opacity"
                             >
                               <PackageCheck className="size-3" />
                               Recibir
@@ -407,7 +407,7 @@ export function OrdersList({
 
       {/* Bottom bar: count + pagination */}
       <div className="flex items-center justify-between mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {orders.length} orden{orders.length !== 1 ? 'es' : ''}
         </p>
 
@@ -416,7 +416,7 @@ export function OrdersList({
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="size-3.5" />
             </button>
@@ -429,20 +429,20 @@ export function OrdersList({
               }, [])
               .map((n, i) =>
                 n === '…'
-                  ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-[#5f5e59]">…</span>
+                  ? <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
                   : <button
                     key={n}
                     onClick={() => setPage(n as number)}
                     className={cn('size-7 text-[10px] font-bold border transition-colors', safePage === n
-                      ? 'bg-[#1A1A1A] text-[#F5F2EA] border-[#1A1A1A]'
-                      : 'border-[#1A1A1A]/20 hover:bg-[#E5E1D8]'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border hover:bg-muted'
                     )}
                   >{n}</button>
               )}
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="size-7 flex items-center justify-center border border-[#1A1A1A]/20 hover:bg-[#E5E1D8] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="size-3.5" />
             </button>

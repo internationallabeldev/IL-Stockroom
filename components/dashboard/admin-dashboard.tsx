@@ -33,19 +33,17 @@ export function AdminDashboard({ userName }: { userName: string }) {
 
   return (
     <div className="px-8 pt-8 pb-16 space-y-8">
-      {/* Header */}
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-[#1A1A1A]">
+          <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">
             Panel de Operaciones
           </h1>
-          <p className="text-lg text-[#5f5e59] mt-1">
+          <p className="text-lg text-muted-foreground mt-1">
             {greeting}, <span className="text-[#008dc2] font-bold capitalize">{userName}</span>
           </p>
         </div>
       </header>
 
-      {/* KPIs */}
       <div className="grid grid-cols-4 gap-3">
         <KpiCard
           title="Stock de tinta"
@@ -78,10 +76,9 @@ export function AdminDashboard({ userName }: { userName: string }) {
         />
       </div>
 
-      {/* Charts — with date range selector */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40">Consumo</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Consumo</p>
           <DateRangePicker onRangeChange={setDateRange} />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -90,7 +87,6 @@ export function AdminDashboard({ userName }: { userName: string }) {
         </div>
       </div>
 
-      {/* Widgets grid */}
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-5">
           <PendingRequisitionsWidget />
@@ -103,7 +99,6 @@ export function AdminDashboard({ userName }: { userName: string }) {
         </div>
       </div>
 
-      {/* Recent activity */}
       <div className="grid grid-cols-2 gap-4">
         <RecentActivityWidget />
       </div>

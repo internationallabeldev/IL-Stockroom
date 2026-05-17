@@ -40,8 +40,8 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
 
   if (lots.length === 0) {
     return (
-      <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+      <div className="border border-dashed border-border p-16 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           No hay bobinas para mostrar
         </p>
       </div>
@@ -49,27 +49,27 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
   }
 
   return (
-    <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+    <div className="border border-border overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-[#E5E1D8]/60 border-b border-[#1A1A1A]/10">
+          <tr className="bg-muted/60 border-b border-border/50">
             {[
               'Lote interno', 'Lote prov.', 'Papel', 'Disponible',
               'Recepción', 'Estado', '',
             ].map(h => (
-              <th key={h} className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] whitespace-nowrap">
+              <th key={h} className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#1A1A1A]/8">
+        <tbody className="divide-y divide-border/30">
           {lots.map(lot => (
             <tr
               key={lot.id}
               className={cn(
                 'transition-colors',
-                lot.enabled ? 'hover:bg-[#E5E1D8]/30' : 'opacity-50 bg-[#E5E1D8]/10'
+                lot.enabled ? 'hover:bg-muted/30' : 'opacity-50 bg-muted/10'
               )}
             >
               <td className="px-4 py-3 font-mono font-bold text-[11px]">
@@ -78,14 +78,14 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
 
               <td className="px-4 py-3">
                 <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                <p className="font-mono text-[10px] text-[#5f5e59]">{lot.receipt?.provider_batch ?? '—'}</p>
+                <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
               </td>
 
               <td className="px-4 py-3">
-                <p className="font-mono text-[10px] text-[#5f5e59]">{lot.paper_catalog?.code}</p>
+                <p className="font-mono text-[10px] text-muted-foreground">{lot.paper_catalog?.code}</p>
                 <p className="font-medium">{lot.paper_catalog?.name}</p>
                 {lot.paper_catalog?.weight_gsm && (
-                  <p className="text-[9px] text-[#5f5e59] font-mono">{lot.paper_catalog.weight_gsm} g/m²</p>
+                  <p className="text-[9px] text-muted-foreground font-mono">{lot.paper_catalog.weight_gsm} g/m²</p>
                 )}
               </td>
 
@@ -93,7 +93,7 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                 <DisponibleCell lot={lot} />
               </td>
 
-              <td className="px-4 py-3 font-mono text-[11px] text-[#5f5e59] whitespace-nowrap">
+              <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
                 {fmtDate((lot.receipt as any)?.receipt_date)}
               </td>
 
@@ -102,7 +102,7 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                   'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
                   lot.enabled
                     ? 'border-green-200 text-green-700 bg-green-50'
-                    : 'border-[#1A1A1A]/20 text-[#5f5e59] bg-[#E5E1D8]/40'
+                    : 'border-border text-muted-foreground bg-muted/40'
                 )}>
                   {lot.enabled ? 'Activa' : 'Deshabilitada'}
                 </span>
@@ -113,7 +113,7 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                   <div className="flex items-center gap-0.5">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button onClick={() => onHistory(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-[#1A1A1A] transition-colors rounded">
+                        <button onClick={() => onHistory(lot.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
                           <History className="size-3.5" />
                         </button>
                       </TooltipTrigger>
@@ -134,14 +134,14 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                     {canManage && lot.enabled && (
                       confirming === lot.id ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">¿Confirmar?</span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">¿Confirmar?</span>
                           <button onClick={() => handleDisable(lot.id)} disabled={disabling === lot.id} className="text-[9px] font-bold uppercase tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50">Sí</button>
-                          <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] hover:text-[#1A1A1A]">No</button>
+                          <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">No</button>
                         </div>
                       ) : (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-[#5f5e59] hover:text-red-600 transition-colors rounded">
+                            <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors rounded">
                               <PowerOff className="size-3.5" />
                             </button>
                           </TooltipTrigger>

@@ -14,12 +14,12 @@ import type { DateRange } from '@/types/dashboard.types'
 const CustomTooltip = ({ active, payload, label, unit }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#F5F2EA] border border-[#1A1A1A]/15 px-3 py-2 shadow-lg">
-      <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 mb-1.5">{label}</p>
+    <div className="bg-background border border-border px-3 py-2 shadow-lg">
+      <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 mb-1.5">{label}</p>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2 text-[10px]">
           <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-          <span className="text-[#1A1A1A]/60 truncate max-w-[120px]">{p.name}</span>
+          <span className="text-foreground/60 truncate max-w-30">{p.name}</span>
           <span className="font-mono font-bold ml-auto pl-2">
             {Number(p.value).toLocaleString('es-MX', { maximumFractionDigits: 2 })} {unit}
           </span>
@@ -56,21 +56,21 @@ export function ConsumptionChart({
   }))
 
   return (
-    <div className="bg-[#fdf9f0] border border-[#1A1A1A]/10 p-5 flex flex-col">
+    <div className="bg-card border border-border p-5 flex flex-col">
       <div className="flex items-center gap-2 mb-5">
-        <TrendingUp className="size-3.5 text-[#1A1A1A]/60" />
+        <TrendingUp className="size-3.5 text-foreground/60" />
         <h3 className="text-[10px] font-bold uppercase tracking-widest">
           Consumo de {materialType === 'INK' ? 'tintas' : 'papel'}
         </h3>
-        <span className="text-[9px] text-[#1A1A1A]/40 uppercase tracking-wider">{unit}</span>
+        <span className="text-[9px] text-foreground/40 uppercase tracking-wider">{unit}</span>
       </div>
 
       {isLoading ? (
-        <div className="h-48 bg-[#E5E1D8] animate-pulse" />
+        <div className="h-48 bg-muted animate-pulse" />
       ) : points.length === 0 ? (
         <div className="h-48 flex flex-col items-center justify-center gap-2">
-          <TrendingUp className="size-6 text-[#1A1A1A]/15" />
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#1A1A1A]/30">
+          <TrendingUp className="size-6 text-foreground/15" />
+          <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/30">
             Sin datos en el período seleccionado
           </p>
         </div>
@@ -85,15 +85,15 @@ export function ConsumptionChart({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A10" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.08} vertical={false} />
             <XAxis
               dataKey="dateLabel"
-              tick={{ fontSize: 9, fill: '#1A1A1A80', fontFamily: 'var(--font-sans)', fontWeight: 700, letterSpacing: 1 }}
+              tick={{ fontSize: 9, fill: 'currentColor', fontFamily: 'var(--font-sans)', fontWeight: 700, letterSpacing: 1, fillOpacity: 0.5 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 9, fill: '#1A1A1A80', fontFamily: 'var(--font-sans)', fontWeight: 700 }}
+              tick={{ fontSize: 9, fill: 'currentColor', fontFamily: 'var(--font-sans)', fontWeight: 700, fillOpacity: 0.5 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={v => v.toLocaleString('es-MX', { maximumFractionDigits: 0 })}

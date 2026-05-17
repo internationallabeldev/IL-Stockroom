@@ -27,8 +27,8 @@ const schema = z.object({
 })
 type FormValues = z.infer<typeof schema>
 
-const inputCls = 'w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-3 text-sm outline-none focus:border-[#1A1A1A]/40 transition-colors'
-const labelCls = 'text-[10px] font-bold uppercase tracking-widest text-[#5f5e59] block mb-1.5'
+const inputCls = 'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
+const labelCls = 'text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1.5'
 const errCls   = 'text-[10px] text-red-600 mt-1'
 
 export function InkRequisitionSheet({ open, onClose, preselectedInk, availableLots }: Props) {
@@ -74,13 +74,13 @@ export function InkRequisitionSheet({ open, onClose, preselectedInk, availableLo
 
   return (
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
-      <SheetContent side="right" className="w-full max-w-md overflow-y-auto bg-[#F5F2EA] border-l border-[#1A1A1A]/15 p-0">
-        <SheetHeader className="px-6 py-5 border-b border-[#1A1A1A]/10">
+      <SheetContent side="right" className="w-full max-w-md overflow-y-auto bg-background border-l border-border p-0">
+        <SheetHeader className="px-6 py-5 border-b border-border/50">
           <SheetTitle className="font-heading text-xl font-bold tracking-tight flex items-center gap-2">
             <FlaskConical className="size-5" />
             Solicitar material
           </SheetTitle>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Requisición de tinta para producción
           </p>
         </SheetHeader>
@@ -91,7 +91,7 @@ export function InkRequisitionSheet({ open, onClose, preselectedInk, availableLo
           <div>
             <label className={labelCls}>Tinta *</label>
             {preselectedInk ? (
-              <div className="h-9 border border-[#1A1A1A]/20 bg-[#E5E1D8]/40 px-3 flex items-center text-sm font-medium">
+              <div className="h-9 border border-border bg-muted/40 px-3 flex items-center text-sm font-medium">
                 {preselectedInk.code} — {preselectedInk.name}
               </div>
             ) : (
@@ -111,7 +111,7 @@ export function InkRequisitionSheet({ open, onClose, preselectedInk, availableLo
 
           {/* Stock info */}
           {catalogId > 0 && (
-            <div className={`px-3 py-2 border text-[11px] font-mono ${kgInsuff ? 'border-red-200 bg-red-50 text-red-700' : 'border-[#1A1A1A]/10 bg-[#E5E1D8]/30 text-[#5f5e59]'}`}>
+            <div className={`px-3 py-2 border text-[11px] font-mono ${kgInsuff ? 'border-red-200 bg-red-50 text-red-700' : 'border-border/50 bg-muted/30 text-muted-foreground'}`}>
               {kgInsuff
                 ? `Stock insuficiente — faltan ${Math.abs(kgDelta).toFixed(1)} kg`
                 : `Stock disponible: ${availableKg.toFixed(1)} kg`
@@ -157,14 +157,14 @@ export function InkRequisitionSheet({ open, onClose, preselectedInk, availableLo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 border border-[#1A1A1A]/25 text-[10px] font-bold uppercase tracking-widest hover:bg-[#E5E1D8] transition-colors"
+              className="flex-1 py-2.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting || kgInsuff}
-              className="flex-1 py-2.5 bg-[#1A1A1A] text-[#F5F2EA] text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 flex items-center justify-center gap-1.5"
             >
               {isSubmitting && <Loader2 className="size-3 animate-spin" />}
               {isSubmitting ? 'Enviando…' : 'Solicitar'}
