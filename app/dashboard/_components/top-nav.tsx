@@ -26,7 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/receipts/ink':       'Recepciones — Tintas',
   '/dashboard/receipts/paper':     'Recepciones — Papel',
   '/dashboard/users':              'Usuarios',
-  '/dashboard/settings':           'Configuración',
+  '/dashboard/settings/app':       'Configuración del Sistema',
   '/dashboard/audit':              'Auditoría',
   '/dashboard/outputs/history':    'Salidas de material',
 }

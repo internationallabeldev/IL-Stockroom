@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Pencil, Ban, ArrowLeft, FileText } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { cancelPurchaseOrder, type PurchaseOrderDetail } from '@/actions/purchase-orders.actions'
+import type { AppSettings } from '@/types/app-settings.types'
 import { OrderStatusBadge } from './order-status-badge'
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -18,11 +19,13 @@ const OrderPdfButton = dynamic(
 )
 
 type Props = {
-  order: PurchaseOrderDetail
-  canEdit: boolean
+  order:       PurchaseOrderDetail
+  canEdit:     boolean
+  settings?:   AppSettings | null
+  logoBase64?: string | null
 }
 
-export function OrderDetail({ order, canEdit }: Props) {
+export function OrderDetail({ order, canEdit, settings, logoBase64 }: Props) {
   const router = useRouter()
   const [cancelling, setCancelling] = useState(false)
 
@@ -67,7 +70,7 @@ export function OrderDetail({ order, canEdit }: Props) {
         </button>
 
         <div className="flex gap-2 items-center">
-          <OrderPdfButton order={order} />
+          <OrderPdfButton order={order} settings={settings} logoBase64={logoBase64} />
           {canEdit && isPending && !isLocked && (
             <>
               <button

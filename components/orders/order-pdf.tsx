@@ -1,17 +1,21 @@
 'use client'
 
-import { Document, Page, Text, View, StyleSheet, Svg, Path } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Svg, Path, Image as PdfImage } from '@react-pdf/renderer'
 import type { PurchaseOrderDetail } from '@/actions/purchase-orders.actions'
+import type { AppSettings } from '@/types/app-settings.types'
 
-// ─── Company constants ────────────────────────────────────────────────────────
-const COMPANY_NAME    = 'INTERNATIONAL LABEL S.A. DE C.V.'
-const COMPANY_ADDRESS = 'GALEANA NO. 45 COL. ACAPANTZINGO'
-const COMPANY_CITY    = 'CUERNAVACA, MORELOS'
-const COMPANY_ZIP     = 'C.P. 62440'
-const COMPANY_PHONE   = 'TEL: (777) 312-5897'
-const FISCAL_ADDRESS  = 'GALEANA NO. 45 COL. ACAPANTZINGO, MOR. C.P. 62440 CUERNAVACA, MORELOS'
-const RFC             = 'ILA000101XXX'
-const BODEGA          = 'GALEANA NO. 45 COL. ACAPANTZINGO CUERNAVACA, MORELOS'
+// ─── Fallback constants (used when settings are not provided) ─────────────────
+const DEFAULT_COMPANY_NAME    = 'INTERNATIONAL LABEL S.A. DE C.V.'
+const DEFAULT_COMPANY_ADDRESS = 'GALEANA NO. 45 COL. ACAPANTZINGO'
+const DEFAULT_COMPANY_CITY    = 'CUERNAVACA, MORELOS'
+const DEFAULT_COMPANY_ZIP     = 'C.P. 62440'
+const DEFAULT_COMPANY_PHONE   = 'TEL: (777) 312-5897'
+const DEFAULT_FISCAL_ADDRESS  = 'GALEANA NO. 45 COL. ACAPANTZINGO, MOR. C.P. 62440 CUERNAVACA, MORELOS'
+const DEFAULT_RFC             = 'ILA000101XXX'
+const DEFAULT_BODEGA          = 'GALEANA NO. 45 COL. ACAPANTZINGO CUERNAVACA, MORELOS'
+const DEFAULT_FOOTER_LEGAL    = 'FAVOR DE FACTURAR A: INTERNATIONAL LABEL S.A. DE C.V.'
+const DEFAULT_RECEPTION_NOTES = 'RECEPCIÓN DE MATERIALES LUNES A VIERNES DE 08:30 A 16:30 HRS.\nNO SE RECIBIRÁN MATERIALES SI ESTOS NO VIENEN ACOMPAÑADOS DE FACTURA QUE INDIQUE N° DE ORDEN DE COMPRA, TIPO DE CAMBIO (SOLO PARA FACTURAS EN PESOS), ASÍ COMO CERTIFICADOS DE CALIDAD.'
+const DEFAULT_REVISION        = 'Rev: 3'
 
 // ─── Logo SVG paths ───────────────────────────────────────────────────────────
 const IL_PATH_RING = 'M213.923 2388.74C282.581 3417.81 1113.34 4238.28 2146.76 4290.73V4501.45C997.068 4448.59 72.2259 3534.1 3.01465 2388.74H213.923ZM4500.99 2388.74C4431.77 3534.1 3506.93 4448.59 2357.24 4501.45V4290.73C3390.66 4238.28 4221.42 3417.81 4290.08 2388.74H4500.99ZM2357.24 0C3528.79 53.8645 4466.85 1002.43 4504 2178.27H4293.4C4256.46 1118.69 3412.51 264.279 2357.24 210.724V0ZM2146.76 210.724C1091.49 264.279 247.537 1118.69 210.596 2178.27H0C37.1487 1002.43 975.215 53.8654 2146.76 0V210.724Z'
@@ -288,8 +292,26 @@ function dateParts(d: string) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function OrderPDF({ order }: { order: PurchaseOrderDetail }) {
+type OrderPDFProps = {
+  order:    PurchaseOrderDetail
+  settings?: AppSettings | null
+  logoBase64?: string | null
+}
+
+export function OrderPDF({ order, settings, logoBase64 }: OrderPDFProps) {
   const isInk    = order.material_type === 'INK'
+
+  const companyName    = settings?.company.name?.toUpperCase()             ?? DEFAULT_COMPANY_NAME
+  const companyAddress = settings?.company.address?.toUpperCase()          ?? DEFAULT_COMPANY_ADDRESS
+  const companyPhone   = settings?.company.phone
+    ? `TEL: ${settings.company.phone}`
+    : DEFAULT_COMPANY_PHONE
+  const rfc            = settings?.company.rfc                             || DEFAULT_RFC
+  const fiscalAddress  = settings?.company.fiscal_address?.toUpperCase()   || DEFAULT_FISCAL_ADDRESS
+  const bodega         = settings?.company.warehouse_address?.toUpperCase() || DEFAULT_BODEGA
+  const footerLegal    = settings?.pdf.footer_legal                        ?? DEFAULT_FOOTER_LEGAL
+  const receptionNotes = settings?.pdf.reception_notes                     ?? DEFAULT_RECEPTION_NOTES
+  const revision       = settings?.pdf.revision                            ?? DEFAULT_REVISION
   const provider = order.providers
   const { day, month, year } = dateParts(order.request_date)
 
@@ -321,16 +343,22 @@ export function OrderPDF({ order }: { order: PurchaseOrderDetail }) {
         {/* HEADER */}
         <View style={s.header}>
           <View style={s.logoBox}>
-            <Svg viewBox="0 0 4504 4502" width={44} height={44}>
-              <Path d={IL_PATH_RING} fill="#1A1A1A" />
-              <Path d={IL_PATH_INNER} fill="#1A1A1A" />
-            </Svg>
+            {logoBase64 ? (
+              <PdfImage src={logoBase64} style={{ width: 44, height: 44, objectFit: 'contain' }} />
+            ) : (
+              <Svg viewBox="0 0 4504 4502" width={44} height={44}>
+                <Path d={IL_PATH_RING} fill="#1A1A1A" />
+                <Path d={IL_PATH_INNER} fill="#1A1A1A" />
+              </Svg>
+            )}
           </View>
           <View style={s.companyBlock}>
-            <Text style={s.companyName}>{COMPANY_NAME}</Text>
-            <Text style={s.companyInfo}>{COMPANY_ADDRESS}</Text>
-            <Text style={s.companyInfo}>{COMPANY_CITY} · {COMPANY_ZIP}</Text>
-            <Text style={s.companyInfo}>{COMPANY_PHONE}</Text>
+            <Text style={s.companyName}>{companyName}</Text>
+            <Text style={s.companyInfo}>{companyAddress}</Text>
+            {!settings && (
+              <Text style={s.companyInfo}>{DEFAULT_COMPANY_CITY} · {DEFAULT_COMPANY_ZIP}</Text>
+            )}
+            <Text style={s.companyInfo}>{companyPhone}</Text>
           </View>
           <Text style={s.ocLabel}>ORDEN DE COMPRA</Text>
         </View>
@@ -447,15 +475,11 @@ export function OrderPDF({ order }: { order: PurchaseOrderDetail }) {
         {/* FOOTER */}
         <View style={s.footer}>
           <Text style={s.footerBilling}>
-            FAVOR DE FACTURAR A: {COMPANY_NAME} · DOMICILIO FISCAL: {FISCAL_ADDRESS} · R.F.C.: {RFC} · BODEGA: {BODEGA}
+            {footerLegal} · DOMICILIO FISCAL: {fiscalAddress} · R.F.C.: {rfc} · BODEGA: {bodega}
           </Text>
           <View style={s.separator} />
-          <Text style={s.footerRules}>
-            RECEPCIÓN DE MATERIALES LUNES A VIERNES DE 08:30 A 16:30 HRS.{'\n'}
-            NO SE RECIBIRÁN MATERIALES SI ESTOS NO VIENEN ACOMPAÑADOS DE FACTURA QUE INDIQUE N° DE ORDEN DE COMPRA,
-            TIPO DE CAMBIO (SOLO PARA FACTURAS EN PESOS), ASÍ COMO CERTIFICADOS DE CALIDAD.
-          </Text>
-          <Text style={s.revText}>Rev: 3</Text>
+          <Text style={s.footerRules}>{receptionNotes}</Text>
+          <Text style={s.revText}>{revision}</Text>
         </View>
 
         {/* SIGNATURES */}

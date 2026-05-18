@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          changed_fields: string[] | null
+          created_at: string | null
+          id: number
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          performed_by: string | null
+          performed_by_name: string | null
+          record_id: number | null
+          table_name: string
+        }
+        Insert: {
+          changed_fields?: string[] | null
+          created_at?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          performed_by?: string | null
+          performed_by_name?: string | null
+          record_id?: number | null
+          table_name: string
+        }
+        Update: {
+          changed_fields?: string[] | null
+          created_at?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          performed_by?: string | null
+          performed_by_name?: string | null
+          record_id?: number | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -1136,7 +1175,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_current_user_id: { Args: { user_id: string }; Returns: undefined }
     }
     Enums: {
       material_type: "INK" | "PAPER"
