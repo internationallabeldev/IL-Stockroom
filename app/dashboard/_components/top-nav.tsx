@@ -1,13 +1,16 @@
 'use client'
 
-import { Bell, User, Droplet, FileText, Search } from 'lucide-react'
-import Image from 'next/image'
+import { useState } from 'react'
+import { Bell, Droplet, FileText, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMaterial } from './material-context'
 import { usePathname } from 'next/navigation'
 import { useCommandPalette } from '@/hooks/use-command-palette'
 import { CommandPalette } from '@/components/search/command-palette'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { UserAvatar } from '@/components/shared/user-avatar'
+import { SettingsDrawer } from '@/components/settings/settings-drawer'
+import type { AppUser } from '@/actions/users.actions'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard/orders/ink':         'Órdenes de compra — Tintas',
@@ -28,16 +31,24 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/outputs/history':    'Salidas de material',
 }
 
-export function TopNav({ userName }: { userName: string }) {
+type ExtUser = AppUser & { nickname?: string | null }
+
+export function TopNav({ user }: { user: AppUser }) {
+  const u = user as ExtUser
   const { material, setMaterial } = useMaterial()
   const pathname = usePathname()
   const pageTitle = PAGE_TITLES[pathname] ?? null
   const showMaterialToggle = pathname !== '/dashboard/providers'
   const { isOpen, open, close } = useCommandPalette()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const displayName = u.nickname || user.first_name
 
   return (
     <>
     <CommandPalette isOpen={isOpen} onClose={close} />
+    <SettingsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} user={user} />
+
     <header className="fixed top-0 z-50 h-16 w-full bg-background border-b border-border flex items-center justify-between px-8">
       <div className="flex items-center gap-4">
         <span className="font-heading font-bold text-xl tracking-tighter select-none">
@@ -104,12 +115,21 @@ export function TopNav({ userName }: { userName: string }) {
           <Bell className="size-4 text-foreground/60" />
         </button>
 
-        <div className="flex items-center gap-2 border-l border-border pl-3">
-          <User className="size-4 text-foreground/70" />
+        {/* User section → opens SettingsDrawer */}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="flex items-center gap-2 border-l border-border pl-3 hover:opacity-70 transition-opacity"
+        >
+          <UserAvatar
+            firstName={user.first_name}
+            lastName={user.last_name}
+            avatarUrl={user.avatar_url}
+            size="sm"
+          />
           <span className="text-[10px] font-bold tracking-widest uppercase text-foreground">
-            {userName}
+            {displayName}
           </span>
-        </div>
+        </button>
       </div>
     </header>
     </>

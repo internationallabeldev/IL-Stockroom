@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
+import { setAuditUser }      from '@/lib/supabase/audit'
 import type { Database }     from '@/types/database.types'
 
 type PaperInventoryRow = Database['public']['Tables']['paper_inventory']['Row']
@@ -103,6 +104,7 @@ export async function updatePaperLotLocation(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('paper_inventory')
     .update({ location: location.trim() || null, updated_at: new Date().toISOString() })
@@ -120,6 +122,7 @@ export async function disablePaperLot(
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('paper_inventory')
     .update({ enabled: false, updated_at: new Date().toISOString() })

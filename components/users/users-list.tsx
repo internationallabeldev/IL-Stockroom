@@ -8,7 +8,7 @@ import { RoleBadge } from './role-badge'
 import { InviteUserForm } from './invite-user-form'
 import { UserDetailSheet } from './user-detail-sheet'
 import { getUsers, type AppUser } from '@/actions/users.actions'
-import type { Database } from '@/types/database.types'
+import { UserAvatar } from '@/components/shared/user-avatar'
 
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'Todos' },
@@ -37,23 +37,6 @@ function formatLastAccess(iso: string | null) {
   return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function UserAvatar({ user }: { user: AppUser }) {
-  const initials = `${user.first_name[0] ?? ''}${user.last_name[0] ?? ''}`.toUpperCase()
-  if (user.avatar_url) {
-    return (
-      <img
-        src={user.avatar_url}
-        alt=""
-        className="size-7 object-cover rounded-none"
-      />
-    )
-  }
-  return (
-    <div className="size-7 bg-foreground flex items-center justify-center shrink-0">
-      <span className="text-background text-[9px] font-bold">{initials}</span>
-    </div>
-  )
-}
 
 type Props = {
   initialUsers: AppUser[]
@@ -197,7 +180,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
                   }`}
                 >
                   <td className="px-4 py-3">
-                    <UserAvatar user={u} />
+                    <UserAvatar firstName={u.first_name} lastName={u.last_name} avatarUrl={u.avatar_url} size="sm" />
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
                     {u.first_name} {u.last_name}

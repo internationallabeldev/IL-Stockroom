@@ -11,7 +11,7 @@ import { QualityUpdateForm } from './quality-update-form'
 import { EditReceiptForm } from './edit-receipt-form'
 import { ReceiptForm, type ReceiptItemContext } from './receipt-form'
 import { BatchReceiptForm } from './batch-receipt-form'
-import type { UpdateReceiptAdminValues } from '@/lib/validations/receipt.schema'
+import type { UpdateInkReceiptAdminValues, UpdatePaperReceiptAdminValues } from '@/lib/validations/receipt.schema'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
@@ -23,6 +23,7 @@ type Props = {
   initialOrder: OrderWithReceipts
   canReceive: boolean
   canEdit: boolean
+  isAdmin: boolean
 }
 
 type QualityDialog = {
@@ -33,15 +34,19 @@ type QualityDialog = {
   currentQuality: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
 }
 
+type QualityStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
+
 type EditDialog = {
   open:          boolean
   receiptId:     number
   materialType:  'INK' | 'PAPER'
+  qualityStatus: QualityStatus
+  inventoryId:   number | null
   batchRef:      string
-  initialValues: UpdateReceiptAdminValues
+  initialValues: UpdateInkReceiptAdminValues | UpdatePaperReceiptAdminValues
 }
 
-export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props) {
+export function OrderReceiptDetail({ initialOrder, canReceive, canEdit, isAdmin }: Props) {
   const [receiptForm, setReceiptForm]   = useState<{ open: boolean; item: ReceiptItemContext | null }>({ open: false, item: null })
   const [batchFormOpen, setBatchFormOpen] = useState(false)
   const [qualityDialog, setQualityDialog] = useState<QualityDialog>({
@@ -49,7 +54,8 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
   })
   const [editDialog, setEditDialog] = useState<EditDialog>({
     open: false, receiptId: 0, materialType: 'INK', batchRef: '',
-    initialValues: { receipt_date: '', invoice_remission: '', provider_batch: '', quality_certificate: 'PENDING' },
+    qualityStatus: 'PENDING', inventoryId: null,
+    initialValues: { receipt_date: '', invoice_remission: '', provider_batch: '' },
   })
 
   const { data: order, refetch } = useQuery({
@@ -210,20 +216,38 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
                       onEvalQuality={({ receiptId, batchRef, currentQuality }) =>
                         setQualityDialog({ open: true, receiptId, materialType: order.material_type, batchRef, currentQuality })
                       }
-                      onEdit={rec => setEditDialog({
-                        open: true,
-                        receiptId: rec.id,
-                        materialType: order.material_type,
-                        batchRef: (rec as any).internal_batch,
-                        initialValues: {
-                          receipt_date:        (rec as any).receipt_date?.split('T')[0] ?? '',
-                          invoice_remission:   (rec as any).invoice_remission ?? '',
-                          provider_batch:      (rec as any).provider_batch ?? '',
-                          quality_certificate: (rec as any).quality_certificate ?? 'PENDING',
-                          quality_notes:       (rec as any).quality_notes ?? '',
-                          certificate_url:     (rec as any).certificate_url ?? '',
-                        },
-                      })}
+                      onEdit={rec => {
+                        const r = rec as any
+                        const isInkOrder = order.material_type === 'INK'
+                        setEditDialog({
+                          open:          true,
+                          receiptId:     r.id,
+                          materialType:  order.material_type,
+                          qualityStatus: r.quality_certificate ?? 'PENDING',
+                          inventoryId:   r.ink_inventory?.id ?? r.paper_inventory?.id ?? null,
+                          batchRef:      r.internal_batch,
+                          initialValues: isInkOrder ? {
+                            receipt_date:      r.receipt_date?.split('T')[0] ?? '',
+                            invoice_remission: r.invoice_remission ?? '',
+                            provider_batch:    r.provider_batch ?? '',
+                            quality_notes:     r.quality_notes ?? '',
+                            certificate_url:   r.certificate_url ?? '',
+                            internal_batch:    r.internal_batch ?? '',
+                            kg_received:       r.kg_received,
+                            units_received:    r.units_received,
+                          } : {
+                            receipt_date:      r.receipt_date?.split('T')[0] ?? '',
+                            invoice_remission: r.invoice_remission ?? '',
+                            provider_batch:    r.provider_batch ?? '',
+                            quality_notes:     r.quality_notes ?? '',
+                            certificate_url:   r.certificate_url ?? '',
+                            internal_batch:    r.internal_batch ?? '',
+                            length_m:          r.length_m,
+                            width_m:           r.width_m,
+                            units_received:    r.units_received,
+                          },
+                        })
+                      }}
                     />
                   ))}
                 </div>
@@ -263,6 +287,9 @@ export function OrderReceiptDetail({ initialOrder, canReceive, canEdit }: Props)
         onClose={() => { setEditDialog(d => ({ ...d, open: false })); refetch() }}
         receiptId={editDialog.receiptId}
         materialType={editDialog.materialType}
+        qualityStatus={editDialog.qualityStatus}
+        inventoryId={editDialog.inventoryId}
+        isAdmin={isAdmin}
         batchRef={editDialog.batchRef}
         initialValues={editDialog.initialValues}
       />

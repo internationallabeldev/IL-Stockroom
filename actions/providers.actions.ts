@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getSessionUser } from './auth.actions'
 import { revalidatePath } from 'next/cache'
 import { providerSchema } from '@/lib/validations/provider.schema'
-import type { Database } from '@/types/database.types'
+import { setAuditUser }   from '@/lib/supabase/audit'
+import type { Database }  from '@/types/database.types'
 
 export type Provider = Database['public']['Tables']['providers']['Row']
 type ProviderInsert = Database['public']['Tables']['providers']['Insert']
@@ -61,6 +62,7 @@ export async function createProvider(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase.from('providers').insert(parsed.data as ProviderInsert)
   if (error) return { error: error.message }
 
@@ -92,6 +94,7 @@ export async function updateProvider(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
+  await setAuditUser(supabase, user.id)
   const update: ProviderUpdate = { ...parsed.data, updated_at: new Date().toISOString() }
   const { error } = await supabase.from('providers').update(update).eq('id', id)
   if (error) return { error: error.message }
@@ -113,6 +116,7 @@ export async function toggleProviderStatus(
     .eq('id', id)
     .single()
 
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('providers')
     .update({ enabled: !provider?.enabled, updated_at: new Date().toISOString() })

@@ -15,6 +15,7 @@ export default async function OrderReceiptPage({ params }: { params: Promise<{ o
 
   const canReceive = ['ADMIN', 'WAREHOUSE_MANAGER'].includes(user.role)
   const canEdit    = ['ADMIN', 'WAREHOUSE_MANAGER'].includes(user.role)
+  const isAdmin    = user.role === 'ADMIN'
 
   const order = await getOrderWithReceipts(id)
   if (!order) notFound()
@@ -25,6 +26,7 @@ export default async function OrderReceiptPage({ params }: { params: Promise<{ o
         initialOrder={order}
         canReceive={canReceive}
         canEdit={canEdit}
+        isAdmin={isAdmin}
       />
     </div>
   )

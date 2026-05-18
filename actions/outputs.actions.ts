@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
+import { setAuditUser }      from '@/lib/supabase/audit'
 import {
   createInkOutputSchema,
   createPaperOutputSchema,
@@ -101,6 +102,7 @@ export async function createInkOutput(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // Validate requisition status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,6 +196,7 @@ export async function createPaperOutput(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
 
   // Validate requisition
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -347,6 +350,7 @@ export async function registerInkReturn(
     return { error: `No puedes devolver más de lo entregado (${out.kg_delivered.toFixed(2)} kg)` }
   }
 
+  await setAuditUser(supabase, user.id)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('ink_outputs')
@@ -382,6 +386,7 @@ export async function registerPaperReturn(
     return { error: `No puedes devolver más de lo entregado (${(out.m2_delivered ?? 0).toFixed(3)} m²)` }
   }
 
+  await setAuditUser(supabase, user.id)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('paper_outputs')

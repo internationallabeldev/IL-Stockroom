@@ -4,17 +4,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 import { logoutAction } from '@/actions/auth.actions'
+import { updateUserTheme } from '@/actions/users.actions'
 import {
   LayoutDashboard, Package, ClipboardList,
   Truck, BookOpen, ClipboardCheck, ShoppingCart, LogOut,
   PackagePlus, Users, Settings, ShieldCheck, History,
+  Sun, Moon,
   type LucideIcon,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useMaterial, MATERIAL_ROUTES, getMaterialFromPath } from './material-context'
 import { Separator } from '@/components/ui/separator'
+import { UserAvatar } from '@/components/shared/user-avatar'
+import { RoleBadge } from '@/components/users/role-badge'
+import type { AppUser } from '@/actions/users.actions'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -109,9 +115,14 @@ function NavLink({
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
-export function SidebarNav({ role = 'USER' }: { role?: Role }) {
+type ExtUser = AppUser & { nickname?: string | null }
+
+export function SidebarNav({ user }: { user: AppUser }) {
+  const u = user as ExtUser
+  const role = user.role as Role
   const pathname = usePathname()
   const { material, setMaterial } = useMaterial()
+  const { resolvedTheme, setTheme } = useTheme()
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
@@ -192,8 +203,82 @@ export function SidebarNav({ role = 'USER' }: { role?: Role }) {
         {/* ── Bottom ──────────────────────────────────────────────────────────── */}
         <div className={cn(
           'shrink-0 pt-4 border-t border-sidebar-border',
-          expanded ? 'px-6 space-y-3' : 'px-2 space-y-1'
+          expanded ? 'px-6 space-y-3' : 'px-2 space-y-2'
         )}>
+          {/* User info */}
+          {expanded ? (
+            <div className="flex items-center gap-3 py-2">
+              <UserAvatar
+                firstName={user.first_name}
+                lastName={user.last_name}
+                avatarUrl={user.avatar_url}
+                size="sm"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-sidebar-foreground truncate">
+                  {u.nickname || user.first_name}
+                </p>
+                <RoleBadge role={user.role} />
+              </div>
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex justify-center py-1">
+                  <UserAvatar
+                    firstName={user.first_name}
+                    lastName={user.last_name}
+                    avatarUrl={user.avatar_url}
+                    size="sm"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {u.nickname || `${user.first_name} ${user.last_name}`}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Theme toggle */}
+          {expanded ? (
+            <button
+              onClick={() => {
+                const next = resolvedTheme === 'dark' ? 'light' : 'dark'
+                setTheme(next)
+                updateUserTheme(next)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            >
+              {resolvedTheme === 'dark'
+                ? <Sun className="size-3 shrink-0" />
+                : <Moon className="size-3 shrink-0" />
+              }
+              {resolvedTheme === 'dark' ? 'Claro' : 'Oscuro'}
+            </button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    const next = resolvedTheme === 'dark' ? 'light' : 'dark'
+                    setTheme(next)
+                    updateUserTheme(next)
+                  }}
+                  className="flex justify-center items-center h-8 w-full text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                >
+                  {resolvedTheme === 'dark'
+                    ? <Sun className="size-3 shrink-0" />
+                    : <Moon className="size-3 shrink-0" />
+                  }
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {resolvedTheme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Logout */}
           <form action={logoutAction}>
             {expanded ? (
               <button

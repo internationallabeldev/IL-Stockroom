@@ -15,6 +15,21 @@ export const updateProfileSchema = z.object({
   phone: z.string().nullable().optional(),
 })
 
+export const updateOwnProfileSchema = z.object({
+  nickname:  z.string().max(30, 'Máx. 30 caracteres').nullable().optional(),
+  phone:     z.string().nullable().optional(),
+  job_title: z.string().max(50, 'Máx. 50 caracteres').nullable().optional(),
+})
+
+export const notificationPreferencesSchema = z.object({
+  pending_requisitions:  z.boolean().optional(),
+  quality_pending:       z.boolean().optional(),
+  low_stock:             z.boolean().optional(),
+  order_overdue:         z.boolean().optional(),
+  requisition_approved:  z.boolean().optional(),
+  requisition_rejected:  z.boolean().optional(),
+})
+
 export const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Mínimo 8 caracteres'),
   confirm: z.string(),
@@ -37,5 +52,7 @@ export const changeOwnPasswordSchema = z.object({
 
 export type InviteUserValues = z.infer<typeof inviteUserSchema>
 export type UpdateProfileValues = z.infer<typeof updateProfileSchema>
+export type UpdateOwnProfileValues = z.infer<typeof updateOwnProfileSchema>
+export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>
 export type ChangeOwnPasswordValues = z.infer<typeof changeOwnPasswordSchema>

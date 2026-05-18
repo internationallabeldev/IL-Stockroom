@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { QueryProvider } from "./query-provider"
@@ -31,11 +32,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore  = await cookies()
+  const savedTheme   = cookieStore.get('preferred-theme')?.value
+  const defaultTheme = savedTheme === 'dark' ? 'dark' : 'light'
+
   return (
     <html
       lang="es"
@@ -43,7 +48,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme={defaultTheme}>
         <QueryProvider>
           {children}
           <Toaster

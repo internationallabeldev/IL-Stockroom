@@ -1,10 +1,11 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { getSessionUser } from './auth.actions'
-import { revalidatePath } from 'next/cache'
-import { paperCatalogSchema } from '@/lib/validations/paper-catalog.schema'
-import type { Database } from '@/types/database.types'
+import { createAdminClient }   from '@/lib/supabase/admin'
+import { getSessionUser }       from './auth.actions'
+import { revalidatePath }       from 'next/cache'
+import { paperCatalogSchema }   from '@/lib/validations/paper-catalog.schema'
+import { setAuditUser }         from '@/lib/supabase/audit'
+import type { Database }        from '@/types/database.types'
 
 export type PaperCatalogItem = Database['public']['Tables']['paper_catalog']['Row']
 type PaperInsert = Database['public']['Tables']['paper_catalog']['Insert']
@@ -33,6 +34,7 @@ export async function createPaperCatalogItem(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase.from('paper_catalog').insert(parsed.data as PaperInsert)
   if (error) return { error: error.message }
 
@@ -51,6 +53,7 @@ export async function updatePaperCatalogItem(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = createAdminClient()
+  await setAuditUser(supabase, user.id)
   const update: PaperUpdate = { ...parsed.data, updated_at: new Date().toISOString() }
   const { error } = await supabase.from('paper_catalog').update(update).eq('id', id)
   if (error) return { error: error.message }
@@ -67,6 +70,7 @@ export async function togglePaperCatalogStatus(
 
   const supabase = createAdminClient()
   const { data } = await supabase.from('paper_catalog').select('enabled').eq('id', id).single()
+  await setAuditUser(supabase, user.id)
   const { error } = await supabase
     .from('paper_catalog')
     .update({ enabled: !data?.enabled, updated_at: new Date().toISOString() })
