@@ -33,7 +33,7 @@ export function OrdersSettings({ settings }: { settings: AppSettings }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-      <div className="space-y-1.5 max-w-xs">
+      <div className="space-y-1.5 max-w-2xl">
         <Label className="text-[10px] uppercase tracking-widest">Método de pago por defecto</Label>
         <Input {...register('default_payment_method')} placeholder="Ej: Transferencia" />
         <p className="text-[9px] text-muted-foreground">
@@ -41,7 +41,7 @@ export function OrdersSettings({ settings }: { settings: AppSettings }) {
         </p>
       </div>
 
-      <div className="space-y-1.5 max-w-xs">
+      <div className="space-y-1.5 max-w-2xl">
         <Label className="text-[10px] uppercase tracking-widest">Lugar de entrega por defecto</Label>
         <Input {...register('default_delivery_place')} placeholder="Ej: Directo en Planta" />
         <p className="text-[9px] text-muted-foreground">
@@ -49,7 +49,7 @@ export function OrdersSettings({ settings }: { settings: AppSettings }) {
         </p>
       </div>
 
-      <div className="space-y-1.5 max-w-xs">
+      <div className="space-y-1.5 max-w-2xl">
         <Label className="text-[10px] uppercase tracking-widest">Número inicial de secuencia</Label>
         <Input
           {...register('number_sequence_start', { valueAsNumber: true })}

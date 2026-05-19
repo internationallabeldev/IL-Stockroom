@@ -13,16 +13,7 @@ export default async function AppSettingsPage() {
   if (!settings) redirect('/dashboard')
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="font-heading text-2xl font-black uppercase tracking-tight">
-          Configuración del Sistema
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Identidad de la empresa, documentos PDF, alertas y valores por defecto
-        </p>
-      </div>
-
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden -mb-10">
       <AppSettingsForm settings={settings} />
     </div>
   )

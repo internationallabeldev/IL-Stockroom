@@ -1,6 +1,8 @@
 'use client'
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useState } from 'react'
+import { Building2, FileText, Bell, ShoppingCart, ClipboardCheck } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { CompanySettings }      from './company-settings'
 import { PdfSettings }          from './pdf-settings'
 import { AlertsSettings }       from './alerts-settings'
@@ -8,86 +10,62 @@ import { OrdersSettings }       from './orders-settings'
 import { RequisitionsSettings } from './requisitions-settings'
 import type { AppSettings }     from '@/types/app-settings.types'
 
-const TABS = [
-  { value: 'company',      label: 'Empresa' },
-  { value: 'pdf',          label: 'PDF y Documentos' },
-  { value: 'alerts',       label: 'Alertas' },
-  { value: 'orders',       label: 'Órdenes de Compra' },
-  { value: 'requisitions', label: 'Requisiciones' },
-] as const
+type Section = 'company' | 'pdf' | 'alerts' | 'orders' | 'requisitions'
+
+const SECTIONS = [
+  { key: 'company'      as Section, label: 'Empresa',           icon: Building2,      desc: 'Identidad, logo y domicilios' },
+  { key: 'pdf'          as Section, label: 'PDF y Documentos',  icon: FileText,       desc: 'Textos y notas en documentos exportados' },
+  { key: 'alerts'       as Section, label: 'Alertas',           icon: Bell,           desc: 'Umbrales y días de aviso' },
+  { key: 'orders'       as Section, label: 'Órdenes de Compra', icon: ShoppingCart,   desc: 'Valores por defecto al crear órdenes' },
+  { key: 'requisitions' as Section, label: 'Requisiciones',     icon: ClipboardCheck, desc: 'Tiempos de respuesta y textos de ayuda' },
+]
 
 export function AppSettingsForm({ settings }: { settings: AppSettings }) {
+  const [active, setActive] = useState<Section>('company')
+  const current = SECTIONS.find(s => s.key === active)!
+
   return (
-    <Tabs defaultValue="company">
-      <TabsList className="w-full overflow-x-auto">
-        {TABS.map(t => (
-          <TabsTrigger key={t.value} value={t.value}>
-            {t.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <div className="flex h-full w-full">
 
-      <div className="mt-8">
-        <TabsContent value="company">
-          <section>
-            <div className="mb-5 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold uppercase tracking-widest">Identidad de la empresa</h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Aparece en el sidebar, PDFs y documentos exportados
-              </p>
-            </div>
-            <CompanySettings settings={settings} />
-          </section>
-        </TabsContent>
+      {/* Vertical nav */}
+      <nav className="h-full w-52 shrink-0 border-r border-border overflow-y-auto py-6">
+        {SECTIONS.map(s => {
+          const Icon = s.icon
+          const isActive = s.key === active
+          return (
+            <button
+              key={s.key}
+              onClick={() => setActive(s.key)}
+              className={cn(
+                'w-full text-left flex items-center gap-3 px-5 py-3 border-l-2 transition-colors',
+                isActive
+                  ? 'border-foreground bg-foreground/5 text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-foreground/3'
+              )}
+            >
+              <Icon className="size-3.5 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest leading-tight">
+                {s.label}
+              </span>
+            </button>
+          )
+        })}
+      </nav>
 
-        <TabsContent value="pdf">
-          <section>
-            <div className="mb-5 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold uppercase tracking-widest">PDF y Documentos</h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Textos y datos que aparecen en los documentos PDF de órdenes de compra
-              </p>
-            </div>
-            <PdfSettings settings={settings} />
-          </section>
-        </TabsContent>
+      {/* Content panel — scrolls independently */}
+      <div className="flex-1 h-full overflow-y-auto py-8 pb-14 min-w-0 px-15">
+        <div className="mb-6 pb-3 border-b border-border">
+          <h2 className="text-sm font-bold uppercase tracking-widest">{current.label}</h2>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{current.desc}</p>
+        </div>
 
-        <TabsContent value="alerts">
-          <section>
-            <div className="mb-5 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold uppercase tracking-widest">Alertas y Umbrales</h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Configura cuándo se disparan las alertas en el dashboard
-              </p>
-            </div>
-            <AlertsSettings settings={settings} />
-          </section>
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <section>
-            <div className="mb-5 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold uppercase tracking-widest">Órdenes de Compra</h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Valores por defecto al crear nuevas órdenes de compra
-              </p>
-            </div>
-            <OrdersSettings settings={settings} />
-          </section>
-        </TabsContent>
-
-        <TabsContent value="requisitions">
-          <section>
-            <div className="mb-5 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold uppercase tracking-widest">Requisiciones</h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Tiempos de respuesta y textos de ayuda para el flujo de requisiciones
-              </p>
-            </div>
-            <RequisitionsSettings settings={settings} />
-          </section>
-        </TabsContent>
+        {active === 'company'      && <CompanySettings settings={settings} />}
+        {active === 'pdf'          && <PdfSettings settings={settings} />}
+        {active === 'alerts'       && <AlertsSettings settings={settings} />}
+        {active === 'orders'       && <OrdersSettings settings={settings} />}
+        {active === 'requisitions' && <RequisitionsSettings settings={settings} />}
       </div>
-    </Tabs>
+
+    </div>
   )
 }

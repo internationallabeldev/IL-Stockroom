@@ -11,23 +11,32 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import type { AppSettings } from '@/types/app-settings.types'
 
-type CompanyValues = AppSettings['company']
+// logo_url is managed separately via uploadCompanyLogo — excluded from the text form
+type CompanyFormValues = Omit<AppSettings['company'], 'logo_url'>
 
 export function CompanySettings({ settings }: { settings: AppSettings }) {
   const [isPending, startTransition] = useTransition()
-  const [logoPreview, setLogoPreview] = useState<string | null>(
-    settings.company.logo_url,
-  )
+  // logoUrl = the URL persisted in Supabase Storage (used when saving company fields)
+  // logoPreview = what shows in the UI (can temporarily be a blob URL while uploading)
+  const [logoUrl, setLogoUrl] = useState<string | null>(settings.company.logo_url)
+  const [logoPreview, setLogoPreview] = useState<string | null>(settings.company.logo_url)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const { register, handleSubmit, formState: { isDirty } } = useForm<CompanyValues>({
-    defaultValues: settings.company,
+  const { register, handleSubmit, formState: { isDirty } } = useForm<CompanyFormValues>({
+    defaultValues: {
+      name:              settings.company.name,
+      address:           settings.company.address,
+      phone:             settings.company.phone,
+      rfc:               settings.company.rfc,
+      fiscal_address:    settings.company.fiscal_address,
+      warehouse_address: settings.company.warehouse_address,
+    },
   })
 
-  function onSubmit(values: CompanyValues) {
+  function onSubmit(values: CompanyFormValues) {
     startTransition(async () => {
-      const res = await updateSettings('company', values)
+      const res = await updateSettings('company', { ...values, logo_url: logoUrl })
       if (res.error) toast.error(res.error)
       else toast.success('Identidad de empresa guardada')
     })
@@ -47,9 +56,10 @@ export function CompanySettings({ settings }: { settings: AppSettings }) {
     setUploading(false)
     if (res.error) {
       toast.error(res.error)
-      setLogoPreview(settings.company.logo_url)
+      setLogoPreview(logoUrl)
     } else {
       toast.success('Logo actualizado')
+      setLogoUrl(res.url ?? null)
       setLogoPreview(res.url ?? null)
     }
   }
@@ -95,6 +105,7 @@ export function CompanySettings({ settings }: { settings: AppSettings }) {
               <button
                 type="button"
                 onClick={() => {
+                  setLogoUrl(null)
                   setLogoPreview(null)
                   startTransition(async () => {
                     await updateSettings('company', { ...settings.company, logo_url: null })
