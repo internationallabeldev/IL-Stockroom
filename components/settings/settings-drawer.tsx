@@ -1,11 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useTheme } from 'next-themes'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Sun, Moon, ExternalLink } from 'lucide-react'
-import Link from 'next/link'
 import {
   Sheet,
   SheetContent,
@@ -17,7 +12,7 @@ import { RoleBadge } from '@/components/users/role-badge'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { ProfileForm } from './profile-form'
 import { NotificationPreferences } from './notification-preferences'
-import { updateUserTheme } from '@/actions/users.actions'
+import { ChangePasswordForm } from './change-password-form'
 import type { AppUser } from '@/actions/users.actions'
 
 type ExtUser = AppUser & {
@@ -31,37 +26,28 @@ type Props = {
   user:    AppUser
 }
 
-type Tab = 'perfil' | 'notificaciones' | 'apariencia'
+type Tab = 'perfil' | 'notificaciones' | 'contrasena'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'perfil',          label: 'Perfil' },
-  { id: 'notificaciones',  label: 'Notificaciones' },
-  { id: 'apariencia',      label: 'Apariencia' },
+  { id: 'perfil',         label: 'Perfil' },
+  { id: 'notificaciones', label: 'Notificaciones' },
+  { id: 'contrasena',     label: 'Contraseña' },
 ]
 
 export function SettingsDrawer({ open, onClose, user }: Props) {
   const u = user as ExtUser
   const [tab, setTab] = useState<Tab>('perfil')
-  const { resolvedTheme, setTheme } = useTheme()
-  const router = useRouter()
 
   const displayName = u.nickname
     ? u.nickname
     : `${user.first_name} ${user.last_name}`
 
-  async function handleThemeToggle() {
-    const next = resolvedTheme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    await updateUserTheme(next)
-    router.refresh()
-  }
-
   return (
     <Sheet open={open} onOpenChange={open => { if (!open) onClose() }}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col p-0 gap-0 overflow-hidden">
+      <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 gap-0 overflow-hidden">
         {/* Header */}
-        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-4 mb-3">
+        <SheetHeader className="px-6 pt-6 pb-0 border-b border-border shrink-0">
+          <div className="flex items-center gap-4 mb-4">
             <UserAvatar
               firstName={user.first_name}
               lastName={user.last_name}
@@ -80,12 +66,12 @@ export function SettingsDrawer({ open, onClose, user }: Props) {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-0 border-b border-border -mx-6 px-6 -mb-4">
+          <div className="flex gap-0 -mx-6 px-6">
             {TABS.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`pb-3 px-1 mr-4 text-[10px] font-bold uppercase tracking-widest border-b-2 transition-colors ${
+                className={`pb-3 px-1 mr-5 text-[10px] font-bold uppercase tracking-widest border-b-2 transition-colors ${
                   tab === t.id
                     ? 'border-foreground text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -99,61 +85,20 @@ export function SettingsDrawer({ open, onClose, user }: Props) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 pt-6 pb-8">
-          {tab === 'perfil' && (
+          {tab === 'perfil' && <ProfileForm user={user} />}
+
+          {tab === 'notificaciones' && <NotificationPreferences user={user} />}
+
+          {tab === 'contrasena' && (
             <>
-              <ProfileForm user={user} />
-              <Separator className="my-6" />
-              <Link
-                href="/dashboard/settings"
-                onClick={onClose}
-                className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="size-3" />
-                Cambiar contraseña
-              </Link>
-            </>
-          )}
-
-          {tab === 'notificaciones' && (
-            <NotificationPreferences user={user} />
-          )}
-
-          {tab === 'apariencia' && (
-            <div className="space-y-6">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                  Tema de color
+              <div className="mb-5 pb-3 border-b border-border">
+                <h2 className="text-sm font-bold uppercase tracking-widest">Cambiar contraseña</h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Actualiza tu contraseña de acceso
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setTheme('light'); updateUserTheme('light'); router.refresh() }}
-                    className={`flex-1 flex items-center gap-3 p-4 border-2 transition-colors ${
-                      resolvedTheme === 'light'
-                        ? 'border-foreground bg-muted'
-                        : 'border-border hover:border-foreground/40'
-                    }`}
-                  >
-                    <Sun className="size-4 shrink-0" />
-                    <div className="text-left">
-                      <p className="text-[10px] font-bold uppercase tracking-widest">Claro</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { setTheme('dark'); updateUserTheme('dark'); router.refresh() }}
-                    className={`flex-1 flex items-center gap-3 p-4 border-2 transition-colors ${
-                      resolvedTheme === 'dark'
-                        ? 'border-foreground bg-muted'
-                        : 'border-border hover:border-foreground/40'
-                    }`}
-                  >
-                    <Moon className="size-4 shrink-0" />
-                    <div className="text-left">
-                      <p className="text-[10px] font-bold uppercase tracking-widest">Oscuro</p>
-                    </div>
-                  </button>
-                </div>
               </div>
-            </div>
+              <ChangePasswordForm />
+            </>
           )}
         </div>
       </SheetContent>
