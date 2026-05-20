@@ -50,14 +50,14 @@ function DiffRow({
 
   return (
     <tr className={cn('border-b border-border last:border-0', changed ? '' : 'opacity-40')}>
-      <td className="py-1.5 pr-4 text-[10px] font-mono font-bold text-foreground/70 whitespace-nowrap align-top">{field}</td>
+      <td className="py-1.5 pr-4 text-[10px] font-mono font-bold text-foreground/70 break-all align-top">{field}</td>
       {oldVal !== undefined && (
-        <td className={cn('py-1.5 pr-4 text-[11px] align-top', changed && 'text-red-600 dark:text-red-400 line-through decoration-red-400/50')}>
+        <td className={cn('py-1.5 pr-4 text-[11px] align-top wrap-break-word', changed && 'text-red-600 dark:text-red-400 line-through decoration-red-400/50')}>
           {fmt(oldVal)}
         </td>
       )}
       {newVal !== undefined && (
-        <td className={cn('py-1.5 text-[11px] align-top', changed && 'text-emerald-600 dark:text-emerald-400 font-semibold')}>
+        <td className={cn('py-1.5 text-[11px] align-top wrap-break-word', changed && 'text-emerald-600 dark:text-emerald-400 font-semibold')}>
           {fmt(newVal)}
         </td>
       )}
@@ -91,15 +91,15 @@ export function AuditLogDetail({ entry, onClose }: Props) {
 
   return (
     <Sheet open={!!entry} onOpenChange={open => { if (!open) onClose() }}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader className="mb-6">
+      <SheetContent className="w-[50vw]! max-w-none! overflow-y-auto p-8">
+        <SheetHeader className="mb-8">
           <SheetTitle className="text-sm font-bold uppercase tracking-widest">
             Detalle de auditoría
           </SheetTitle>
         </SheetHeader>
 
         {/* Metadata */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-6 pb-6 border-b border-border">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 pb-8 border-b border-border">
           <MetaField label="Tabla"     value={TABLE_LABELS[entry.table_name] ?? entry.table_name} />
           <MetaField label="Operación" value={<OperationBadge operation={entry.operation} />} />
           <MetaField label="Registro"  value={entry.record_id ? `#${entry.record_id}` : '—'} />
@@ -117,28 +117,31 @@ export function AuditLogDetail({ entry, onClose }: Props) {
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
               Cambios ({entry.changed_fields?.length ?? 0} campo{entry.changed_fields?.length !== 1 ? 's' : ''})
             </p>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-border">
-                    <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Campo</th>
-                    <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Antes</th>
-                    <th className="pb-2      text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Después</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allKeys.map(key => (
-                    <DiffRow
-                      key={key}
-                      field={key}
-                      oldVal={entry.old_data?.[key]}
-                      newVal={entry.new_data?.[key]}
-                      changed={changedSet.has(key)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <table className="w-full table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[28%]" />
+                <col className="w-[36%]" />
+                <col className="w-[36%]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b-2 border-border">
+                  <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Campo</th>
+                  <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Antes</th>
+                  <th className="pb-2      text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Después</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allKeys.map(key => (
+                  <DiffRow
+                    key={key}
+                    field={key}
+                    oldVal={entry.old_data?.[key]}
+                    newVal={entry.new_data?.[key]}
+                    changed={changedSet.has(key)}
+                  />
+                ))}
+              </tbody>
+            </table>
           </>
         )}
 
@@ -147,27 +150,29 @@ export function AuditLogDetail({ entry, onClose }: Props) {
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
               {isInsert ? 'Datos creados' : 'Datos eliminados'}
             </p>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b-2 border-border">
-                    <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Campo</th>
-                    <th className="pb-2      text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allKeys.map(key => (
-                    <DiffRow
-                      key={key}
-                      field={key}
-                      oldVal={isDelete ? data[key] : undefined}
-                      newVal={isInsert ? data[key] : undefined}
-                      changed={false}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <table className="w-full table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[28%]" />
+                <col className="w-[72%]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b-2 border-border">
+                  <th className="pb-2 pr-4 text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Campo</th>
+                  <th className="pb-2      text-[9px] font-bold uppercase tracking-widest text-left text-muted-foreground">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allKeys.map(key => (
+                  <DiffRow
+                    key={key}
+                    field={key}
+                    oldVal={isDelete ? data[key] : undefined}
+                    newVal={isInsert ? data[key] : undefined}
+                    changed={false}
+                  />
+                ))}
+              </tbody>
+            </table>
           </>
         )}
       </SheetContent>
