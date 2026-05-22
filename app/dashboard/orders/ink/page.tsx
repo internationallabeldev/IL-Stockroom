@@ -18,7 +18,7 @@ export default async function InkOrdersPage() {
   const canReceive = user?.role === 'ADMIN' || user?.role === 'WAREHOUSE_MANAGER'
 
   return (
-    <div className="px-8 pt-6 pb-8">
+    <div className="px-8 pb-8">
       <OrdersList
         initialOrders={orders}
         materialType="INK"

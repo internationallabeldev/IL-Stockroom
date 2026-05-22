@@ -16,14 +16,14 @@ export function ReceiptsPageTabs({ pendingCount, pendingPanel, historyPanel }: P
 
   return (
     <div>
-      <div className="flex border-b border-[#1A1A1A]/15 mb-6">
+      <div className="flex border-b border-border mb-6">
         <button
           onClick={() => setTab('pending')}
           className={cn(
             'px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2',
             tab === 'pending'
-              ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A] -mb-px'
-              : 'text-[#5f5e59] hover:text-[#1A1A1A]'
+              ? 'border-b-2 border-foreground text-foreground -mb-px'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           Pendientes de calidad
@@ -39,8 +39,8 @@ export function ReceiptsPageTabs({ pendingCount, pendingPanel, historyPanel }: P
           className={cn(
             'px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors',
             tab === 'history'
-              ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A] -mb-px'
-              : 'text-[#5f5e59] hover:text-[#1A1A1A]'
+              ? 'border-b-2 border-foreground text-foreground -mb-px'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           Historial

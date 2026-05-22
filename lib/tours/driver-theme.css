@@ -1,0 +1,169 @@
+/* IL Stockroom design override for driver.js */
+
+.driver-popover {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--foreground) !important;
+  padding: 0 !important;
+  min-width: 280px !important;
+  max-width: 340px !important;
+}
+
+.driver-popover * {
+  font-family: var(--font-sans) !important;
+}
+
+/* ── Title ── */
+.driver-popover-title {
+  display: block !important;
+  font-family: var(--font-heading) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  line-height: 1.4 !important;
+  color: var(--foreground) !important;
+  padding: 14px 38px 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  margin: 0 !important;
+}
+
+/* ── Description ── */
+.driver-popover-description {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
+  color: var(--muted-foreground) !important;
+  padding: 12px 16px !important;
+  margin: 0 !important;
+}
+
+/* ── Close button ── */
+.driver-popover-close-btn {
+  top: 12px !important;
+  right: 12px !important;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--muted-foreground) !important;
+  line-height: 20px !important;
+  transition: color 0.15s !important;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus {
+  color: var(--foreground) !important;
+}
+
+/* ── Footer ── */
+.driver-popover-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 16px !important;
+  border-top: 1px solid var(--border) !important;
+  margin-top: 0 !important;
+  gap: 6px !important;
+}
+
+.driver-popover-progress-text {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: var(--muted-foreground) !important;
+}
+
+.driver-popover-navigation-btns {
+  display: flex !important;
+  flex-grow: 1 !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+}
+
+/* ── Buttons base ── */
+.driver-popover-footer button {
+  all: unset !important;
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  cursor: pointer !important;
+  border-radius: 0 !important;
+  line-height: 1 !important;
+  transition: opacity 0.15s, background-color 0.15s !important;
+}
+
+.driver-popover-footer .driver-popover-btn-disabled {
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+}
+
+/* Prev — needs .driver-popover-footer prefix to beat (0,1,1) specificity of the base rule */
+.driver-popover-footer .driver-popover-prev-btn {
+  background-color: transparent !important;
+  color: var(--muted-foreground) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.driver-popover-footer .driver-popover-prev-btn:hover,
+.driver-popover-footer .driver-popover-prev-btn:focus {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+/* Next / Done */
+.driver-popover-footer .driver-popover-next-btn {
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+  border: none !important;
+}
+
+.driver-popover-footer .driver-popover-next-btn:hover,
+.driver-popover-footer .driver-popover-next-btn:focus {
+  opacity: 0.8 !important;
+}
+
+/* ── Arrow — visible side must match card background ── */
+.driver-popover-arrow {
+  border-color: var(--card) !important;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+.driver-popover-arrow-side-over,
+.driver-popover-arrow-side-center,
+.driver-popover-arrow-none {
+  display: none !important;
+}

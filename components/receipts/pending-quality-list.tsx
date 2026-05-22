@@ -124,7 +124,7 @@ function InlineEvaluator({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Quality toggle */}
-      <div className="flex border border-[#1A1A1A]/20">
+      <div className="flex border border-foreground/20">
         {Q_OPTIONS.map(o => (
           <button
             key={o.value}
@@ -132,7 +132,7 @@ function InlineEvaluator({
             onClick={() => selectQuality(o.value)}
             className={cn(
               'px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-              quality === o.value ? o.activeCls : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+              quality === o.value ? o.activeCls : 'text-foreground/50 hover:bg-muted hover:text-foreground'
             )}
           >
             {o.label}
@@ -147,7 +147,7 @@ function InlineEvaluator({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="h-7 px-2.5 flex items-center gap-1 border border-[#1A1A1A]/20 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] hover:text-[#1A1A1A] transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="h-7 px-2.5 flex items-center gap-1 border border-foreground/20 text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {uploading ? <Loader2 className="size-2.5 animate-spin" /> : <Paperclip className="size-2.5" />}
             {uploading ? 'Subiendo…' : certUrl ? 'Reemplazar' : 'Certificado'}
@@ -166,7 +166,7 @@ function InlineEvaluator({
               <button
                 type="button"
                 onClick={() => { setCertUrl(null); if (fileRef.current) fileRef.current.value = '' }}
-                className="text-[#5f5e59] hover:text-red-600 transition-colors"
+                className="text-muted-foreground hover:text-red-600 transition-colors"
               >
                 <XCircle className="size-3" />
               </button>
@@ -189,7 +189,7 @@ function InlineEvaluator({
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Notas (opcional)"
-          className="h-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-[10px] outline-none focus:border-[#1A1A1A]/40 transition-colors w-36"
+          className="h-7 border border-foreground/20 bg-card px-2 text-[10px] outline-none focus:border-foreground/40 transition-colors w-36"
         />
       )}
 
@@ -197,7 +197,7 @@ function InlineEvaluator({
       <button
         onClick={save}
         disabled={!quality || saving}
-        className="h-7 px-3 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-25 flex items-center gap-1 shrink-0"
+        className="h-7 px-3 bg-foreground text-background text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-25 flex items-center gap-1 shrink-0"
       >
         {saving && <Loader2 className="size-2.5 animate-spin" />}
         {applyCount > 1 ? `Guardar (${applyCount})` : 'Guardar'}
@@ -337,22 +337,22 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
 
         {/* Search */}
         <div className="relative flex-1 min-w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             placeholder="Buscar lote, material, OC, proveedor…"
-            className="w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-9 pr-3 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+            className="w-full h-9 border border-foreground/20 bg-card pl-9 pr-3 text-xs outline-none focus:border-foreground/40 transition-colors"
           />
         </div>
 
         {/* Quick bulk action — no cert, no notes */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
             Todos ({filtered.length}):
           </span>
-          <div className="flex border border-[#1A1A1A]/20">
+          <div className="flex border border-foreground/20">
             {Q_OPTIONS.map(o => (
               <button
                 key={o.value}
@@ -360,7 +360,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                 onClick={() => setBulkQuality(prev => prev === o.value ? null : o.value)}
                 className={cn(
                   'px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-                  bulkQuality === o.value ? o.activeCls : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+                  bulkQuality === o.value ? o.activeCls : 'text-foreground/50 hover:bg-muted hover:text-foreground'
                 )}
               >
                 {o.label}
@@ -370,7 +370,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
           <button
             onClick={applyBulk}
             disabled={!bulkQuality || bulkSaving || filtered.length === 0}
-            className="h-9 px-3 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-30 flex items-center gap-1.5 shrink-0"
+            className="h-9 px-3 bg-foreground text-background text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-30 flex items-center gap-1.5 shrink-0"
           >
             {bulkSaving && <Loader2 className="size-3 animate-spin" />}
             Aplicar
@@ -380,13 +380,13 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
 
       {/* ── Selection bar ────────────────────────────────────────────────────── */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700">
+        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400">
           <span className="text-[9px] font-bold uppercase tracking-widest">
             {selected.size} seleccionado{selected.size !== 1 ? 's' : ''} — al guardar en cualquiera de ellos se aplicará a todos
           </span>
           <button
             onClick={() => setSelected(new Set())}
-            className="ml-auto text-[9px] font-bold uppercase tracking-widest underline underline-offset-2 hover:text-blue-900 transition-colors"
+            className="ml-auto text-[9px] font-bold uppercase tracking-widest underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 transition-colors"
           >
             Limpiar selección
           </button>
@@ -395,8 +395,8 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
 
       {/* ── Empty state ──────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <div className="border border-dashed border-foreground/20 p-16 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {search.trim()
               ? 'Sin resultados para la búsqueda'
               : 'No hay recepciones pendientes de evaluación de calidad'}
@@ -405,10 +405,10 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
       ) : (
         <>
           {/* ── Table ─────────────────────────────────────────────────────── */}
-          <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+          <div className="border border-border overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-[#E5E1D8]/60 border-b border-[#1A1A1A]/10">
+                <tr className="bg-muted/60 border-b border-foreground/10">
                   <th className="px-3 py-2.5 w-8">
                     <input
                       type="checkbox"
@@ -418,16 +418,16 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       className="size-3.5 cursor-pointer accent-blue-600"
                     />
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Lote interno</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Material</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Orden</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Fecha</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Días</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Cantidad</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Evaluar calidad</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Lote interno</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Material</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Orden</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Fecha</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Días</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Cantidad</th>
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Evaluar calidad</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1A1A1A]/8">
+              <tbody className="divide-y divide-foreground/8">
                 {paged.map(row => {
                   const d       = row.data
                   const key     = rowKey(row.kind, d.id)
@@ -448,7 +448,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       key={key}
                       className={cn(
                         'transition-colors',
-                        isSelected ? 'bg-blue-50/50' : 'hover:bg-[#E5E1D8]/30'
+                        isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-muted/30'
                       )}
                     >
                       <td className="px-3 py-3 text-center">
@@ -461,18 +461,18 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px]">{d.internal_batch}</td>
                       <td className="px-4 py-3">
-                        <p className="font-mono text-[10px] text-[#5f5e59]">{catalog?.code}</p>
-                        <p className="font-medium text-[#1A1A1A]">{catalog?.name}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground">{catalog?.code}</p>
+                        <p className="font-medium text-foreground">{catalog?.name}</p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-mono text-[10px]">OC-{String(order?.order_number ?? '').padStart(4, '0')}</p>
-                        <p className="text-[10px] text-[#5f5e59]">{order?.providers?.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{order?.providers?.name}</p>
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px]">{fmtDate(d.receipt_date)}</td>
                       <td className="px-4 py-3">
                         <span className={cn(
                           'inline-flex items-center gap-1 font-mono text-[11px]',
-                          alert ? 'text-red-600 font-bold' : 'text-[#5f5e59]'
+                          alert ? 'text-red-600 font-bold' : 'text-muted-foreground'
                         )}>
                           {alert && <AlertTriangle className="size-3" />}
                           {days}d
@@ -482,12 +482,12 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                         {row.kind === 'ink' ? (
                           <>
                             <p className="font-mono text-[11px]">{inkD.units_received} uds · {inkD.kg_received} kg</p>
-                            <p className="font-mono text-[10px] text-[#5f5e59]">{(inkD.kg_received / inkD.units_received).toFixed(3)} kg/ud</p>
+                            <p className="font-mono text-[10px] text-muted-foreground">{(inkD.kg_received / inkD.units_received).toFixed(3)} kg/ud</p>
                           </>
                         ) : (
                           <>
                             <p className="font-mono text-[11px]">{paperD.units_received} rollos · {paperD.length_m} m × {paperD.width_m} m</p>
-                            <p className="font-mono text-[10px] text-[#5f5e59]">{(paperD.total_m2_received ?? 0).toFixed(2)} m² total</p>
+                            <p className="font-mono text-[10px] text-muted-foreground">{(paperD.total_m2_received ?? 0).toFixed(2)} m² total</p>
                           </>
                         )}
                       </td>
@@ -509,7 +509,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
 
           {/* ── Pagination bar ────────────────────────────────────────────── */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[#5f5e59]">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <span className="text-[9px] font-bold uppercase tracking-widest">Mostrar</span>
               <input
                 type="text"
@@ -517,28 +517,28 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                 onChange={e => setPageSizeInput(e.target.value)}
                 onBlur={commitPageSize}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                className="w-14 h-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-center text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
+                className="w-14 h-7 border border-foreground/20 bg-card px-2 text-center text-xs outline-none focus:border-foreground/40 transition-colors"
               />
               <span className="text-[9px] font-bold uppercase tracking-widest">
                 filas · {filtered.length} total
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] text-[#5f5e59]">
+              <span className="font-mono text-[10px] text-muted-foreground">
                 {currentPage} / {totalPages}
               </span>
-              <div className="flex border border-[#1A1A1A]/15">
+              <div className="flex border border-border">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
-                  className="size-7 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors disabled:opacity-30"
+                  className="size-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
                 >
                   <ChevronLeft className="size-3.5" />
                 </button>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="size-7 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors disabled:opacity-30 border-l border-[#1A1A1A]/15"
+                  className="size-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30 border-l border-border"
                 >
                   <ChevronRight className="size-3.5" />
                 </button>

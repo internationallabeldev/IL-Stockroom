@@ -9,10 +9,10 @@ import { ProviderForm } from './provider-form'
 import { getProviders, type Provider } from '@/actions/providers.actions'
 
 const TYPE_FILTERS = [
-  { value: '',               label: 'Todos' },
-  { value: 'INK_SUPPLIER',   label: 'Tintas' },
+  { value: '', label: 'Todos' },
+  { value: 'INK_SUPPLIER', label: 'Tintas' },
   { value: 'PAPER_SUPPLIER', label: 'Papel' },
-  { value: 'BOTH',           label: 'Ambos' },
+  { value: 'BOTH', label: 'Ambos' },
 ]
 
 const DEFAULT_PAGE_SIZE = 8
@@ -29,36 +29,36 @@ type Props = {
 }
 
 export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
-  const [search, setSearch]               = useState('')
-  const [typeFilter, setTypeFilter]       = useState('')
-  const [page, setPage]                   = useState(1)
-  const [pageSize, setPageSize]           = useState(DEFAULT_PAGE_SIZE)
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
-  const [drawer, setDrawer]               = useState<DrawerState>({ open: false, mode: 'create', provider: null })
+  const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', provider: null })
 
   const { data: providers = initialProviders } = useQuery({
-    queryKey:      ['providers'],
-    queryFn:       () => getProviders(),
-    initialData:   initialProviders,
+    queryKey: ['providers'],
+    queryFn: () => getProviders(),
+    initialData: initialProviders,
     refetchInterval: 30_000,
   })
 
   const filtered = providers.filter(p => {
-    const matchType   = !typeFilter || p.provider_type === typeFilter
-    const q           = search.toLowerCase()
+    const matchType = !typeFilter || p.provider_type === typeFilter
+    const q = search.toLowerCase()
     const matchSearch = !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || (p.contact_person ?? '').toLowerCase().includes(q)
     return matchType && matchSearch
   })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const safePage   = Math.min(page, totalPages)
-  const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const safePage = Math.min(page, totalPages)
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   useEffect(() => { setPage(1) }, [search, typeFilter, pageSize])
 
-  const openCreate  = () => setDrawer({ open: true, mode: 'create', provider: null })
-  const openView    = (p: Provider) => setDrawer({ open: true, mode: 'view', provider: p })
-  const openEdit    = (p: Provider) => setDrawer({ open: true, mode: 'edit', provider: p })
+  const openCreate = () => setDrawer({ open: true, mode: 'create', provider: null })
+  const openView = (p: Provider) => setDrawer({ open: true, mode: 'view', provider: p })
+  const openEdit = (p: Provider) => setDrawer({ open: true, mode: 'edit', provider: p })
   const closeDrawer = () => setDrawer(d => ({ ...d, open: false }))
 
   function handlePageSizeChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -68,7 +68,7 @@ export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
   }
 
   function handlePageSizeBlur() {
-    const n       = parseInt(pageSizeInput)
+    const n = parseInt(pageSizeInput)
     const clamped = isNaN(n) || n < 1 ? pageSize : Math.min(100, n)
     setPageSize(clamped)
     setPageSizeInput(String(clamped))
@@ -77,7 +77,7 @@ export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
+      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 py-3 mb-6 flex flex-wrap justify-between items-center gap-3">
         <div className="relative" id="providers-search">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
           <input
@@ -85,7 +85,7 @@ export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor..."
-            className="h-8 w-56 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+            className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -94,51 +94,58 @@ export function ProvidersList({ providers: initialProviders, canEdit }: Props) {
           )}
         </div>
 
-        {/* Type filter */}
-        <div className="flex border border-border" id="providers-type-filter">
-          {TYPE_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setTypeFilter(f.value)}
-              className={cn(
-                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                typeFilter === f.value
-                  ? 'bg-foreground text-background'
-                  : 'text-foreground/50 hover:text-foreground border-l border-border first:border-l-0',
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className='gap-2 flex flex-row '>
+
+          {/* Type filter */}
+          <div className="flex border border-border" id="providers-type-filter">
+            {TYPE_FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setTypeFilter(f.value)}
+                className={cn(
+                  'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                  typeFilter === f.value
+                    ? 'bg-foreground text-background'
+                    : 'text-foreground/50 hover:text-foreground border-l border-border first:border-l-0',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Page size */}
+          <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="providers-page-size">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={pageSizeInput}
+              onChange={handlePageSizeChange}
+              onBlur={handlePageSizeBlur}
+              className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+            />
+          </div>
+
+          <span id="providers-new-btn">
+            {canEdit && (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-2 h-8 px-4 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+              >
+                <Plus className="size-3.5" />
+                Nuevo proveedor
+              </button>
+            )}
+          </span>
+
+
         </div>
 
-        <div className="flex-1" />
 
-        {/* Page size */}
-        <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="providers-page-size">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={pageSizeInput}
-            onChange={handlePageSizeChange}
-            onBlur={handlePageSizeBlur}
-            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
-          />
-        </div>
-
-        <span id="providers-new-btn">
-          {canEdit && (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-2 h-8 px-4 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
-            >
-              <Plus className="size-3.5" />
-              Nuevo proveedor
-            </button>
-          )}
-        </span>
       </div>
 
       {/* Count + pagination info */}

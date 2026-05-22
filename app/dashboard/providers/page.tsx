@@ -1,7 +1,6 @@
 import { getProviders } from '@/actions/providers.actions'
 import { getSessionUser } from '@/actions/auth.actions'
 import { ProvidersList } from '@/components/providers/providers-list'
-import { TourButton } from '@/components/shared/tour-button'
 
 export default async function ProvidersPage() {
   const [providers, user] = await Promise.all([getProviders(), getSessionUser()])
@@ -10,7 +9,6 @@ export default async function ProvidersPage() {
   return (
     <div className="px-8 pt-6 pb-8">
       <ProvidersList providers={providers} canEdit={canEdit} />
-      <TourButton tourName="providers-tour" />
     </div>
   )
 }

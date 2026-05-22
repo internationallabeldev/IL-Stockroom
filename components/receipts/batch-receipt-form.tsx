@@ -176,6 +176,7 @@ function InkBatchForm({ order, onClose }: { order: OrderWithReceipts; onClose: (
       </>
       {fields.map((field, i) => {
         const item    = incompleteItems[i]
+        if (!item) return null
         const skipped = watchedItems[i]?.skip
         return (
           <ItemRow
@@ -318,6 +319,7 @@ function PaperBatchForm({ order, onClose }: { order: OrderWithReceipts; onClose:
       </>
       {fields.map((field, i) => {
         const item    = incompleteItems[i]
+        if (!item) return null
         const skipped = watchedItems[i]?.skip
         const m2 = (watchedItems[i]?.units_received || 0) * (watchedItems[i]?.length_m || 0) * (watchedItems[i]?.width_m || 0)
         return (

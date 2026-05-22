@@ -98,7 +98,7 @@ export function TopNav({ user }: { user: AppUser }) {
         {/* Search trigger */}
         <button
           onClick={open}
-          className="relative flex h-8 w-56 cursor-text items-center gap-2 border border-border bg-card pl-2.5 pr-2 text-left transition-colors hover:border-foreground/40"
+          className="relative flex h-8 w-100 cursor-text items-center gap-2 border border-border bg-card pl-2.5 pr-2 text-left transition-colors hover:border-foreground/40"
         >
           <Search className="size-3.5 shrink-0 text-foreground/40" />
           <span className="flex-1 text-xs text-foreground/40">Buscar...</span>

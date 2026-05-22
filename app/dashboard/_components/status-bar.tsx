@@ -1,7 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Activity, X, RotateCcw } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Activity, X, RotateCcw, BookOpen } from 'lucide-react'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
+import '@/lib/tours/driver-theme.css'
+import { TOURS } from '@/lib/tours'
 import { cn } from '@/lib/utils'
 import { pingDatabase, getSystemStats, type SystemStats } from '@/actions/system-status.actions'
 import {
@@ -108,6 +113,9 @@ function MetricCard({ label, value, sub, tooltip, accent, loading }: {
 }
 
 export function StatusBar() {
+  const pathname                      = usePathname()
+  const tourSteps                     = TOURS[pathname] ?? null
+
   const [time, setTime]               = useState('')
   const [isOnline, setIsOnline]       = useState(true)
   const [status, setStatus]           = useState<SupabaseStatusData | null>(null)
@@ -188,6 +196,18 @@ export function StatusBar() {
     CORE_SERVICES.some(name => c.name.toLowerCase().includes(name.toLowerCase()))
   )
 
+  function startTour() {
+    if (!tourSteps) return
+    driver({
+      showProgress:  true,
+      steps:         tourSteps,
+      nextBtnText:   'Siguiente',
+      prevBtnText:   'Anterior',
+      doneBtnText:   'Finalizar',
+      progressText:  '{{current}} de {{total}}',
+    }).drive()
+  }
+
   return (
     <TooltipProvider>
       {/* ── Status bar ──────────────────────────────────────────────────────── */}
@@ -216,8 +236,17 @@ export function StatusBar() {
           </span>
         </div>
 
-        <div className="font-mono text-[11px] text-foreground/50 tracking-wider">
-          {time}
+        <div className="flex items-center gap-5">
+          {tourSteps && (
+            <button
+              onClick={startTour}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-foreground/40 hover:text-foreground transition-colors"
+            >
+              <BookOpen className="size-3" />
+              Tutorial
+            </button>
+          )}
+          <span className="font-mono text-[11px] text-foreground/50 tracking-wider">{time}</span>
         </div>
       </footer>
 
