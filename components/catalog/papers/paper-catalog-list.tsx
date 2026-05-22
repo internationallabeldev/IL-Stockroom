@@ -139,77 +139,78 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3 justify-between">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            id="catalog-search"
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar papel..."
-            className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className='flex flex-row gap-2'>
-
-          {/* Stock filter */}
-          <div id="catalog-stock-filter" className="flex border border-border">
-            {STOCK_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setStockFilter(f.value)}
-                className={cn(
-                  'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                  stockFilter === f.value
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1" />
-
-          {/* Page size */}
-          <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-6">
+        <div className="py-3 flex flex-wrap items-center gap-3 justify-between">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
-              type="number"
-              min={1}
-              max={100}
-              value={pageSizeInput}
-              onChange={handlePageSizeChange}
-              onBlur={handlePageSizeBlur}
-              className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+              id="catalog-search"
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar papel..."
+              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
             />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
 
-          {canEdit && (
-            <button
-              id="catalog-new-btn"
-              onClick={openCreate}
-              className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
-            >
-              <Plus className="size-3.5" />
-              Nuevo papel
-            </button>
-          )}
+          <div className='flex flex-row gap-2'>
 
+            {/* Stock filter */}
+            <div id="catalog-stock-filter" className="flex border border-border">
+              {STOCK_FILTERS.map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setStockFilter(f.value)}
+                  className={cn(
+                    'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    stockFilter === f.value
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1" />
+
+            {/* Page size */}
+            <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={pageSizeInput}
+                onChange={handlePageSizeChange}
+                onBlur={handlePageSizeBlur}
+                className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+              />
+            </div>
+
+            {canEdit && (
+              <button
+                id="catalog-new-btn"
+                onClick={openCreate}
+                className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+              >
+                <Plus className="size-3.5" />
+                Nuevo papel
+              </button>
+            )}
+
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="mb-4">
-        <PaperStatsBar items={items} />
+        <div className="py-3">
+          <PaperStatsBar items={items} />
+        </div>
       </div>
 
       {/* Grid */}

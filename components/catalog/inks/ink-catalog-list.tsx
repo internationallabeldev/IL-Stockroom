@@ -253,7 +253,7 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
           </div>
         </div>
 
-        <div className="border-t border-border/50 py-3">
+        <div className="py-3">
           <InkStatsBar items={items} />
         </div>
       </div>

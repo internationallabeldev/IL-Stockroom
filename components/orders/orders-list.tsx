@@ -393,32 +393,9 @@ export function OrdersList({
           </div>
         )}
 
-        <div className="border-t border-border/50 py-3">
+        <div className="py-3">
           <OrdersStatsBar orders={allOrders} />
         </div>
-      </div>
-
-      {/* Quick insights */}
-      <div className="flex items-center gap-2 mb-3 text-[10px] font-mono text-muted-foreground">
-        <span>{orders.length} orden{orders.length !== 1 ? 'es' : ''}</span>
-        {kpiDelayed > 0 && (
-          <>
-            <span className="text-border">·</span>
-            <span className="text-red-500 font-bold">{kpiDelayed} retrasada{kpiDelayed !== 1 ? 's' : ''}</span>
-          </>
-        )}
-        {nextDelivery && (
-          <>
-            <span className="text-border">·</span>
-            <span>próxima entrega {nextDelivery.slice(0, 10) === todayStr ? 'hoy' : fmtDate(nextDelivery)}</span>
-          </>
-        )}
-        {kpiToday > 0 && (
-          <>
-            <span className="text-border">·</span>
-            <span className="text-foreground">{kpiToday} recibida{kpiToday !== 1 ? 's' : ''} hoy</span>
-          </>
-        )}
       </div>
 
       {/* Table */}
@@ -542,8 +519,30 @@ export function OrdersList({
         </>
       )}
 
-      {/* Bottom bar: pagination */}
-      <div className="flex items-center justify-end mt-4">
+      {/* Bottom bar: insights + pagination */}
+      <div className="flex items-center justify-between mt-4">
+
+        <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+          <span>{orders.length} orden{orders.length !== 1 ? 'es' : ''}</span>
+          {kpiDelayed > 0 && (
+            <>
+              <span className="text-border">·</span>
+              <span className="text-red-500 font-bold">{kpiDelayed} retrasada{kpiDelayed !== 1 ? 's' : ''}</span>
+            </>
+          )}
+          {nextDelivery && (
+            <>
+              <span className="text-border">·</span>
+              <span>próxima entrega {nextDelivery.slice(0, 10) === todayStr ? 'hoy' : fmtDate(nextDelivery)}</span>
+            </>
+          )}
+          {kpiToday > 0 && (
+            <>
+              <span className="text-border">·</span>
+              <span className="text-foreground">{kpiToday} recibida{kpiToday !== 1 ? 's' : ''} hoy</span>
+            </>
+          )}
+        </div>
 
         {totalPages > 1 && (
           <div className="flex items-center gap-1">
