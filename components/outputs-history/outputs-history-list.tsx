@@ -44,8 +44,8 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
 
   const { data: all = initialRequisitions } = useQuery({
-    queryKey:        ['requisitions', 'fulfilled'],
-    queryFn:         () => getRequisitions({ status: 'FULFILLED' }),
+    queryKey:        ['requisitions', 'with-outputs'],
+    queryFn:         () => getRequisitions({ statuses: ['FULFILLED', 'PARTIAL'] }),
     initialData:     initialRequisitions,
     refetchInterval: 60_000,
   })
@@ -56,7 +56,9 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   }
 
   const filtered = useMemo(() => {
-    let result = all as Requisition[]
+    let result = (all as Requisition[]).filter(r =>
+      r.ink_outputs.length > 0 || r.paper_outputs.length > 0
+    )
 
     if (matFilter !== 'ALL') result = result.filter(r => r.material_type === matFilter)
 

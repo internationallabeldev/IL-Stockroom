@@ -56,7 +56,7 @@ export type InkOutputRecord = {
   output_date:      string
   created_at:       string | null
   delivered_by_user: { first_name: string | null; last_name: string | null } | null
-  ink_inventory:    { internal_batch: string; ink_catalog: { name: string; color_code: string | null } | null } | null
+  ink_inventory:    { internal_batch: string; ink_catalog_id: number; ink_catalog: { name: string; color_code: string | null } | null } | null
 }
 
 export type PaperOutputRecord = {
@@ -78,7 +78,7 @@ export type PaperOutputRecord = {
   output_date:          string
   created_at:           string | null
   delivered_by_user:    { first_name: string | null; last_name: string | null } | null
-  paper_inventory:      { internal_batch: string; paper_catalog: { name: string } | null } | null
+  paper_inventory:      { internal_batch: string; paper_catalog_id: number; paper_catalog: { name: string } | null } | null
 }
 
 export type Requisition = {
@@ -125,6 +125,7 @@ export type AvailablePaperLot = {
 
 export type RequisitionFilters = {
   status?:        RequisitionStatus | ''
+  statuses?:      RequisitionStatus[]
   material_type?: MaterialType | ''
   requested_by?:  string
   date_from?:     string
@@ -153,6 +154,7 @@ const FULL_SELECT = `
     delivered_by_user:delivered_by ( first_name, last_name ),
     ink_inventory:ink_inventory_id (
       internal_batch,
+      ink_catalog_id,
       ink_catalog:ink_catalog_id ( name, color_code )
     )
   ),
@@ -161,6 +163,7 @@ const FULL_SELECT = `
     delivered_by_user:delivered_by ( first_name, last_name ),
     paper_inventory:paper_inventory_id (
       internal_batch,
+      paper_catalog_id,
       paper_catalog:paper_catalog_id ( name )
     )
   )
@@ -181,8 +184,9 @@ export async function getRequisitions(filters?: RequisitionFilters): Promise<Req
 
   if (user.role === 'PRODUCER') query = query.eq('requested_by', user.id)
 
-  if (filters?.status)        query = query.eq('status', filters.status)
-  if (filters?.material_type) query = query.eq('material_type', filters.material_type)
+  if (filters?.statuses?.length) query = query.in('status', filters.statuses)
+  else if (filters?.status)      query = query.eq('status', filters.status)
+  if (filters?.material_type)    query = query.eq('material_type', filters.material_type)
   if (filters?.requested_by)  query = query.eq('requested_by', filters.requested_by)
   if (filters?.date_from)     query = query.gte('request_date', filters.date_from)
   if (filters?.date_to)       query = query.lte('request_date', filters.date_to)
@@ -538,37 +542,41 @@ export async function fulfillInkRequisition(
 
   if (outErr) return { error: outErr.message }
 
-  // Map lot → catalog
-  const { data: lots } = await supabase
+  // Re-fetch ALL outputs for this requisition as the authoritative source
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allOutputs } = await (supabase as any)
+    .from('ink_outputs')
+    .select('ink_inventory_id, kg_delivered')
+    .eq('requisition_id', requisitionId)
+
+  const allInvIds = [...new Set((allOutputs ?? []).map((o: { ink_inventory_id: number }) => o.ink_inventory_id))]
+  const { data: allLots } = await supabase
     .from('ink_inventory')
     .select('id, ink_catalog_id')
-    .in('id', outputs.map(o => o.inventory_id))
+    .in('id', allInvIds.length ? allInvIds : [0])
 
-  const lotCatalog = new Map((lots ?? []).map(l => [l.id, l.ink_catalog_id]))
+  const lotCatalog = new Map((allLots ?? []).map(l => [l.id, l.ink_catalog_id]))
 
-  // Update each item's kg_delivered
+  const kgByCatalog = new Map<number, number>()
+  for (const o of (allOutputs ?? []) as { ink_inventory_id: number; kg_delivered: number }[]) {
+    const catId = lotCatalog.get(o.ink_inventory_id)
+    if (catId !== undefined) kgByCatalog.set(catId, (kgByCatalog.get(catId) ?? 0) + o.kg_delivered)
+  }
+
+  let allFulfilled = true
   for (const item of req.ink_items as RequisitionInkItem[]) {
-    const related = outputs.filter(o => lotCatalog.get(o.inventory_id) === item.ink_catalog_id)
-    if (!related.length) continue
-
-    const newKg       = (item.kg_delivered ?? 0) + related.reduce((s, o) => s + o.kg_delivered, 0)
-    const isFulfilled = newKg >= item.kg_requested
+    const totalDel    = kgByCatalog.get(item.ink_catalog_id) ?? 0
+    const kgReq       = parseFloat(String(item.kg_requested)) || 0
+    const isFulfilled = kgReq > 0 && totalDel >= kgReq
+    if (!isFulfilled) allFulfilled = false
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('requisition_ink_items')
-      .update({ kg_delivered: newKg, is_fulfilled: isFulfilled })
+      .update({ kg_delivered: totalDel, is_fulfilled: isFulfilled })
       .eq('id', item.id)
   }
 
-  // Determine new status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updated } = await (supabase as any)
-    .from('requisition_ink_items')
-    .select('is_fulfilled')
-    .eq('requisition_id', requisitionId)
-
-  const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
   const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -639,29 +647,42 @@ export async function fulfillPaperRequisition(
     if (outErr) return { error: outErr.message }
   }
 
-  // Update m2_delivered on paper items
-  for (const item of req.paper_items as RequisitionPaperItem[]) {
-    const related  = outputs.filter(o => lotCatalog.get(o.inventory_id) === item.paper_catalog_id)
-    if (!related.length) continue
+  // Re-fetch ALL outputs for this requisition as the authoritative source
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allPaperOutputs } = await (supabase as any)
+    .from('paper_outputs')
+    .select('paper_inventory_id, m2_delivered')
+    .eq('requisition_id', requisitionId)
 
-    const addedM2     = related.reduce((s, o) => s + o.length_m * o.width_m, 0)
-    const newM2       = (item.m2_delivered ?? 0) + addedM2
-    const isFulfilled = item.m2_requested != null && newM2 >= item.m2_requested
+  const allPaperInvIds = [...new Set((allPaperOutputs ?? []).map((o: { paper_inventory_id: number }) => o.paper_inventory_id))]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allPaperLots } = await (supabase as any)
+    .from('paper_inventory')
+    .select('id, paper_catalog_id')
+    .in('id', allPaperInvIds.length ? allPaperInvIds : [0])
+
+  const lotCatalogP = new Map(((allPaperLots ?? []) as { id: number; paper_catalog_id: number }[]).map(l => [l.id, l.paper_catalog_id]))
+
+  const m2ByCatalog = new Map<number, number>()
+  for (const o of (allPaperOutputs ?? []) as { paper_inventory_id: number; m2_delivered: number | null }[]) {
+    const catId = lotCatalogP.get(o.paper_inventory_id)
+    if (catId !== undefined) m2ByCatalog.set(catId, (m2ByCatalog.get(catId) ?? 0) + (o.m2_delivered ?? 0))
+  }
+
+  let allFulfilled = true
+  for (const item of req.paper_items as RequisitionPaperItem[]) {
+    const totalDel    = m2ByCatalog.get(item.paper_catalog_id) ?? 0
+    const m2Req       = parseFloat(String(item.m2_requested ?? '0')) || 0
+    const isFulfilled = m2Req > 0 && totalDel >= m2Req
+    if (!isFulfilled) allFulfilled = false
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('requisition_paper_items')
-      .update({ m2_delivered: newM2, is_fulfilled: isFulfilled })
+      .update({ m2_delivered: totalDel, is_fulfilled: isFulfilled })
       .eq('id', item.id)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updated } = await (supabase as any)
-    .from('requisition_paper_items')
-    .select('is_fulfilled')
-    .eq('requisition_id', requisitionId)
-
-  const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
   const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

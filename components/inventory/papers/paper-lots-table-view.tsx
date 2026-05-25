@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { History, PowerOff, Layers } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { History, PowerOff, Layers, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { disablePaperLot, type PaperLot } from '@/actions/paper-inventory.actions'
 import { DisponibleCell } from './disponible-cell'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { getLotStatusInfo } from './lot-utils'
+
+type SortKey = 'batch' | 'paper' | 'remaining' | 'date' | 'status'
 
 type Props = {
   lots:          PaperLot[]
@@ -15,6 +18,9 @@ type Props = {
   onHistory:     (id: number) => void
   onRequest:     (lot: PaperLot) => void
   onLotDisabled: () => void
+  sortKey:       SortKey
+  sortDir:       'asc' | 'desc'
+  onSort:        (key: SortKey) => void
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -24,9 +30,22 @@ function fmtDate(d: string | null | undefined) {
 }
 
 
-export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onRequest, onLotDisabled }: Props) {
+export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onRequest, onLotDisabled, sortKey, sortDir, onSort }: Props) {
   const [confirming, setConfirming] = useState<number | null>(null)
   const [disabling,  setDisabling]  = useState<number | null>(null)
+
+  // oldest active lot per catalog → FIFO priority marker
+  const fifoIds = useMemo(() => {
+    const oldest = new Map<number, { id: number; date: string }>()
+    for (const lot of lots) {
+      if (!lot.enabled || !(lot.remaining_m2 ?? 0) || !lot.receipt?.receipt_date || !lot.paper_catalog) continue
+      const cur = oldest.get(lot.paper_catalog.id)
+      if (!cur || lot.receipt.receipt_date < cur.date) {
+        oldest.set(lot.paper_catalog.id, { id: lot.id, date: lot.receipt.receipt_date })
+      }
+    }
+    return new Set(Array.from(oldest.values()).map(v => v.id))
+  }, [lots])
 
   async function handleDisable(id: number) {
     setDisabling(id)
@@ -49,22 +68,45 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
   }
 
   return (
-    <div className="border border-border overflow-x-auto">
+    <div id="paper-inv-table" className="border border-border overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-muted/60 border-b border-border/50">
-            {[
-              'Lote interno', 'Lote prov.', 'Papel', 'Disponible',
-              'Recepción', 'Estado', '',
-            ].map(h => (
-              <th key={h} className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                {h}
+            {([
+              { label: 'Lote interno', key: 'batch'     },
+              { label: 'Lote prov.',   key: null         },
+              { label: 'Papel',        key: 'paper'      },
+              { label: 'Disponible',   key: 'remaining'  },
+              { label: 'Recepción',    key: 'date'       },
+              { label: 'Estado',       key: 'status'     },
+              { label: '',             key: null         },
+            ] as { label: string; key: SortKey | null }[]).map(col => (
+              <th
+                key={col.label}
+                onClick={() => col.key && onSort(col.key)}
+                className={cn(
+                  'px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap select-none',
+                  col.key && 'cursor-pointer hover:text-foreground transition-colors'
+                )}
+              >
+                {col.key ? (
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {sortKey === col.key
+                      ? sortDir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+                      : <ArrowUpDown className="size-3 opacity-30" />}
+                  </span>
+                ) : col.label}
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-border/30">
-          {lots.map(lot => (
+          {lots.map(lot => {
+            const statusInfo = getLotStatusInfo(lot)
+            const isFifo     = fifoIds.has(lot.id)
+
+            return (
             <tr
               key={lot.id}
               className={cn(
@@ -93,22 +135,28 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                 <DisponibleCell lot={lot} />
               </td>
 
-              <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                {fmtDate((lot.receipt as any)?.receipt_date)}
+              {/* Fecha recepción + FIFO marker */}
+              <td className="px-4 py-3 whitespace-nowrap">
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  {fmtDate((lot.receipt as any)?.receipt_date)}
+                </p>
+                {isFifo && (
+                  <span className="mt-0.5 inline-block text-[8px] font-bold uppercase tracking-widest px-1 py-px border border-orange-200 text-orange-600 bg-orange-50">
+                    FIFO
+                  </span>
+                )}
               </td>
 
               <td className="px-4 py-3">
                 <span className={cn(
                   'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
-                  lot.enabled
-                    ? 'border-green-200 text-green-700 bg-green-50'
-                    : 'border-border text-muted-foreground bg-muted/40'
+                  statusInfo.cls
                 )}>
-                  {lot.enabled ? 'Activa' : 'Deshabilitada'}
+                  {statusInfo.label}
                 </span>
               </td>
 
-              <td className="px-4 py-3">
+              <td id={lots.indexOf(lot) === 0 ? 'paper-inv-row-actions' : undefined} className="px-4 py-3">
                 <TooltipProvider>
                   <div className="flex items-center gap-0.5">
                     <Tooltip>
@@ -153,7 +201,7 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
                 </TooltipProvider>
               </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
     </div>

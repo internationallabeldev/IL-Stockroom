@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle, ChevronLeft, ChevronRight, Loader2,
-  Search, Paperclip, CheckCircle2, XCircle,
+  Paperclip, CheckCircle2, XCircle, ArrowUp, ArrowDown, ArrowUpDown,
 } from 'lucide-react'
 import {
   getPendingQualityReceipts,
@@ -27,10 +27,17 @@ type QualityValue = 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
 type Target       = { receiptId: number; kind: 'ink' | 'paper' }
 
 type Props = {
-  initialInk:       InkReceiptWithContext[]
-  initialPaper:     PaperReceiptWithContext[]
-  defaultMaterial?: 'INK' | 'PAPER'
+  initialInk:           InkReceiptWithContext[]
+  initialPaper:         PaperReceiptWithContext[]
+  defaultMaterial?:     'INK' | 'PAPER'
+  search:               string
+  pageSize:             number
+  bulkQuality:          QualityValue | null
+  onBulkSavingChange:   (v: boolean) => void
+  onBulkDone:           () => void
 }
+
+type Handle = { applyBulk: () => Promise<void> }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -215,14 +222,21 @@ function InlineEvaluator({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }: Props) {
-  const [search,        setSearch]        = useState('')
-  const [pageSizeInput, setPageSizeInput] = useState('20')
-  const [pageSize,      setPageSize]      = useState(20)
-  const [page,          setPage]          = useState(1)
-  const [selected,      setSelected]      = useState<Set<string>>(new Set())
-  const [bulkQuality,   setBulkQuality]   = useState<QualityValue | null>(null)
-  const [bulkSaving,    setBulkSaving]    = useState(false)
+type SortKey = 'batch' | 'material' | 'order' | 'date' | 'days' | 'qty'
+
+export const PendingQualityList = forwardRef<Handle, Props>(
+function PendingQualityList({ initialInk, initialPaper, defaultMaterial, search, pageSize, bulkQuality, onBulkSavingChange, onBulkDone }, ref) {
+  const [page,     setPage]     = useState(1)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [sortKey,  setSortKey]  = useState<SortKey>('date')
+  const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('asc')
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  useEffect(() => { setPage(1) }, [search, pageSize])
 
   const { data, refetch } = useQuery({
     queryKey:    ['pending-quality'],
@@ -236,8 +250,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
       ...data.inkReceipts.map(d => ({ kind: 'ink'   as const, data: d })),
       ...data.paperReceipts.map(d => ({ kind: 'paper' as const, data: d })),
     ]
-      .filter(row => !defaultMaterial || (defaultMaterial === 'INK' ? row.kind === 'ink' : row.kind === 'paper'))
-      .sort((a, b) => a.data.receipt_date.localeCompare(b.data.receipt_date)),
+      .filter(row => !defaultMaterial || (defaultMaterial === 'INK' ? row.kind === 'ink' : row.kind === 'paper')),
   [data, defaultMaterial])
 
   const filtered = useMemo(() => {
@@ -262,9 +275,37 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
     })
   }, [allRows, search])
 
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const sorted = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1
+    return [...filtered].sort((a, b) => {
+      const ad = a.data, bd = b.data
+      switch (sortKey) {
+        case 'batch':    return ad.internal_batch.localeCompare(bd.internal_batch) * dir
+        case 'material': {
+          const ac = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.ink_catalog   : (ad as PaperReceiptWithContext).purchase_order_item?.paper_catalog
+          const bc = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.ink_catalog   : (bd as PaperReceiptWithContext).purchase_order_item?.paper_catalog
+          return (ac?.name ?? '').localeCompare(bc?.name ?? '') * dir
+        }
+        case 'order': {
+          const ao = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (ad as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+          const bo = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (bd as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+          return ((ao ?? 0) - (bo ?? 0)) * dir
+        }
+        case 'date':    return ad.receipt_date.localeCompare(bd.receipt_date) * dir
+        case 'days':    return ad.receipt_date.localeCompare(bd.receipt_date) * dir
+        case 'qty': {
+          const aq = a.kind === 'ink' ? (ad as InkReceiptWithContext).kg_received                          : ((ad as PaperReceiptWithContext).total_m2_received ?? 0)
+          const bq = b.kind === 'ink' ? (bd as InkReceiptWithContext).kg_received                          : ((bd as PaperReceiptWithContext).total_m2_received ?? 0)
+          return (aq - bq) * dir
+        }
+        default:        return 0
+      }
+    })
+  }, [filtered, sortKey, sortDir])
+
+  const totalPages  = Math.max(1, Math.ceil(sorted.length / pageSize))
   const currentPage = Math.min(page, totalPages)
-  const paged       = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paged       = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // Selected targets (from allRows so selection persists across pages)
   const selectedTargets: Target[] = useMemo(
@@ -295,88 +336,37 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
     })
   }
 
-  function commitPageSize() {
-    const n = parseInt(pageSizeInput, 10)
-    if (n > 0) { setPageSize(n); setPage(1) }
-    else setPageSizeInput(String(pageSize))
-  }
-
   function handleDone() {
     setSelected(new Set())
     refetch()
   }
 
-  // Quick bulk action (no cert/notes — for speed)
-  async function applyBulk() {
-    if (!bulkQuality || filtered.length === 0) return
-    const label = Q_OPTIONS.find(o => o.value === bulkQuality)!.label
-    const ok = window.confirm(
-      `¿Aplicar "${label}" a ${filtered.length} recepción${filtered.length !== 1 ? 'es' : ''}?`
-    )
-    if (!ok) return
-    setBulkSaving(true)
-    let errs = 0
-    for (const row of filtered) {
-      const action = row.kind === 'ink' ? updateInkReceiptQuality : updatePaperReceiptQuality
-      const res = await action(row.data.id, { quality_certificate: bulkQuality })
-      if (res.error) errs++
-    }
-    setBulkSaving(false)
-    if (errs > 0) toast.error(`${errs} error${errs !== 1 ? 'es' : ''} al actualizar`)
-    else toast.success(`${filtered.length} recepcion${filtered.length !== 1 ? 'es' : ''} actualizadas`)
-    setSelected(new Set())
-    refetch()
-    setBulkQuality(null)
-  }
+  useImperativeHandle(ref, () => ({
+    applyBulk: async () => {
+      if (!bulkQuality || filtered.length === 0) return
+      const label = Q_OPTIONS.find(o => o.value === bulkQuality)!.label
+      const ok = window.confirm(
+        `¿Aplicar "${label}" a ${filtered.length} recepción${filtered.length !== 1 ? 'es' : ''}?`
+      )
+      if (!ok) return
+      onBulkSavingChange(true)
+      let errs = 0
+      for (const row of filtered) {
+        const action = row.kind === 'ink' ? updateInkReceiptQuality : updatePaperReceiptQuality
+        const res = await action(row.data.id, { quality_certificate: bulkQuality })
+        if (res.error) errs++
+      }
+      onBulkSavingChange(false)
+      if (errs > 0) toast.error(`${errs} error${errs !== 1 ? 'es' : ''} al actualizar`)
+      else toast.success(`${filtered.length} recepcion${filtered.length !== 1 ? 'es' : ''} actualizadas`)
+      setSelected(new Set())
+      refetch()
+      onBulkDone()
+    },
+  }), [bulkQuality, filtered, onBulkSavingChange, onBulkDone, refetch])
 
   return (
     <div className="space-y-4">
-
-      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-3">
-
-        {/* Search */}
-        <div className="relative flex-1 min-w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Buscar lote, material, OC, proveedor…"
-            className="w-full h-9 border border-foreground/20 bg-card pl-9 pr-3 text-xs outline-none focus:border-foreground/40 transition-colors"
-          />
-        </div>
-
-        {/* Quick bulk action — no cert, no notes */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-            Todos ({filtered.length}):
-          </span>
-          <div className="flex border border-foreground/20">
-            {Q_OPTIONS.map(o => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => setBulkQuality(prev => prev === o.value ? null : o.value)}
-                className={cn(
-                  'px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-                  bulkQuality === o.value ? o.activeCls : 'text-foreground/50 hover:bg-muted hover:text-foreground'
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={applyBulk}
-            disabled={!bulkQuality || bulkSaving || filtered.length === 0}
-            className="h-9 px-3 bg-foreground text-background text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-30 flex items-center gap-1.5 shrink-0"
-          >
-            {bulkSaving && <Loader2 className="size-3 animate-spin" />}
-            Aplicar
-          </button>
-        </div>
-      </div>
 
       {/* ── Selection bar ────────────────────────────────────────────────────── */}
       {selected.size > 0 && (
@@ -405,7 +395,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
       ) : (
         <>
           {/* ── Table ─────────────────────────────────────────────────────── */}
-          <div className="border border-border overflow-x-auto">
+          <div id="receipts-pending-table" className="border border-border overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-muted/60 border-b border-foreground/10">
@@ -418,12 +408,27 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       className="size-3.5 cursor-pointer accent-blue-600"
                     />
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Lote interno</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Material</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Orden</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Fecha</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Días</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Cantidad</th>
+                  {([
+                    { label: 'Lote interno', key: 'batch'    },
+                    { label: 'Material',     key: 'material' },
+                    { label: 'Orden',        key: 'order'    },
+                    { label: 'Fecha',        key: 'date'     },
+                    { label: 'Días',         key: 'days'     },
+                    { label: 'Cantidad',     key: 'qty'      },
+                  ] as { label: string; key: SortKey }[]).map(col => (
+                    <th
+                      key={col.label}
+                      onClick={() => toggleSort(col.key)}
+                      className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.label}
+                        {sortKey === col.key
+                          ? sortDir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+                          : <ArrowUpDown className="size-3 opacity-30" />}
+                      </span>
+                    </th>
+                  ))}
                   <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Evaluar calidad</th>
                 </tr>
               </thead>
@@ -491,7 +496,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                           </>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td id={paged.indexOf(row) === 0 ? 'receipts-inline-evaluator' : undefined} className="px-4 py-3">
                         <InlineEvaluator
                           receiptId={d.id}
                           kind={row.kind}
@@ -507,46 +512,62 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
             </table>
           </div>
 
-          {/* ── Pagination bar ────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="text-[9px] font-bold uppercase tracking-widest">Mostrar</span>
-              <input
-                type="text"
-                value={pageSizeInput}
-                onChange={e => setPageSizeInput(e.target.value)}
-                onBlur={commitPageSize}
-                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                className="w-14 h-7 border border-foreground/20 bg-card px-2 text-center text-xs outline-none focus:border-foreground/40 transition-colors"
-              />
-              <span className="text-[9px] font-bold uppercase tracking-widest">
-                filas · {filtered.length} total
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] text-muted-foreground">
-                {currentPage} / {totalPages}
-              </span>
-              <div className="flex border border-border">
+          {/* ── Count + pagination ────────────────────────────────────────── */}
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {sorted.length} recepción{sorted.length !== 1 ? 'es' : ''}
+              {sorted.length > pageSize && (
+                <span className="ml-1 font-normal normal-case tracking-normal">
+                  — mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)}
+                </span>
+              )}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  className="size-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30"
+                  disabled={currentPage === 1}
+                  className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="size-3.5" />
                 </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
+                  .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                    if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                    acc.push(n)
+                    return acc
+                  }, [])
+                  .map((n, i) =>
+                    n === '…' ? (
+                      <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
+                    ) : (
+                      <button
+                        key={n}
+                        onClick={() => setPage(n as number)}
+                        className={cn(
+                          'size-7 text-[10px] font-bold border transition-colors',
+                          currentPage === n
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'border-border hover:bg-muted',
+                        )}
+                      >
+                        {n}
+                      </button>
+                    )
+                  )}
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                  className="size-7 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-30 border-l border-border"
+                  disabled={currentPage === totalPages}
+                  className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="size-3.5" />
                 </button>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}
     </div>
   )
-}
+})

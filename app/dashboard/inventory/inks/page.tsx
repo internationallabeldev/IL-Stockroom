@@ -19,7 +19,7 @@ export default async function InkInventoryPage() {
   ])
 
   return (
-    <div className="p-8">
+    <div className="px-8 pb-8">
       <InkInventoryView
         initialLots={lots}
         canManage={canManage}

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { disablePaperLot, type PaperLot } from '@/actions/paper-inventory.actions'
 import { DisponibleCell } from './disponible-cell'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { getLotStatusInfo } from './lot-utils'
 
 type Props = {
   lots:          PaperLot[]
@@ -25,13 +26,14 @@ type CatalogGroup = {
   minStockM2:   number
   totalM2:      number
   activeCount:  number
+  fifoLotId:    number | null
   lots:         PaperLot[]
 }
 
 function stockBadge(totalM2: number, minM2: number) {
-  if (totalM2 <= 0)       return { label: 'Sin stock', cls: 'border-red-200    text-red-700    bg-red-50'    }
-  if (totalM2 < minM2)    return { label: 'Bajo',      cls: 'border-yellow-200 text-yellow-700 bg-yellow-50' }
-  return                         { label: 'OK',         cls: 'border-green-200  text-green-700  bg-green-50'  }
+  if (totalM2 <= 0)       return { label: 'Sin stock', cls: 'border-red-200    text-red-700    bg-red-50',    bar: 'bg-red-400'    }
+  if (totalM2 < minM2)    return { label: 'Bajo',      cls: 'border-yellow-200 text-yellow-700 bg-yellow-50', bar: 'bg-yellow-400' }
+  return                         { label: 'OK',         cls: 'border-green-200  text-green-700  bg-green-50',  bar: 'bg-green-500'  }
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -56,6 +58,7 @@ function buildGroups(lots: PaperLot[]): CatalogGroup[] {
         minStockM2:  c.min_stock_m2 ?? 0,
         totalM2:     0,
         activeCount: 0,
+        fifoLotId:   null,
         lots:        [],
       }
       map.set(c.id, g)
@@ -67,7 +70,18 @@ function buildGroups(lots: PaperLot[]): CatalogGroup[] {
     }
   }
 
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+  const groups = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+
+  for (const g of groups) {
+    const oldest = g.lots
+      .filter(l => l.enabled && (l.remaining_m2 ?? 0) > 0 && l.receipt?.receipt_date)
+      .sort((a, b) =>
+        (a.receipt!.receipt_date as string).localeCompare(b.receipt!.receipt_date as string)
+      )[0]
+    if (oldest) g.fifoLotId = oldest.id
+  }
+
+  return groups
 }
 
 export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, onRequest, onLotDisabled }: Props) {
@@ -76,6 +90,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
   const [disabling,  setDisabling]  = useState<number | null>(null)
 
   const groups = buildGroups(lots)
+  const maxM2  = Math.max(...groups.map(g => g.totalM2), 1)
 
   async function handleDisable(id: number) {
     setDisabling(id)
@@ -108,8 +123,9 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
   return (
     <div className="border border-border divide-y divide-border/50">
       {groups.map(g => {
-        const open  = expanded.has(g.catalogId)
-        const badge = stockBadge(g.totalM2, g.minStockM2)
+        const open   = expanded.has(g.catalogId)
+        const badge  = stockBadge(g.totalM2, g.minStockM2)
+        const barPct = (g.totalM2 / maxM2) * 100
 
         return (
           <div key={g.catalogId}>
@@ -129,9 +145,19 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
               </span>
 
               <span className="flex items-center gap-3 shrink-0">
-                <span className="text-[10px] font-mono text-muted-foreground">
-                  {g.totalM2.toFixed(1)} m²
+                {/* Proportional bar */}
+                <span className="flex items-center gap-1.5 w-28">
+                  <div className="flex-1 h-1 bg-muted overflow-hidden">
+                    <div
+                      className={cn('h-full transition-all', badge.bar)}
+                      style={{ width: `${barPct.toFixed(0)}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground w-16 text-right tabular-nums">
+                    {g.totalM2.toFixed(1)} m²
+                  </span>
                 </span>
+
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   {g.activeCount} {g.activeCount === 1 ? 'bobina' : 'bobinas'}
                 </span>
@@ -155,7 +181,11 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
-                    {g.lots.map(lot => (
+                    {g.lots.map(lot => {
+                      const statusInfo = getLotStatusInfo(lot)
+                      const isFifo     = lot.id === g.fifoLotId
+
+                      return (
                       <tr
                         key={lot.id}
                         className={cn(
@@ -176,18 +206,24 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                           <DisponibleCell lot={lot} />
                         </td>
 
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {fmtDate((lot.receipt as any)?.receipt_date)}
+                        {/* Fecha recepción + FIFO marker */}
+                        <td className="px-4 py-2.5 whitespace-nowrap">
+                          <p className="font-mono text-[11px] text-muted-foreground">
+                            {fmtDate((lot.receipt as any)?.receipt_date)}
+                          </p>
+                          {isFifo && (
+                            <span className="mt-0.5 inline-block text-[8px] font-bold uppercase tracking-widest px-1 py-px border border-orange-200 text-orange-600 bg-orange-50">
+                              FIFO
+                            </span>
+                          )}
                         </td>
 
                         <td className="px-4 py-2.5">
                           <span className={cn(
                             'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
-                            lot.enabled
-                              ? 'border-green-200 text-green-700 bg-green-50'
-                              : 'border-border text-muted-foreground bg-muted/40'
+                            statusInfo.cls
                           )}>
-                            {lot.enabled ? 'Activa' : 'Deshabilitada'}
+                            {statusInfo.label}
                           </span>
                         </td>
 
@@ -236,7 +272,7 @@ export function PaperCatalogGroupView({ lots, canManage, canRequest, onHistory, 
                           </TooltipProvider>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

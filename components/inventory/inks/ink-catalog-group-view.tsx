@@ -8,6 +8,7 @@ import { DisponibleCellInk } from './disponible-cell-ink'
 import { toast } from 'sonner'
 import { disableLot } from '@/actions/ink-inventory.actions'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { getLotStatusInfo } from './lot-utils'
 
 type Props = {
   lots:          InkLot[]
@@ -26,13 +27,14 @@ type CatalogGroup = {
   minStockKg:  number
   totalKg:     number
   activeCount: number
+  fifoLotId:   number | null
   lots:        InkLot[]
 }
 
 function stockBadge(totalKg: number, minKg: number) {
-  if (totalKg <= 0)         return { label: 'Sin stock', cls: 'border-red-200   text-red-700   bg-red-50'   }
-  if (totalKg < minKg)      return { label: 'Bajo',      cls: 'border-yellow-200 text-yellow-700 bg-yellow-50' }
-  return                           { label: 'OK',         cls: 'border-green-200 text-green-700  bg-green-50'  }
+  if (totalKg <= 0)    return { label: 'Sin stock', cls: 'border-red-200   text-red-700   bg-red-50',    bar: 'bg-red-400'    }
+  if (totalKg < minKg) return { label: 'Bajo',      cls: 'border-yellow-200 text-yellow-700 bg-yellow-50', bar: 'bg-yellow-400' }
+  return                      { label: 'OK',         cls: 'border-green-200 text-green-700  bg-green-50',  bar: 'bg-green-500'  }
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -57,6 +59,7 @@ function buildGroups(lots: InkLot[]): CatalogGroup[] {
         minStockKg:  c.min_stock_kg ?? 0,
         totalKg:     0,
         activeCount: 0,
+        fifoLotId:   null,
         lots:        [],
       }
       map.set(c.id, g)
@@ -69,7 +72,18 @@ function buildGroups(lots: InkLot[]): CatalogGroup[] {
     }
   }
 
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+  const groups = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+
+  for (const g of groups) {
+    const oldest = g.lots
+      .filter(l => l.enabled && (l.remaining_kg ?? 0) > 0 && l.receipt?.receipt_date)
+      .sort((a, b) =>
+        (a.receipt!.receipt_date as string).localeCompare(b.receipt!.receipt_date as string)
+      )[0]
+    if (oldest) g.fifoLotId = oldest.id
+  }
+
+  return groups
 }
 
 export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, onRequest, onLotDisabled }: Props) {
@@ -78,6 +92,7 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
   const [disabling,  setDisabling]  = useState<number | null>(null)
 
   const groups = buildGroups(lots)
+  const maxKg  = Math.max(...groups.map(g => g.totalKg), 1)
 
   async function handleDisable(id: number) {
     setDisabling(id)
@@ -112,6 +127,7 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
       {groups.map(g => {
         const open  = expanded.has(g.catalogId)
         const badge = stockBadge(g.totalKg, g.minStockKg)
+        const barPct = (g.totalKg / maxKg) * 100
 
         return (
           <div key={g.catalogId}>
@@ -138,9 +154,19 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
 
               {/* Stats */}
               <span className="flex items-center gap-3 shrink-0">
-                <span className="text-[10px] font-mono text-muted-foreground">
-                  {g.totalKg.toFixed(1)} kg
+                {/* Proportional bar */}
+                <span className="flex items-center gap-1.5 w-28">
+                  <div className="flex-1 h-1 bg-muted overflow-hidden">
+                    <div
+                      className={cn('h-full transition-all', badge.bar)}
+                      style={{ width: `${barPct.toFixed(0)}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground w-16 text-right tabular-nums">
+                    {g.totalKg.toFixed(1)} kg
+                  </span>
                 </span>
+
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   {g.activeCount} {g.activeCount === 1 ? 'lote' : 'lotes'}
                 </span>
@@ -170,88 +196,98 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
-                    {g.lots.map(lot => (
-                      <tr
-                        key={lot.id}
-                        className={cn(
-                          'transition-colors',
-                          lot.enabled ? 'hover:bg-muted/30' : 'opacity-50 bg-muted/10'
-                        )}
-                      >
-                        <td className="pl-12 pr-4 py-2.5 font-mono font-bold text-[11px]">
-                          {lot.internal_batch}
-                        </td>
+                    {g.lots.map(lot => {
+                      const statusInfo = getLotStatusInfo(lot)
+                      const isFifo     = lot.id === g.fifoLotId
 
-                        <td className="px-4 py-2.5">
-                          <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                          <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
-                        </td>
+                      return (
+                        <tr
+                          key={lot.id}
+                          className={cn(
+                            'transition-colors',
+                            lot.enabled ? 'hover:bg-muted/30' : 'opacity-50 bg-muted/10'
+                          )}
+                        >
+                          <td className="pl-12 pr-4 py-2.5 font-mono font-bold text-[11px]">
+                            {lot.internal_batch}
+                          </td>
 
-                        <td className="px-4 py-2.5">
-                          <DisponibleCellInk lot={lot} />
-                        </td>
+                          <td className="px-4 py-2.5">
+                            <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                            <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                          </td>
 
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {fmtDate(lot.receipt?.receipt_date)}
-                        </td>
+                          <td className="px-4 py-2.5">
+                            <DisponibleCellInk lot={lot} />
+                          </td>
 
-                        <td className="px-4 py-2.5">
-                          <span className={cn(
-                            'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
-                            lot.enabled
-                              ? 'border-green-200 text-green-700 bg-green-50'
-                              : 'border-border text-muted-foreground bg-muted/40'
-                          )}>
-                            {lot.enabled ? 'Activo' : 'Deshabilitado'}
-                          </span>
-                        </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            <p className="font-mono text-[11px] text-muted-foreground">
+                              {fmtDate(lot.receipt?.receipt_date)}
+                            </p>
+                            {isFifo && (
+                              <span className="mt-0.5 inline-block text-[8px] font-bold uppercase tracking-widest px-1 py-px border border-orange-200 text-orange-600 bg-orange-50">
+                                FIFO
+                              </span>
+                            )}
+                          </td>
 
-                        <td className="px-4 py-2.5">
-                          <TooltipProvider>
-                            <div className="flex items-center gap-0.5">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button onClick={() => onHistory(lot.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
-                                    <History className="size-3.5" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Historial</TooltipContent>
-                              </Tooltip>
+                          <td className="px-4 py-2.5">
+                            <span className={cn(
+                              'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border',
+                              statusInfo.cls
+                            )}>
+                              {statusInfo.label}
+                            </span>
+                          </td>
 
-                              {canRequest && lot.enabled && (lot.remaining_kg ?? 0) > 0 && (
+                          <td className="px-4 py-2.5">
+                            <TooltipProvider>
+                              <div className="flex items-center gap-0.5">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <button onClick={() => onRequest(lot)} className="p-1.5 text-blue-600 hover:text-blue-800 transition-colors rounded">
-                                      <FlaskConical className="size-3.5" />
+                                    <button onClick={() => onHistory(lot.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
+                                      <History className="size-3.5" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent>Solicitar material</TooltipContent>
+                                  <TooltipContent>Historial</TooltipContent>
                                 </Tooltip>
-                              )}
 
-                              {canManage && lot.enabled && (
-                                confirming === lot.id ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">¿Confirmar?</span>
-                                    <button onClick={() => handleDisable(lot.id)} disabled={disabling === lot.id} className="text-[9px] font-bold uppercase tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50">Sí</button>
-                                    <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">No</button>
-                                  </div>
-                                ) : (
+                                {canRequest && lot.enabled && (lot.remaining_kg ?? 0) > 0 && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors rounded">
-                                        <PowerOff className="size-3.5" />
+                                      <button onClick={() => onRequest(lot)} className="p-1.5 text-blue-600 hover:text-blue-800 transition-colors rounded">
+                                        <FlaskConical className="size-3.5" />
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Deshabilitar lote</TooltipContent>
+                                    <TooltipContent>Solicitar material</TooltipContent>
                                   </Tooltip>
-                                )
-                              )}
-                            </div>
-                          </TooltipProvider>
-                        </td>
-                      </tr>
-                    ))}
+                                )}
+
+                                {canManage && lot.enabled && (
+                                  confirming === lot.id ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">¿Confirmar?</span>
+                                      <button onClick={() => handleDisable(lot.id)} disabled={disabling === lot.id} className="text-[9px] font-bold uppercase tracking-widest text-red-600 hover:text-red-800 disabled:opacity-50">Sí</button>
+                                      <button onClick={() => setConfirming(null)} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">No</button>
+                                    </div>
+                                  ) : (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button onClick={() => setConfirming(lot.id)} className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors rounded">
+                                          <PowerOff className="size-3.5" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Deshabilitar lote</TooltipContent>
+                                    </Tooltip>
+                                  )
+                                )}
+                              </div>
+                            </TooltipProvider>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
