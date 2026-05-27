@@ -43,6 +43,10 @@ const DEFAULTS: AppSettings = {
     max_response_hours:    24,
     rejection_placeholder: 'Por favor especifica el motivo del rechazo...',
   },
+  supplies: {
+    alert_roles:          ['ADMIN', 'WAREHOUSE_MANAGER'],
+    alert_cooldown_hours: 24,
+  },
 }
 
 function parseSettings(rows: RawRow[]): AppSettings {
@@ -76,6 +80,10 @@ function parseSettings(rows: RawRow[]): AppSettings {
     requisitions: {
       max_response_hours:    (map['requisitions.max_response_hours']    as number) ?? DEFAULTS.requisitions.max_response_hours,
       rejection_placeholder: (map['requisitions.rejection_placeholder'] as string) ?? DEFAULTS.requisitions.rejection_placeholder,
+    },
+    supplies: {
+      alert_roles:          (map['supplies.alert_roles']          as string[]) ?? DEFAULTS.supplies.alert_roles,
+      alert_cooldown_hours: (map['supplies.alert_cooldown_hours'] as number)   ?? DEFAULTS.supplies.alert_cooldown_hours,
     },
   }
 }

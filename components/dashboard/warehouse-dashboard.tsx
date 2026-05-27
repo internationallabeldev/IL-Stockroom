@@ -6,6 +6,7 @@ import { ClipboardList, ClipboardCheck, AlertTriangle, PackageCheck } from 'luci
 import { subDays } from 'date-fns'
 import { KpiCard } from './widgets/kpi-card'
 import { LowStockWidget } from './widgets/low-stock-widget'
+import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
 import { ConsumptionChart } from './widgets/consumption-chart'
 import { PendingRequisitionsWidget } from './widgets/pending-requisitions-widget'
 import { PendingQualityWidget } from './widgets/pending-quality-widget'
@@ -81,14 +82,17 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-6">
+        <div className="col-span-5">
           <PendingRequisitionsWidget />
         </div>
         <div className="col-span-3">
           <PendingQualityWidget />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-2">
           <LowStockWidget materialType="BOTH" />
+        </div>
+        <div className="col-span-2">
+          <SuppliesAlertWidget />
         </div>
       </div>
 

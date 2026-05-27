@@ -786,6 +786,7 @@ export type Database = {
           name: string
           phone: string
           provider_type: Database["public"]["Enums"]["provider_type"]
+          supply_types: string[] | null
           updated_at: string | null
           whatsapp: string | null
         }
@@ -802,6 +803,7 @@ export type Database = {
           name: string
           phone: string
           provider_type: Database["public"]["Enums"]["provider_type"]
+          supply_types?: string[] | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -818,6 +820,7 @@ export type Database = {
           name?: string
           phone?: string
           provider_type?: Database["public"]["Enums"]["provider_type"]
+          supply_types?: string[] | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -1179,7 +1182,7 @@ export type Database = {
     }
     Enums: {
       material_type: "INK" | "PAPER"
-      provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "BOTH"
+      provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "SUPPLY_SUPPLIER" | "BOTH"
       purchase_order_status: "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED"
       quality_certificate: "PENDING" | "APPROVED" | "REJECTED"
       requisition_status:
@@ -1323,7 +1326,7 @@ export const Constants = {
   public: {
     Enums: {
       material_type: ["INK", "PAPER"],
-      provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "BOTH"],
+      provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "SUPPLY_SUPPLIER", "BOTH"],
       purchase_order_status: ["PENDING", "PARTIAL", "COMPLETED", "CANCELLED"],
       quality_certificate: ["PENDING", "APPROVED", "REJECTED"],
       requisition_status: [

@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, FileText, Bell, ShoppingCart, ClipboardCheck } from 'lucide-react'
+import { Building2, FileText, Bell, ShoppingCart, ClipboardCheck, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CompanySettings }      from './company-settings'
 import { PdfSettings }          from './pdf-settings'
 import { AlertsSettings }       from './alerts-settings'
 import { OrdersSettings }       from './orders-settings'
 import { RequisitionsSettings } from './requisitions-settings'
+import { SuppliesSettings }     from './supplies-settings'
 import type { AppSettings }     from '@/types/app-settings.types'
 
-type Section = 'company' | 'pdf' | 'alerts' | 'orders' | 'requisitions'
+type Section = 'company' | 'pdf' | 'alerts' | 'orders' | 'requisitions' | 'supplies'
 
 const SECTIONS = [
   { key: 'company'      as Section, label: 'Empresa',           icon: Building2,      desc: 'Identidad, logo y domicilios' },
@@ -18,6 +19,7 @@ const SECTIONS = [
   { key: 'alerts'       as Section, label: 'Alertas',           icon: Bell,           desc: 'Umbrales y días de aviso' },
   { key: 'orders'       as Section, label: 'Órdenes de Compra', icon: ShoppingCart,   desc: 'Valores por defecto al crear órdenes' },
   { key: 'requisitions' as Section, label: 'Requisiciones',     icon: ClipboardCheck, desc: 'Tiempos de respuesta y textos de ayuda' },
+  { key: 'supplies'     as Section, label: 'Consumibles',       icon: Package,        desc: 'Alertas de stock bajo y roles notificados' },
 ]
 
 export function AppSettingsForm({ settings }: { settings: AppSettings }) {
@@ -64,6 +66,7 @@ export function AppSettingsForm({ settings }: { settings: AppSettings }) {
         {active === 'alerts'       && <AlertsSettings settings={settings} />}
         {active === 'orders'       && <OrdersSettings settings={settings} />}
         {active === 'requisitions' && <RequisitionsSettings settings={settings} />}
+        {active === 'supplies'     && <SuppliesSettings settings={settings} />}
       </div>
 
     </div>

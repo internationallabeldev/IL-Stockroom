@@ -29,9 +29,10 @@ export type SearchCategory = {
 const LIMIT = 4
 
 const PROVIDER_TYPE_LABEL: Record<string, string> = {
-  INK_SUPPLIER: 'Tinta',
-  PAPER_SUPPLIER: 'Papel',
-  BOTH: 'Ambos',
+  INK_SUPPLIER:    'Tintas',
+  PAPER_SUPPLIER:  'Papel',
+  SUPPLY_SUPPLIER: 'Consumibles',
+  BOTH:            'Múltiples',
 }
 
 const STATUS_LABEL: Record<string, string> = {

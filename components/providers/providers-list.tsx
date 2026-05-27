@@ -10,19 +10,21 @@ import { getProviders, type Provider } from '@/actions/providers.actions'
 import { getPurchaseOrders, type PurchaseOrderSummary } from '@/actions/purchase-orders.actions'
 
 const TYPE_FILTERS = [
-  { value: '', label: 'Todos' },
-  { value: 'INK_SUPPLIER', label: 'Tintas' },
-  { value: 'PAPER_SUPPLIER', label: 'Papel' },
-  { value: 'BOTH', label: 'Ambos' },
+  { value: '',               label: 'Todos' },
+  { value: 'INK_SUPPLIER',    label: 'Tintas' },
+  { value: 'PAPER_SUPPLIER',  label: 'Papel' },
+  { value: 'SUPPLY_SUPPLIER', label: 'Consumibles' },
+  { value: 'BOTH',            label: 'Múltiples' },
 ]
 
 function ProvidersStatsBar({ providers, orders }: { providers: Provider[], orders: PurchaseOrderSummary[] }) {
   const todayStr = new Date().toISOString().slice(0, 10)
 
-  const active     = providers.filter(p => p.enabled).length
-  const inkCount   = providers.filter(p => p.provider_type === 'INK_SUPPLIER').length
-  const paperCount = providers.filter(p => p.provider_type === 'PAPER_SUPPLIER').length
-  const bothCount  = providers.filter(p => p.provider_type === 'BOTH').length
+  const active       = providers.filter(p => p.enabled).length
+  const inkCount     = providers.filter(p => p.provider_type === 'INK_SUPPLIER').length
+  const paperCount   = providers.filter(p => p.provider_type === 'PAPER_SUPPLIER').length
+  const supplyCount  = providers.filter(p => p.provider_type === 'SUPPLY_SUPPLIER').length
+  const bothCount    = providers.filter(p => p.provider_type === 'BOTH').length
 
   const activeOrders = orders.filter(o => o.status === 'PENDING' || o.status === 'PARTIAL').length
 
@@ -75,13 +77,16 @@ function ProvidersStatsBar({ providers, orders }: { providers: Provider[], order
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
-            <div className="bg-foreground/80 transition-all" style={{ width: `${(inkCount / active) * 100}%` }} />
+            <div className="bg-[#008dc2] transition-all" style={{ width: `${(inkCount / active) * 100}%` }} />
             <div className="bg-foreground/40 transition-all" style={{ width: `${(paperCount / active) * 100}%` }} />
+            <div className="bg-[#7c3aed] transition-all" style={{ width: `${(supplyCount / active) * 100}%` }} />
             <div className="bg-foreground/20 transition-all" style={{ width: `${(bothCount / active) * 100}%` }} />
           </div>
-          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{inkCount}</span>
+          <span className="text-[11px] font-bold tabular-nums text-[#008dc2]">{inkCount}</span>
           <span className="text-[9px] text-muted-foreground/40">·</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/60">{paperCount}</span>
+          <span className="text-[9px] text-muted-foreground/40">·</span>
+          <span className="text-[11px] font-bold tabular-nums text-[#7c3aed]">{supplyCount}</span>
           <span className="text-[9px] text-muted-foreground/40">·</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/40">{bothCount}</span>
         </div>
@@ -93,7 +98,7 @@ function ProvidersStatsBar({ providers, orders }: { providers: Provider[], order
           <span className="text-border/60 select-none hidden sm:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Principal</span>
-          <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-[120px] truncate">{topProvider.name}</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topProvider.name}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topPct}%</span>
         </div>
       )}

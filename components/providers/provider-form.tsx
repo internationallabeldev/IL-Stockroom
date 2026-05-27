@@ -13,16 +13,24 @@ import { createClient } from '@/lib/supabase/client'
 const ProviderMap = dynamic(() => import('@/components/maps/provider-map'), { ssr: false })
 
 const TYPE_OPTIONS = [
-  { value: 'INK_SUPPLIER',   label: 'Proveedor de Tintas' },
-  { value: 'PAPER_SUPPLIER', label: 'Proveedor de Papel' },
-  { value: 'BOTH',           label: 'Tintas & Papel' },
+  { value: 'INK_SUPPLIER',    label: 'Proveedor de Tintas' },
+  { value: 'PAPER_SUPPLIER',  label: 'Proveedor de Papel' },
+  { value: 'SUPPLY_SUPPLIER', label: 'Proveedor de Consumibles' },
+  { value: 'BOTH',            label: 'Múltiples tipos' },
 ]
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  INK_SUPPLIER:   { label: 'Tintas',        color: '#008dc2' },
-  PAPER_SUPPLIER: { label: 'Papel',          color: '#5f5e59' },
-  BOTH:           { label: 'Tintas & Papel', color: '#1A1A1A' },
+  INK_SUPPLIER:    { label: 'Tintas',      color: '#008dc2' },
+  PAPER_SUPPLIER:  { label: 'Papel',       color: '#5f5e59' },
+  SUPPLY_SUPPLIER: { label: 'Consumibles', color: '#7c3aed' },
+  BOTH:            { label: 'Múltiples',   color: '#1A1A1A' },
 }
+
+const SUPPLY_TYPE_OPTIONS = [
+  { value: 'INK',      label: 'Tintas' },
+  { value: 'PAPER',    label: 'Papel' },
+  { value: 'SUPPLIES', label: 'Consumibles' },
+]
 
 type DrawerMode = 'create' | 'view' | 'edit'
 
@@ -49,16 +57,17 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
     formState: { errors, isSubmitting },
   } = useForm<ProviderFormValues>({
     resolver: zodResolver(providerSchema),
-    defaultValues: { provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null },
+    defaultValues: { provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null, supply_types: null },
   })
 
-  const lat    = watch('latitude')
-  const lng    = watch('longitude')
-  const logoUrl = watch('logo_url')
+  const lat          = watch('latitude')
+  const lng          = watch('longitude')
+  const logoUrl      = watch('logo_url')
+  const providerType = watch('provider_type')
 
   useEffect(() => {
     if (!open) {
-      reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null })
+      reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null, supply_types: null })
       setLogoPreview(null)
       return
     }
@@ -75,10 +84,11 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
         logo_url:       provider.logo_url ?? undefined,
         latitude:       provider.latitude,
         longitude:      provider.longitude,
+        supply_types:   (provider.supply_types as any) ?? null,
       })
       setLogoPreview(provider.logo_url)
     } else {
-      reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null })
+      reset({ provider_type: 'INK_SUPPLIER', latitude: null, longitude: null, logo_url: null, supply_types: null })
       setLogoPreview(null)
     }
   }, [open, provider, initialMode, reset])
@@ -101,7 +111,9 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
   async function onSubmit(data: ProviderFormValues) {
     const fd = new FormData()
     Object.entries(data).forEach(([k, v]) => {
-      if (v !== null && v !== undefined) fd.append(k, String(v))
+      if (v === null || v === undefined) return
+      if (k === 'supply_types') fd.append(k, JSON.stringify(v))
+      else fd.append(k, String(v))
     })
     const res = provider
       ? await updateProvider(provider.id, fd)
@@ -126,6 +138,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
           logo_url:       provider.logo_url ?? undefined,
           latitude:       provider.latitude,
           longitude:      provider.longitude,
+          supply_types:   (provider.supply_types as any) ?? null,
         })
         setLogoPreview(provider.logo_url)
       }
@@ -188,6 +201,13 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                       style={{ color: type.color, borderColor: type.color + '40' }}
                     >
                       {type.label}
+                    </span>
+                  )}
+                  {provider.provider_type === 'BOTH' && provider.supply_types && provider.supply_types.length > 0 && (
+                    <span className="text-[9px] text-muted-foreground">
+                      {provider.supply_types.map((t: string) =>
+                        t === 'INK' ? 'Tintas' : t === 'PAPER' ? 'Papel' : 'Consumibles'
+                      ).join(' + ')}
                     </span>
                   )}
                   <span
@@ -321,6 +341,30 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
+
+              {providerType === 'BOTH' && (
+                <div className="mt-2 border border-border p-3 space-y-2">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                    Tipos que maneja (mín. 2)
+                  </p>
+                  {SUPPLY_TYPE_OPTIONS.map(opt => (
+                    <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        value={opt.value}
+                        {...register('supply_types')}
+                        className="size-3.5 accent-foreground"
+                      />
+                      <span className="text-sm text-foreground/70 group-hover:text-foreground transition-colors">
+                        {opt.label}
+                      </span>
+                    </label>
+                  ))}
+                  {errors.supply_types && (
+                    <p className="text-[10px] text-destructive mt-1">{errors.supply_types.message}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <Field label="Nombre" error={errors.name?.message}>

@@ -6,6 +6,7 @@ import { ShoppingCart, AlertTriangle, TrendingDown, Package } from 'lucide-react
 import { subDays } from 'date-fns'
 import { KpiCard } from './widgets/kpi-card'
 import { LowStockWidget } from './widgets/low-stock-widget'
+import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
 import { ConsumptionChart } from './widgets/consumption-chart'
 import { ActiveOrdersWidget } from './widgets/active-orders-widget'
 import { DateRangePicker } from './date-range-picker'
@@ -68,11 +69,14 @@ export function PurchaserDashboard({ userName }: { userName: string }) {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-7">
+        <div className="col-span-6">
           <ActiveOrdersWidget />
         </div>
-        <div className="col-span-5">
+        <div className="col-span-3">
           <LowStockWidget materialType="BOTH" />
+        </div>
+        <div className="col-span-3">
+          <SuppliesAlertWidget />
         </div>
       </div>
 

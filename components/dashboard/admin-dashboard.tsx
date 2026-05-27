@@ -10,6 +10,7 @@ import { ConsumptionChart } from './widgets/consumption-chart'
 import { PendingRequisitionsWidget } from './widgets/pending-requisitions-widget'
 import { ActiveOrdersWidget } from './widgets/active-orders-widget'
 import { RecentActivityWidget } from './widgets/recent-activity-widget'
+import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
 import { DateRangePicker } from './date-range-picker'
 import { getDashboardKPIs } from '@/actions/dashboard.actions'
 import type { DateRange } from '@/types/dashboard.types'
@@ -99,8 +100,11 @@ export function AdminDashboard({ userName }: { userName: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <RecentActivityWidget />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
+          <RecentActivityWidget />
+        </div>
+        <SuppliesAlertWidget />
       </div>
     </div>
   )

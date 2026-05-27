@@ -8,7 +8,7 @@ import { logoutAction } from '@/actions/auth.actions'
 import {
   LayoutDashboard, Package, ClipboardList,
   Truck, BookOpen, ClipboardCheck, ShoppingCart, LogOut,
-  PackagePlus, Users, Settings, ShieldCheck, History,
+  PackagePlus, Users, Settings, ShieldCheck, History, Boxes,
   type LucideIcon,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -42,6 +42,7 @@ const I = {
   orders:         { kind: 'material' as const, base: '/dashboard/orders',       label: 'Órdenes',      icon: ShoppingCart    },
   catalog:        { kind: 'material' as const, base: '/dashboard/catalog',      label: 'Catálogo',     icon: BookOpen        },
   outputsHistory: { kind: 'static'   as const, href: '/dashboard/outputs/history', label: 'Salidas',   icon: History         },
+  supplies:       { kind: 'static'   as const, href: '/dashboard/supplies',        label: 'Suministros', icon: Boxes           },
 }
 
 // ── Sections per role ─────────────────────────────────────────────────────────
@@ -51,12 +52,14 @@ const NAV_SECTIONS: Record<Role, NavSection[]> = {
   ADMIN: [
     { label: 'General',  items: [I.dashboard] },
     { label: 'Flujo',    items: [I.providers, I.catalog, I.orders, I.receipts, I.inventory, I.requisitions, I.outputsHistory, I.complement] },
+    { label: 'Almacén',  items: [I.supplies] },
     { label: 'Sistema',  items: [I.users, I.appSettings, I.audit] },
   ],
   // Lado almacén: desde que llega el material hasta que sale
   WAREHOUSE_MANAGER: [
     { label: 'General',  items: [I.dashboard] },
     { label: 'Flujo',    items: [I.catalog, I.receipts, I.inventory, I.requisitions, I.outputsHistory, I.complement] },
+    { label: 'Almacén',  items: [I.supplies] },
     { label: 'Sistema',  items: [I.audit] },
   ],
   // Lado compras: desde el proveedor hasta la recepción

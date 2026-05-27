@@ -308,7 +308,7 @@ export function RequisitionsList({
         <div className="py-3 flex flex-wrap items-center gap-3">
 
           {/* Search */}
-          <div className="relative">
+          <div id="req-search" className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               value={search}
@@ -327,7 +327,7 @@ export function RequisitionsList({
           </div>
 
           {/* Tabs */}
-          <div className="flex border border-border">
+          <div id="req-tabs" className="flex border border-border">
             {TABS.map(t => (
               <button
                 key={t.value}
@@ -355,7 +355,7 @@ export function RequisitionsList({
           <div className="flex-1" />
 
           {/* Page size */}
-          <div className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+          <div id="req-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
             <input
               type="number"
@@ -376,6 +376,7 @@ export function RequisitionsList({
 
           {canCreate && (
             <button
+              id="req-new-btn"
               onClick={() => setFormOpen(true)}
               className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
             >
@@ -386,7 +387,7 @@ export function RequisitionsList({
         </div>
 
         {/* Stats bar row */}
-        <div className="pb-3">
+        <div id="req-stats" className="pb-3">
           <RequisitionsStatsBar reqs={all as Requisition[]} />
         </div>
       </div>
@@ -399,7 +400,7 @@ export function RequisitionsList({
           </p>
         </div>
       ) : (
-        <div className="border border-border overflow-x-auto">
+        <div id="req-table" className="border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/40">
@@ -434,7 +435,7 @@ export function RequisitionsList({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/30">
+            <tbody id="req-row" className="divide-y divide-border/30">
               {paginated.map(req => {
                 const urgency    = getUrgency(req)
                 const isExpanded = expandedId === req.id
