@@ -1,6 +1,7 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getSessionUser } from './auth.actions'
 
 export type SearchResultType =
   | 'provider'
@@ -50,15 +51,87 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
   const q = query.trim()
   if (q.length < 2) return []
 
-  const supabase = await createClient()
+  // El buscador usa el cliente admin (como el resto de la app) porque RLS
+  // bloquea la lectura directa de inventario, catálogo, órdenes, etc.
+  // Por eso exigimos una sesión válida antes de devolver cualquier resultado.
+  const user = await getSessionUser()
+  if (!user) return []
+
+  const supabase = createAdminClient()
   const isNumeric = /^\d+$/.test(q)
+
+  // Dedupe rows coming from several parallel queries, keeping order, capped at LIMIT.
+  const mergeById = <T extends { id: number | string }>(rows: T[]): T[] => {
+    const seen = new Set<T['id']>()
+    const out: T[] = []
+    for (const r of rows) {
+      if (seen.has(r.id)) continue
+      seen.add(r.id)
+      out.push(r)
+      if (out.length >= LIMIT) break
+    }
+    return out
+  }
+
+  // Inventory matches the local page search: internal batch, catalog name/code,
+  // and the provider batch on the linked receipt. PostgREST can't OR across
+  // tables in one query, so we run one query per source and merge by id.
+  const searchInkInventory = async () => {
+    const [byBatch, byCatalog, byProvBatch] = await Promise.all([
+      supabase
+        .from('ink_inventory')
+        .select('id, internal_batch, ink_catalog(name)')
+        .ilike('internal_batch', `%${q}%`)
+        .limit(LIMIT),
+      supabase
+        .from('ink_inventory')
+        .select('id, internal_batch, ink_catalog:ink_catalog_id!inner(name)')
+        .or(`name.ilike.%${q}%,code.ilike.%${q}%`, { referencedTable: 'ink_catalog' })
+        .limit(LIMIT),
+      supabase
+        .from('ink_inventory')
+        .select('id, internal_batch, ink_catalog(name), receipt:receipt_id!inner(provider_batch)')
+        .ilike('receipt.provider_batch', `%${q}%`)
+        .limit(LIMIT),
+    ])
+    return mergeById([
+      ...(byBatch.data ?? []),
+      ...(byCatalog.data ?? []),
+      ...(byProvBatch.data ?? []),
+    ] as any[])
+  }
+
+  const searchPaperInventory = async () => {
+    const [byBatch, byCatalog, byProvBatch] = await Promise.all([
+      supabase
+        .from('paper_inventory')
+        .select('id, internal_batch, paper_catalog(name)')
+        .ilike('internal_batch', `%${q}%`)
+        .limit(LIMIT),
+      supabase
+        .from('paper_inventory')
+        .select('id, internal_batch, paper_catalog:paper_catalog_id!inner(name)')
+        .or(`name.ilike.%${q}%,code.ilike.%${q}%`, { referencedTable: 'paper_catalog' })
+        .limit(LIMIT),
+      supabase
+        .from('paper_inventory')
+        .select('id, internal_batch, paper_catalog(name), receipt:receipt_id!inner(provider_batch)')
+        .ilike('receipt.provider_batch', `%${q}%`)
+        .limit(LIMIT),
+    ])
+    return mergeById([
+      ...(byBatch.data ?? []),
+      ...(byCatalog.data ?? []),
+      ...(byProvBatch.data ?? []),
+    ] as any[])
+  }
 
   const [
     providersRes,
     inkCatalogRes,
     paperCatalogRes,
-    inkInvRes,
-    paperInvRes,
+    inkInv,
+    paperInv,
     inkOrdersRes,
     paperOrdersRes,
     inkReqRes,
@@ -84,17 +157,9 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
       .or(`name.ilike.%${q}%,code.ilike.%${q}%`)
       .limit(LIMIT),
 
-    supabase
-      .from('ink_inventory')
-      .select('id, internal_batch, ink_catalog(name)')
-      .ilike('internal_batch', `%${q}%`)
-      .limit(LIMIT),
+    searchInkInventory(),
 
-    supabase
-      .from('paper_inventory')
-      .select('id, internal_batch, paper_catalog(name)')
-      .ilike('internal_batch', `%${q}%`)
-      .limit(LIMIT),
+    searchPaperInventory(),
 
     isNumeric
       ? supabase
@@ -204,11 +269,10 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
     })
   }
 
-  const inkInv = inkInvRes.data ?? []
   if (inkInv.length) {
     categories.push({
       label: 'Inventario — Tintas',
-      results: inkInv.map(i => ({
+      results: inkInv.map((i: any) => ({
         id: `ink-inv-${i.id}`,
         type: 'ink_inventory' as const,
         title: i.internal_batch,
@@ -218,11 +282,10 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
     })
   }
 
-  const paperInv = paperInvRes.data ?? []
   if (paperInv.length) {
     categories.push({
       label: 'Inventario — Papel',
-      results: paperInv.map(p => ({
+      results: paperInv.map((p: any) => ({
         id: `paper-inv-${p.id}`,
         type: 'paper_inventory' as const,
         title: p.internal_batch,

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
-import { LayoutList, Layers, Search, X, AlertTriangle, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutList, Layers, Search, X, Eye, EyeOff, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInkInventory, type InkLot } from '@/actions/ink-inventory.actions'
 import type { InkCatalogForRequisition }  from '@/actions/requisitions.actions'
@@ -10,12 +11,15 @@ import { InkLotsTableView }       from './ink-lots-table-view'
 import { InkCatalogGroupView }    from './ink-catalog-group-view'
 import { InkLotHistorySheet }     from './ink-lot-history-sheet'
 import { InkInventoryStatsBar }   from './ink-inventory-stats-bar'
+import { DataRefresh }            from '@/components/shared/data-refresh'
 import { RequisitionForm }        from '@/components/requisitions/requisition-form'
 import { getLotStatusInfo }       from './lot-utils'
 
 type InvSortKey = 'batch' | 'ink' | 'remaining' | 'date' | 'status'
 
 type View = 'table' | 'group'
+
+const STATUS_OPTIONS = ['Activo', 'Bajo stock', 'Crítico', '< 48H', 'Agotado'] as const
 
 type Props = {
   initialLots: InkLot[]
@@ -32,12 +36,38 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
     if (stored === 'table' || stored === 'group') setView(stored)
   }, [])
 
-  const [search,        setSearch]        = useState('')
-  const [lowStock,      setLowStock]      = useState(false)
+  const [search,        setSearch]        = useSearchSeed()
   const [showDisabled,  setShowDisabled]  = useState(false)
   const [page,          setPage]          = useState(1)
   const [pageSize,      setPageSize]      = useState(15)
   const [pageSizeInput, setPageSizeInput] = useState('15')
+
+  // ── Filter panel ──────────────────────────────────────────────────────────
+  const [filtersOpen,  setFiltersOpen]  = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [providerId,   setProviderId]   = useState('')
+  const [remMin,       setRemMin]       = useState('')
+  const [remMax,       setRemMax]       = useState('')
+  const [dateFrom,     setDateFrom]     = useState('')
+  const [dateTo,       setDateTo]       = useState('')
+
+  function toggleStatus(s: string) {
+    setStatusFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+  }
+
+  const activeFilters =
+    statusFilter.length +
+    (providerId ? 1 : 0) +
+    [remMin, remMax, dateFrom, dateTo].filter(Boolean).length +
+    (showDisabled ? 1 : 0)
+
+  function resetFilters() {
+    setStatusFilter([])
+    setProviderId('')
+    setRemMin(''); setRemMax('')
+    setDateFrom(''); setDateTo('')
+    setShowDisabled(false)
+  }
 
   const [sortKey, setSortKey] = useState<InvSortKey>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -52,14 +82,14 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
   const [requisitionOpen, setRequisitionOpen] = useState(false)
   const [selectedLot,     setSelectedLot]     = useState<InkLot | null>(null)
 
-  const { data: lots, refetch } = useQuery({
+  const { data: lots, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey:        ['ink-inventory'],
     queryFn:         () => getInkInventory(),
     initialData:     initialLots,
     refetchInterval: 30_000,
   })
 
-  useEffect(() => { setPage(1) }, [search, lowStock, showDisabled, pageSize, view])
+  useEffect(() => { setPage(1) }, [search, showDisabled, statusFilter, providerId, remMin, remMax, dateFrom, dateTo, pageSize, view])
 
   function switchView(v: View) {
     setView(v)
@@ -92,21 +122,53 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
       )
     }
 
-    if (lowStock) {
+    if (statusFilter.length > 0) {
+      result = result.filter(l => statusFilter.includes(getLotStatusInfo(l).label))
+    }
+
+    if (providerId) {
+      result = result.filter(l =>
+        String(l.receipt?.purchase_order_item?.purchase_order?.provider?.id ?? '') === providerId
+      )
+    }
+
+    if (remMin !== '') result = result.filter(l => (l.remaining_kg ?? 0) >= parseFloat(remMin))
+    if (remMax !== '') result = result.filter(l => (l.remaining_kg ?? 0) <= parseFloat(remMax))
+
+    if (dateFrom || dateTo) {
       result = result.filter(l => {
-        const min = l.ink_catalog?.min_stock_kg ?? 0
-        return (l.remaining_kg ?? 0) < min
+        const d = l.receipt?.receipt_date?.slice(0, 10) ?? ''
+        if (dateFrom && (!d || d < dateFrom)) return false
+        if (dateTo && (!d || d > dateTo)) return false
+        return true
       })
     }
 
     return result
-  }, [lots, search, lowStock, showDisabled])
+  }, [lots, search, showDisabled, statusFilter, providerId, remMin, remMax, dateFrom, dateTo])
 
   const totalDisabled = (lots as InkLot[]).filter(l => !l.enabled).length
-  const lowStockCount = (lots as InkLot[]).filter(l => {
-    const min = l.ink_catalog?.min_stock_kg ?? 0
-    return l.enabled && (l.remaining_kg ?? 0) < min
-  }).length
+
+  // Provider options derived from current lots
+  const providerOptions = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const l of lots as InkLot[]) {
+      const p = l.receipt?.purchase_order_item?.purchase_order?.provider
+      if (p) map.set(p.id, p.name)
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [lots])
+
+  // Count of enabled lots per status (for chip badges)
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const l of lots as InkLot[]) {
+      if (!l.enabled) continue
+      const label = getLotStatusInfo(l).label
+      counts[label] = (counts[label] ?? 0) + 1
+    }
+    return counts
+  }, [lots])
 
   const STATUS_WEIGHT: Record<string, number> = { 'Agotado': 0, '< 48H': 1, 'Crítico': 2, 'Bajo stock': 3, 'Activo': 4, 'Deshabilitado': 5 }
   const sortedFiltered = useMemo(() => {
@@ -156,45 +218,27 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
             )}
           </div>
 
-          {/* Low-stock filter */}
+          {/* Filters toggle */}
           <button
-            id="ink-inv-low-stock"
-            onClick={() => setLowStock(v => !v)}
+            id="ink-inv-filters-btn"
+            onClick={() => setFiltersOpen(v => !v)}
             className={cn(
               'flex items-center gap-1.5 h-8 px-3 border text-[9px] font-bold uppercase tracking-widest transition-colors',
-              lowStock
-                ? 'border-yellow-400 bg-yellow-50 text-yellow-700'
+              filtersOpen || activeFilters > 0
+                ? 'bg-foreground text-background border-foreground'
                 : 'border-border text-muted-foreground hover:border-foreground/40'
             )}
           >
-            <AlertTriangle className="size-3" />
-            Stock bajo
-            {lowStockCount > 0 && (
-              <span className="ml-0.5 bg-yellow-400 text-yellow-900 text-[8px] font-bold px-1 rounded-full">
-                {lowStockCount}
-              </span>
-            )}
-          </button>
-
-          {/* Show disabled */}
-          <button
-            id="ink-inv-show-disabled"
-            onClick={() => setShowDisabled(v => !v)}
-            className={cn(
-              'flex items-center gap-1.5 h-8 px-3 border text-[9px] font-bold uppercase tracking-widest transition-colors',
-              showDisabled
-                ? 'border-foreground/40 bg-muted/60 text-foreground'
-                : 'border-border text-muted-foreground hover:border-foreground/40'
-            )}
-          >
-            {showDisabled ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
-            Deshabilitados
-            {totalDisabled > 0 && (
-              <span className="ml-0.5 text-[8px] font-mono">({totalDisabled})</span>
+            <SlidersHorizontal className="size-3" />
+            Filtros
+            {activeFilters > 0 && (
+              <span className="ml-0.5 bg-white/20 text-[8px] px-1 rounded-sm">{activeFilters}</span>
             )}
           </button>
 
           <div className="flex-1" />
+
+          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
 
           {/* Summary */}
           <p className="text-[10px] font-mono text-muted-foreground">
@@ -249,6 +293,124 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
             </button>
           </div>
         </div>
+
+        {/* Filter panel */}
+        {filtersOpen && (
+          <div className="border-t border-border/50 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {/* Estado */}
+            <div className="sm:col-span-2 lg:col-span-4">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Estado del lote</p>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUS_OPTIONS.map(s => {
+                  const active = statusFilter.includes(s)
+                  const count  = statusCounts[s] ?? 0
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => toggleStatus(s)}
+                      className={cn(
+                        'flex items-center gap-1.5 h-7 px-2.5 border text-[9px] font-bold uppercase tracking-widest transition-colors',
+                        active
+                          ? 'bg-foreground text-background border-foreground'
+                          : 'border-border text-muted-foreground hover:border-foreground/40'
+                      )}
+                    >
+                      {s}
+                      <span className={cn('text-[8px] font-mono', active ? 'text-background/70' : 'text-muted-foreground/60')}>
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Proveedor */}
+            <div className="sm:col-span-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Proveedor</p>
+              <select
+                value={providerId}
+                onChange={e => setProviderId(e.target.value)}
+                className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
+              >
+                <option value="">Todos</option>
+                {providerOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cantidad restante */}
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Restante (kg)</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min={0} placeholder="Mín"
+                  value={remMin}
+                  onChange={e => setRemMin(e.target.value)}
+                  className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
+                />
+                <span className="text-muted-foreground text-xs">—</span>
+                <input
+                  type="number" min={0} placeholder="Máx"
+                  value={remMax}
+                  onChange={e => setRemMax(e.target.value)}
+                  className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
+                />
+              </div>
+            </div>
+
+            {/* Fecha de recepción */}
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Fecha de recepción</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
+                />
+                <span className="text-muted-foreground text-xs">—</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="w-full border border-border px-2 py-1 text-[11px] bg-transparent focus:outline-none focus:border-foreground/50"
+                />
+              </div>
+            </div>
+
+            {/* Mostrar deshabilitados + limpiar */}
+            <div className="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center justify-between gap-3">
+              <button
+                onClick={() => setShowDisabled(v => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 h-7 px-2.5 border text-[9px] font-bold uppercase tracking-widest transition-colors',
+                  showDisabled
+                    ? 'border-foreground/40 bg-muted/60 text-foreground'
+                    : 'border-border text-muted-foreground hover:border-foreground/40'
+                )}
+              >
+                {showDisabled ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
+                Mostrar deshabilitados
+                {totalDisabled > 0 && (
+                  <span className="ml-0.5 text-[8px] font-mono">({totalDisabled})</span>
+                )}
+              </button>
+
+              {activeFilters > 0 && (
+                <button
+                  onClick={resetFilters}
+                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="size-3" />
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats bar row */}
         <div id="ink-inv-stats" className="py-3">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, ChevronLeft, ChevronRight, X, Building2, Layers, ShoppingCart, AlertTriangle, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -8,6 +9,7 @@ import { ProviderCard } from './provider-card'
 import { ProviderForm } from './provider-form'
 import { getProviders, type Provider } from '@/actions/providers.actions'
 import { getPurchaseOrders, type PurchaseOrderSummary } from '@/actions/purchase-orders.actions'
+import { DataRefresh } from '@/components/shared/data-refresh'
 
 const TYPE_FILTERS = [
   { value: '',               label: 'Todos' },
@@ -121,21 +123,30 @@ type Props = {
 }
 
 export function ProvidersList({ providers: initialProviders, orders: initialOrders, canEdit }: Props) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSearchSeed()
   const [typeFilter, setTypeFilter] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', provider: null })
 
-  const { data: providers = initialProviders } = useQuery({
+  const {
+    data: providers = initialProviders,
+    refetch: refetchProviders,
+    isFetching: fetchingProviders,
+    dataUpdatedAt,
+  } = useQuery({
     queryKey: ['providers'],
     queryFn: () => getProviders(),
     initialData: initialProviders,
     refetchInterval: 30_000,
   })
 
-  const { data: orders = initialOrders } = useQuery({
+  const {
+    data: orders = initialOrders,
+    refetch: refetchOrders,
+    isFetching: fetchingOrders,
+  } = useQuery({
     queryKey: ['purchase-orders-all'],
     queryFn: () => getPurchaseOrders(),
     initialData: initialOrders,
@@ -215,6 +226,12 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
             </div>
 
             <div className="flex-1" />
+
+            <DataRefresh
+              updatedAt={dataUpdatedAt}
+              isFetching={fetchingProviders || fetchingOrders}
+              onRefresh={() => { refetchProviders(); refetchOrders() }}
+            />
 
             {/* Page size */}
             <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="providers-page-size">

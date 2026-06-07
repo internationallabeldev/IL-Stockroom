@@ -9,6 +9,7 @@ import { InviteUserForm } from './invite-user-form'
 import { UserDetailSheet } from './user-detail-sheet'
 import { getUsers, type AppUser } from '@/actions/users.actions'
 import { UserAvatar } from '@/components/shared/user-avatar'
+import { DataRefresh } from '@/components/shared/data-refresh'
 
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'Todos' },
@@ -50,7 +51,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [selected, setSelected] = useState<AppUser | null>(null)
 
-  const { data: users = initialUsers } = useQuery({
+  const { data: users = initialUsers, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['users'],
     queryFn: () => getUsers(),
     initialData: initialUsers,
@@ -131,6 +132,8 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
         </div>
 
         <div className="flex-1" />
+
+        <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
 
         <button
           onClick={() => setInviteOpen(true)}

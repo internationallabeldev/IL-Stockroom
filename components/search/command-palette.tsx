@@ -36,8 +36,12 @@ export function CommandPalette({ isOpen, onClose }: Props) {
 
   const navigate = useCallback((url: string) => {
     onClose()
-    router.push(url)
-  }, [onClose, router])
+    const q = query.trim()
+    const target = q.length >= 2
+      ? `${url}${url.includes('?') ? '&' : '?'}q=${encodeURIComponent(q)}`
+      : url
+    router.push(target)
+  }, [onClose, router, query])
 
   // Focus input on open, reset state on close
   useEffect(() => {

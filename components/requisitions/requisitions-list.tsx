@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useState, useMemo } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, X, Plus, ChevronLeft, ChevronRight,
@@ -19,6 +20,7 @@ import {
 import { RequisitionStatusBadge } from './requisition-status-badge'
 import { RequisitionForm }        from './requisition-form'
 import { RequisitionSheet }       from './requisition-sheet'
+import { DataRefresh }            from '@/components/shared/data-refresh'
 import type { Database }          from '@/types/database.types'
 
 type UserRole = Database['public']['Enums']['user_role']
@@ -233,7 +235,7 @@ export function RequisitionsList({
   materialType,
 }: Props) {
   const [tab,         setTab]         = useState<TabValue>('pending')
-  const [search,      setSearch]      = useState('')
+  const [search,      setSearch]      = useSearchSeed()
   const [sortKey,     setSortKey]     = useState<SortKey>('date')
   const [sortDir,     setSortDir]     = useState<'asc' | 'desc'>('desc')
   const [page,        setPage]        = useState(1)
@@ -243,7 +245,7 @@ export function RequisitionsList({
   const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
   const [expandedId,  setExpandedId]  = useState<number | null>(null)
 
-  const { data: all = initialRequisitions } = useQuery({
+  const { data: all = initialRequisitions, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey:        ['requisitions'],
     queryFn:         () => getRequisitions(),
     initialData:     initialRequisitions,
@@ -353,6 +355,8 @@ export function RequisitionsList({
           </div>
 
           <div className="flex-1" />
+
+          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
 
           {/* Page size */}
           <div id="req-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">

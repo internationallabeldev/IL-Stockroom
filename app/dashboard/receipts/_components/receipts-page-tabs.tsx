@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { Search, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PendingQualityList } from '@/components/receipts/pending-quality-list'
 import { ReceiptsHistory } from '@/components/receipts/receipts-history'
+import { DataRefresh } from '@/components/shared/data-refresh'
 import type { InkReceiptWithContext, PaperReceiptWithContext } from '@/actions/receipts.actions'
 
 type Tab          = 'pending' | 'history'
@@ -57,6 +59,12 @@ export function ReceiptsPageTabs({
   const [pageSizeInput, setPageSizeInput] = useState('15')
 
   const pendingRef = useRef<{ applyBulk: () => Promise<void> }>(null)
+
+  // Freshness + manual refresh for the active tab's query
+  const queryClient = useQueryClient()
+  const activeKey   = tab === 'pending' ? ['pending-quality'] : ['receipts-history']
+  const isFetching  = useIsFetching({ queryKey: activeKey }) > 0
+  const updatedAt   = queryClient.getQueryState(activeKey)?.dataUpdatedAt ?? 0
 
   const handleBulkSavingChange = useCallback((v: boolean) => setBulkSaving(v), [])
   const handleBulkDone         = useCallback(() => setBulkQuality(null), [])
@@ -162,6 +170,12 @@ export function ReceiptsPageTabs({
                 </div>
               </>
             )}
+
+            <DataRefresh
+              updatedAt={updatedAt}
+              isFetching={isFetching}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
+            />
 
             {/* Page size */}
             <div id="receipts-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">

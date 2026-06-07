@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ import type { Provider } from '@/actions/providers.actions'
 import type { InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import { cn } from '@/lib/utils'
+import { DataRefresh } from '@/components/shared/data-refresh'
 
 const STATUS_TABS: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'Todas' },
@@ -111,7 +113,7 @@ export function OrdersList({
 }: Props) {
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSearchSeed()
   const [pageSizeInput, setPageSizeInput] = useState('10')
   const [pageSize, setPageSize] = useState(10)
   const [page, setPage] = useState(1)
@@ -143,7 +145,7 @@ export function OrdersList({
     setPage(1)
   }
 
-  const { data: allOrders = initialOrders } = useQuery({
+  const { data: allOrders = initialOrders, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['purchase-orders', materialType],
     queryFn: () => getPurchaseOrders({ material_type: materialType }),
     initialData: initialOrders,
@@ -222,17 +224,17 @@ export function OrdersList({
     <>
       {/* Toolbar */}
       <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-6">
-        <div className="py-3 flex flex-wrap items-center gap-3 justify-between">
+        <div className="py-3 flex items-center gap-2">
 
           {/* Search */}
-          <div id="orders-search" className="relative">
+          <div id="orders-search" className="relative shrink min-w-0 basis-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               placeholder="Buscar por # o proveedor..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
-              className="h-8 w-100 pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
+              className="h-8 w-full pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
             />
             {search && (
               <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -241,10 +243,8 @@ export function OrdersList({
             )}
           </div>
 
-          <div className='flex flex-row gap-2'>
-
-            {/* Status tabs */}
-            <div id="orders-status-filter" className="flex border border-border">
+          {/* Status tabs */}
+          <div id="orders-status-filter" className="flex border border-border shrink-0">
               {STATUS_TABS.map(t => (
                 <button
                   key={t.value}
@@ -265,7 +265,7 @@ export function OrdersList({
               id="orders-filters-btn"
               onClick={() => setFiltersOpen(v => !v)}
               className={cn(
-                'flex items-center gap-1.5 h-8 px-3 border text-[10px] font-bold uppercase tracking-widest transition-colors',
+                'flex items-center gap-1.5 h-8 px-3 border text-[10px] font-bold uppercase tracking-widest transition-colors shrink-0',
                 filtersOpen || activeFilters > 0
                   ? 'bg-foreground text-background border-foreground'
                   : 'border-border text-muted-foreground hover:text-foreground'
@@ -280,8 +280,10 @@ export function OrdersList({
 
             <div className="flex-1" />
 
+            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} className="shrink-0" />
+
             {/* Page size */}
-            <div id="orders-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+            <div id="orders-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8 shrink-0">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
               <input
                 type="number"
@@ -304,13 +306,12 @@ export function OrdersList({
               <button
                 id="orders-new-btn"
                 onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0 whitespace-nowrap"
               >
                 <Plus className="size-3.5" />
                 Nueva orden
               </button>
             )}
-          </div>
 
         </div>
 
