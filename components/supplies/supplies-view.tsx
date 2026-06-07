@@ -23,6 +23,7 @@ import { type SupplyCategoryWithItems, type SupplyItemWithStatus } from '@/lib/s
 import { SupplyItemRow } from './supply-item-row'
 import { SupplyItemForm } from './supply-item-form'
 import { SupplyCategoryForm } from './supply-category-form'
+import { DataRefresh } from '@/components/shared/data-refresh'
 
 type StatusFilter = 'all' | 'critical' | 'warning' | 'ok'
 
@@ -295,7 +296,7 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
     defaultCategoryId?: number
   }>({ open: false, item: null })
 
-  const { data: categories = initialCategories } = useQuery({
+  const { data: categories = initialCategories, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey:       ['supply-categories'],
     queryFn:        getSupplyCategories,
     initialData:    initialCategories,
@@ -403,6 +404,8 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
             </div>
 
             <div className="flex-1" />
+
+            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
 
             {canEdit && (
               <>

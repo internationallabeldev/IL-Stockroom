@@ -20,6 +20,7 @@ export type AuditFilters = {
   performed_by?: string
   date_from?:    string
   date_to?:      string
+  search?:       string
   page?:         number
   pageSize?:     number
 }

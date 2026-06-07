@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, ChevronLeft, ChevronRight, X, Activity, AlertTriangle, PackageX, Weight, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -8,6 +9,7 @@ import { InkCatalogCard } from './ink-catalog-card'
 import { InkCatalogForm } from './ink-catalog-form'
 import { getInkCatalog, type InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { Provider } from '@/actions/providers.actions'
+import { DataRefresh } from '@/components/shared/data-refresh'
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -124,14 +126,14 @@ type Props = {
 }
 
 export function InkCatalogList({ items: initialItems, providers, canEdit }: Props) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSearchSeed()
   const [stockFilter, setStockFilter] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', item: null })
 
-  const { data: items = initialItems } = useQuery({
+  const { data: items = initialItems, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['ink-catalog'],
     queryFn: () => getInkCatalog(),
     initialData: initialItems,
@@ -224,6 +226,8 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
             </div>
 
             <div className="flex-1" />
+
+            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
 
             {/* Page size */}
             <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">

@@ -6,6 +6,8 @@ import { receiptsTourSteps }            from './receipts-tour'
 import { createInventoryTourSteps }     from './inventory-tour'
 import { createRequisitionsTourSteps }  from './requisitions-tour'
 import { suppliesTourSteps }            from './supplies-tour'
+import { auditTourSteps }               from './audit-tour'
+import { outputsHistoryTourSteps }      from './outputs-history-tour'
 
 export const TOURS: Record<string, DriveStep[]> = {
   '/dashboard/providers':        providersTourSteps,
@@ -33,5 +35,7 @@ export const TOURS: Record<string, DriveStep[]> = {
     idPrefix:    'paper-inv',
     viewLabels:  ['Por bobina', 'Por papel'],
   }),
-  '/dashboard/supplies': suppliesTourSteps,
+  '/dashboard/supplies':         suppliesTourSteps,
+  '/dashboard/audit':            auditTourSteps,
+  '/dashboard/outputs/history':  outputsHistoryTourSteps,
 }
