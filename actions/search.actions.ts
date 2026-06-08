@@ -62,80 +62,7 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
   if (!user) return []
 
   const supabase = createAdminClient()
-  // El buscador usa el cliente admin (como el resto de la app) porque RLS
-  // bloquea la lectura directa de inventario, catálogo, órdenes, etc.
-  // Por eso exigimos una sesión válida antes de devolver cualquier resultado.
-  const user = await getSessionUser()
-  if (!user) return []
-
-  const supabase = createAdminClient()
   const isNumeric = /^\d+$/.test(q)
-
-  // Dedupe rows coming from several parallel queries, keeping order, capped at LIMIT.
-  const mergeById = <T extends { id: number | string }>(rows: T[]): T[] => {
-    const seen = new Set<T['id']>()
-    const out: T[] = []
-    for (const r of rows) {
-      if (seen.has(r.id)) continue
-      seen.add(r.id)
-      out.push(r)
-      if (out.length >= LIMIT) break
-    }
-    return out
-  }
-
-  // Inventory matches the local page search: internal batch, catalog name/code,
-  // and the provider batch on the linked receipt. PostgREST can't OR across
-  // tables in one query, so we run one query per source and merge by id.
-  const searchInkInventory = async () => {
-    const [byBatch, byCatalog, byProvBatch] = await Promise.all([
-      supabase
-        .from('ink_inventory')
-        .select('id, internal_batch, ink_catalog(name)')
-        .ilike('internal_batch', `%${q}%`)
-        .limit(LIMIT),
-      supabase
-        .from('ink_inventory')
-        .select('id, internal_batch, ink_catalog:ink_catalog_id!inner(name)')
-        .or(`name.ilike.%${q}%,code.ilike.%${q}%`, { referencedTable: 'ink_catalog' })
-        .limit(LIMIT),
-      supabase
-        .from('ink_inventory')
-        .select('id, internal_batch, ink_catalog(name), receipt:receipt_id!inner(provider_batch)')
-        .ilike('receipt.provider_batch', `%${q}%`)
-        .limit(LIMIT),
-    ])
-    return mergeById([
-      ...(byBatch.data ?? []),
-      ...(byCatalog.data ?? []),
-      ...(byProvBatch.data ?? []),
-    ] as any[])
-  }
-
-  const searchPaperInventory = async () => {
-    const [byBatch, byCatalog, byProvBatch] = await Promise.all([
-      supabase
-        .from('paper_inventory')
-        .select('id, internal_batch, paper_catalog(name)')
-        .ilike('internal_batch', `%${q}%`)
-        .limit(LIMIT),
-      supabase
-        .from('paper_inventory')
-        .select('id, internal_batch, paper_catalog:paper_catalog_id!inner(name)')
-        .or(`name.ilike.%${q}%,code.ilike.%${q}%`, { referencedTable: 'paper_catalog' })
-        .limit(LIMIT),
-      supabase
-        .from('paper_inventory')
-        .select('id, internal_batch, paper_catalog(name), receipt:receipt_id!inner(provider_batch)')
-        .ilike('receipt.provider_batch', `%${q}%`)
-        .limit(LIMIT),
-    ])
-    return mergeById([
-      ...(byBatch.data ?? []),
-      ...(byCatalog.data ?? []),
-      ...(byProvBatch.data ?? []),
-    ] as any[])
-  }
 
   // Dedupe rows coming from several parallel queries, keeping order, capped at LIMIT.
   const mergeById = <T extends { id: number | string }>(rows: T[]): T[] => {
@@ -207,8 +134,6 @@ export async function globalSearch(query: string): Promise<SearchCategory[]> {
     providersRes,
     inkCatalogRes,
     paperCatalogRes,
-    inkInv,
-    paperInv,
     inkInv,
     paperInv,
     inkOrdersRes,
