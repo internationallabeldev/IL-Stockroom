@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, Droplet, FileText, Search } from 'lucide-react'
+import { Droplet, FileText, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMaterial } from './material-context'
 import { usePathname } from 'next/navigation'
@@ -10,6 +10,7 @@ import { CommandPalette } from '@/components/search/command-palette'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { SettingsDrawer } from '@/components/settings/settings-drawer'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 import type { AppUser } from '@/actions/users.actions'
 
 const PAGE_TITLES: Record<string, string> = {
@@ -111,9 +112,7 @@ export function TopNav({ user }: { user: AppUser }) {
 
         <ThemeToggle />
 
-        <button className="flex size-8 items-center justify-center hover:bg-muted transition-colors">
-          <Bell className="size-4 text-foreground/60" />
-        </button>
+        <NotificationBell userId={user.id} />
 
         {/* User section → opens SettingsDrawer */}
         <button

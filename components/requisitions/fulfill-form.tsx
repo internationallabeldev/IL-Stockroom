@@ -116,7 +116,8 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
 
   return (
     <>
-      <div className="px-6 py-5 space-y-5 max-h-[55vh] overflow-y-auto">
+      <div className="max-h-[55vh] overflow-y-auto">
+       <div className="px-6 py-5 space-y-5">
         {unfulfilled.map(item => {
           const lots       = lotsByCatalog[item.ink_catalog_id] ?? []
           const remaining  = item.kg_requested - (item.kg_delivered ?? 0)
@@ -227,6 +228,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
             </div>
           )
         })}
+       </div>
       </div>
 
       <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
@@ -325,7 +327,8 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 
   return (
     <>
-      <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
+      <div className="max-h-[60vh] overflow-y-auto">
+       <div className="px-6 py-5 space-y-5">
         {unfulfilled.map(item => {
           const lots     = lotsByCatalog[item.paper_catalog_id] ?? []
           const alloc    = allocs[item.id]
@@ -439,6 +442,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
             </div>
           )
         })}
+       </div>
       </div>
 
       <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
@@ -465,7 +469,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 export function FulfillForm({ open, onClose, requisition }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="w-[30vw] bg-background border border-border p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-150 max-w-[92vw] sm:max-w-150 bg-background border border-border p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 py-5 border-b border-border/50">
           <DialogTitle className="font-heading text-lg font-bold tracking-tight">
             Surtir requisición #{requisition.requisition_number}

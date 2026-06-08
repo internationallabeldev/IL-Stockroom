@@ -20,6 +20,7 @@ import {
   type SupplyCategoryWithItems,
   type SupplyItemWithDetails,
 } from '@/lib/supplies/types'
+import { notifyRoles } from './notifications.actions'
 
 const ALLOWED_ROLES = ['ADMIN', 'WAREHOUSE_MANAGER']
 
@@ -332,15 +333,6 @@ async function sendAlertIfNeeded(itemId: number): Promise<void> {
 
     if (!alertRoles.length) return
 
-    const { data: usersData } = await admin
-      .from('users')
-      .select('email')
-      .in('role', alertRoles)
-      .eq('enabled', true)
-
-    const alertEmails = (usersData ?? []).map((u: { email: string }) => u.email).filter(Boolean)
-    if (!alertEmails.length) return
-
     // Check cooldown
     if (itemData.last_alert_sent_at) {
       const lastSent = new Date(itemData.last_alert_sent_at).getTime()
@@ -348,25 +340,27 @@ async function sendAlertIfNeeded(itemId: number): Promise<void> {
       if (diffHours < cooldownHours) return
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const edgeFnUrl   = `${supabaseUrl}/functions/v1/send-supply-alert`
+    const falta = (itemData.quantity_minimum as number) - (itemData.quantity_current as number)
 
-    await fetch(edgeFnUrl, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+    await notifyRoles(alertRoles, {
+      type:  'low_stock',
+      title: `Stock bajo: ${itemData.name}`,
+      body:  `Quedan ${itemData.quantity_current} ${itemData.unit} (mínimo ${itemData.quantity_minimum} ${itemData.unit}).`,
+      link:  '/dashboard/supplies',
+      metadata: { item_id: itemData.id },
+      email: {
+        badge:    '⚠️ Stock bajo',
+        subtitle: itemData.category?.name ?? undefined,
+        ctaLabel: 'Ver módulo de consumibles',
+        stats: [
+          { label: 'Stock actual',      value: `${itemData.quantity_current} ${itemData.unit}`, emphasis: true },
+          { label: 'Mínimo requerido',  value: `${itemData.quantity_minimum} ${itemData.unit}` },
+          { label: 'Cantidad faltante', value: `${falta} ${itemData.unit}`, emphasis: true },
+          ...(itemData.provider?.name
+            ? [{ label: 'Proveedor sugerido', value: itemData.provider.name as string }]
+            : []),
+        ],
       },
-      body: JSON.stringify({
-        item_id:          itemData.id,
-        item_name:        itemData.name,
-        category_name:    itemData.category?.name ?? '',
-        quantity_current: itemData.quantity_current,
-        quantity_minimum: itemData.quantity_minimum,
-        unit:             itemData.unit,
-        alert_emails:     alertEmails,
-        provider_name:    itemData.provider?.name ?? undefined,
-      }),
     })
 
     // Update last_alert_sent_at

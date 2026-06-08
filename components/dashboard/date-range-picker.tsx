@@ -24,23 +24,23 @@ function makePresetRange(preset: Preset): DateRange | null {
 }
 
 function defaultRange(): DateRange {
-  return makePresetRange('7d')!
+  return makePresetRange('30d')!
 }
 
 function loadFromStorage(): { range: DateRange; preset: Preset } {
-  if (typeof window === 'undefined') return { range: defaultRange(), preset: '7d' }
+  if (typeof window === 'undefined') return { range: defaultRange(), preset: '30d' }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { range: defaultRange(), preset: '7d' }
     const { start, end, preset } = JSON.parse(raw)
     return { range: { start: new Date(start), end: new Date(end) }, preset: preset ?? 'custom' }
   } catch {
-    return { range: defaultRange(), preset: '7d' }
+    return { range: defaultRange(), preset: '30d' }
   }
 }
 
 export function DateRangePicker({ onRangeChange }: { onRangeChange: (range: DateRange) => void }) {
-  const [preset, setPreset]     = useState<Preset>('7d')
+  const [preset, setPreset]     = useState<Preset>('30d')
   const [range, setRange]       = useState<DateRange>(defaultRange)
   const [open, setOpen]         = useState(false)
   const [calRange, setCalRange] = useState<DPRange | undefined>()

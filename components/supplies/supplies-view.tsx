@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import {
   Plus,
   ChevronDown,
@@ -284,7 +285,7 @@ type Props = {
 
 export function SuppliesView({ categories: initialCategories, canEdit }: Props) {
   const [filter, setFilter]           = useState<StatusFilter>('all')
-  const [search, setSearch]           = useState('')
+  const [search, setSearch]           = useSearchSeed()
   const [page, setPage]               = useState(0)
   const [pageSize, setPageSize]       = useState(5)
   const [categoryForm, setCategoryForm] = useState<{ open: boolean; category: SupplyCategoryWithItems | null }>({

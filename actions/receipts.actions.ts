@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
 import { setAuditUser }      from '@/lib/supabase/audit'
+import { notifyRoles }       from './notifications.actions'
 import {
   createInkReceiptSchema,
   createPaperReceiptSchema,
@@ -321,6 +322,17 @@ export async function createInkReceipt(
 
   await _updateOrderItemAndStatus(supabase, item.purchase_order_id, d.purchase_order_item_id, d.units_received, item.units_ordered, item.units_received ?? 0, 'INK')
 
+  if (d.quality_certificate === 'PENDING') {
+    await notifyRoles(['ADMIN', 'WAREHOUSE_MANAGER'], {
+      type:  'quality_pending',
+      title: `Recepción de tinta pendiente de calidad`,
+      body:  `Lote ${d.internal_batch} requiere revisión de calidad.`,
+      link:  `/dashboard/receipts/ink`,
+      metadata: { internal_batch: d.internal_batch, purchase_order_id: item.purchase_order_id },
+      email: { badge: '🔬 Calidad pendiente', subtitle: `Lote ${d.internal_batch}` },
+    })
+  }
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/receipts/${item.purchase_order_id}`)
   return { success: true }
@@ -377,6 +389,17 @@ export async function createPaperReceipt(
 
   await _updateOrderItemAndStatus(supabase, item.purchase_order_id, d.purchase_order_item_id, d.units_received, item.units_ordered, item.units_received ?? 0, 'PAPER')
 
+  if (d.quality_certificate === 'PENDING') {
+    await notifyRoles(['ADMIN', 'WAREHOUSE_MANAGER'], {
+      type:  'quality_pending',
+      title: `Recepción de papel pendiente de calidad`,
+      body:  `Lote ${d.internal_batch} requiere revisión de calidad.`,
+      link:  `/dashboard/receipts/paper`,
+      metadata: { internal_batch: d.internal_batch, purchase_order_id: item.purchase_order_id },
+      email: { badge: '🔬 Calidad pendiente', subtitle: `Lote ${d.internal_batch}` },
+    })
+  }
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/receipts/${item.purchase_order_id}`)
   return { success: true }
@@ -396,7 +419,7 @@ export async function updateInkReceiptQuality(
 
   const { data: current } = await supabase
     .from('ink_receipts')
-    .select('quality_certificate')
+    .select('quality_certificate, internal_batch')
     .eq('id', receiptId)
     .single()
 
@@ -420,9 +443,33 @@ export async function updateInkReceiptQuality(
     return { error: error.message }
   }
 
+  await alertQualityResult(parsed.data.quality_certificate, current.internal_batch, '/dashboard/receipts/ink', parsed.data.quality_notes, receiptId)
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath('/dashboard/inventory/inks')
   return { success: true }
+}
+
+/** Notify purchasing + admin when a quality decision is REJECTED or CONDITIONAL. */
+async function alertQualityResult(
+  decision: string,
+  batch: string,
+  link: string,
+  notes: string | null | undefined,
+  receiptId: number,
+): Promise<void> {
+  if (decision !== 'REJECTED' && decision !== 'CONDITIONAL') return
+  const rejected = decision === 'REJECTED'
+  await notifyRoles(['ADMIN', 'PURCHASER'], {
+    type:  'quality_result',
+    title: `${rejected ? 'Calidad rechazada' : 'Calidad condicional'}: lote ${batch}`,
+    body:  notes
+      ? `Nota: ${notes}`
+      : `El lote ${batch} ${rejected ? 'fue rechazado' : 'quedó condicional'} y requiere atención de compras.`,
+    link,
+    metadata: { receipt_id: receiptId, decision },
+    email: { badge: rejected ? '⛔ Calidad rechazada' : '⚠️ Calidad condicional', subtitle: `Lote ${batch}` },
+  })
 }
 
 export async function updatePaperReceiptQuality(
@@ -439,7 +486,7 @@ export async function updatePaperReceiptQuality(
 
   const { data: current } = await supabase
     .from('paper_receipts')
-    .select('quality_certificate')
+    .select('quality_certificate, internal_batch')
     .eq('id', receiptId)
     .single()
 
@@ -462,6 +509,8 @@ export async function updatePaperReceiptQuality(
     logger.error('updatePaperReceiptQuality', { receiptId, msg: error.message })
     return { error: error.message }
   }
+
+  await alertQualityResult(parsed.data.quality_certificate, current.internal_batch, '/dashboard/receipts/paper', parsed.data.quality_notes, receiptId)
 
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath('/dashboard/inventory/papers')

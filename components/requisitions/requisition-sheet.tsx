@@ -68,7 +68,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent
         side="right"
-        className="w-[30vw] flex flex-col p-0 bg-background border-l border-border gap-0"
+        className="w-160 max-w-[92vw] sm:max-w-160 flex flex-col p-0 bg-background border-l border-border gap-0"
       >
         {!req ? (
           <div className="flex-1 flex items-center justify-center">

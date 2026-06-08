@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   ClipboardList,
   ArrowRightFromLine,
+  Boxes,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SearchResult, SearchResultType } from '@/actions/search.actions'
@@ -19,6 +20,7 @@ const TYPE_ICON: Record<SearchResultType, React.ReactNode> = {
   purchase_order: <ShoppingCart className="size-3.5" />,
   requisition: <ClipboardList className="size-3.5" />,
   output: <ArrowRightFromLine className="size-3.5" />,
+  supply: <Boxes className="size-3.5" />,
 }
 
 interface Props {
