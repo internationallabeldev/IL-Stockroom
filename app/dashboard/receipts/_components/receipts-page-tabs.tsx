@@ -1,56 +1,264 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { useQueryClient, useIsFetching } from '@tanstack/react-query'
+import { Search, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PendingQualityList } from '@/components/receipts/pending-quality-list'
+import { ReceiptsHistory } from '@/components/receipts/receipts-history'
+import { DataRefresh } from '@/components/shared/data-refresh'
+import type { InkReceiptWithContext, PaperReceiptWithContext } from '@/actions/receipts.actions'
+
+type Tab          = 'pending' | 'history'
+type QualityValue = 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
+
+const BULK_OPTIONS: { value: QualityValue; label: string; activeCls: string }[] = [
+  { value: 'APPROVED',    label: 'Aprobado',    activeCls: 'bg-green-600 text-white' },
+  { value: 'REJECTED',    label: 'Rechazado',   activeCls: 'bg-red-600 text-white' },
+  { value: 'CONDITIONAL', label: 'Condicional', activeCls: 'bg-orange-500 text-white' },
+]
+
+const QUALITY_FILTERS = [
+  { value: '',            label: 'Todos' },
+  { value: 'PENDING',     label: 'Pendiente' },
+  { value: 'APPROVED',    label: 'Aprobado' },
+  { value: 'REJECTED',    label: 'Rechazado' },
+  { value: 'CONDITIONAL', label: 'Condicional' },
+]
+
+const TYPE_FILTERS = [
+  { value: '',      label: 'Todos' },
+  { value: 'INK',   label: 'Tinta' },
+  { value: 'PAPER', label: 'Papel' },
+]
 
 type Props = {
-  pendingCount:  number
-  pendingPanel:  React.ReactNode
-  historyPanel:  React.ReactNode
+  statsBar:         React.ReactNode
+  defaultMaterial?: 'INK' | 'PAPER'
+  canEdit:          boolean
+  initialPending:   { inkReceipts: InkReceiptWithContext[]; paperReceipts: PaperReceiptWithContext[] }
+  initialHistory:   { inkReceipts: InkReceiptWithContext[]; paperReceipts: PaperReceiptWithContext[] }
+  alert?:           React.ReactNode
 }
 
-type Tab = 'pending' | 'history'
+export function ReceiptsPageTabs({
+  statsBar,
+  defaultMaterial,
+  canEdit,
+  initialPending,
+  initialHistory,
+  alert,
+}: Props) {
+  const [tab,           setTab]           = useState<Tab>('pending')
+  const [search,        setSearch]        = useState('')
+  const [bulkQuality,   setBulkQuality]   = useState<QualityValue | null>(null)
+  const [bulkSaving,    setBulkSaving]    = useState(false)
+  const [qualityFilter, setQualityFilter] = useState('')
+  const [typeFilter,    setTypeFilter]    = useState(defaultMaterial ?? '')
+  const [pageSize,      setPageSize]      = useState(15)
+  const [pageSizeInput, setPageSizeInput] = useState('15')
 
-export function ReceiptsPageTabs({ pendingCount, pendingPanel, historyPanel }: Props) {
-  const [tab, setTab] = useState<Tab>('pending')
+  const pendingRef = useRef<{ applyBulk: () => Promise<void> }>(null)
+
+  // Freshness + manual refresh for the active tab's query
+  const queryClient = useQueryClient()
+  const activeKey   = tab === 'pending' ? ['pending-quality'] : ['receipts-history']
+  const isFetching  = useIsFetching({ queryKey: activeKey }) > 0
+  const updatedAt   = queryClient.getQueryState(activeKey)?.dataUpdatedAt ?? 0
+
+  const handleBulkSavingChange = useCallback((v: boolean) => setBulkSaving(v), [])
+  const handleBulkDone         = useCallback(() => setBulkQuality(null), [])
+
+  const pendingCount = defaultMaterial === 'INK'
+    ? initialPending.inkReceipts.length
+    : defaultMaterial === 'PAPER'
+    ? initialPending.paperReceipts.length
+    : initialPending.inkReceipts.length + initialPending.paperReceipts.length
 
   return (
-    <div>
-      <div className="flex border-b border-[#1A1A1A]/15 mb-6">
-        <button
-          onClick={() => setTab('pending')}
-          className={cn(
-            'px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2',
-            tab === 'pending'
-              ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A] -mb-px'
-              : 'text-[#5f5e59] hover:text-[#1A1A1A]'
-          )}
-        >
-          Pendientes de calidad
-          {pendingCount > 0 && (
-            <span className="inline-flex items-center justify-center size-4 rounded-full bg-yellow-500 text-white text-[9px] font-bold">
-              {pendingCount > 9 ? '9+' : pendingCount}
-            </span>
-          )}
-        </button>
+    <>
+      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 mb-6">
+        <div className="py-3 flex items-center justify-between gap-3">
 
-        <button
-          onClick={() => setTab('history')}
-          className={cn(
-            'px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors',
-            tab === 'history'
-              ? 'border-b-2 border-[#1A1A1A] text-[#1A1A1A] -mb-px'
-              : 'text-[#5f5e59] hover:text-[#1A1A1A]'
-          )}
-        >
-          Historial
-        </button>
+          {/* Search */}
+          <div id="receipts-search" className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar lote, material, OC, proveedor…"
+              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Right group: secondary controls + page size + primary tabs */}
+          <div className="flex items-center gap-2">
+
+            {/* Dynamic secondary controls */}
+            {tab === 'pending' && (
+              <>
+                <div id="receipts-bulk-actions" className="flex border border-border">
+                  {BULK_OPTIONS.map((o, i) => (
+                    <button
+                      key={o.value}
+                      onClick={() => setBulkQuality(prev => prev === o.value ? null : o.value)}
+                      className={cn(
+                        'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
+                        i > 0 && 'border-l border-border',
+                        bulkQuality === o.value ? o.activeCls : 'text-foreground/50 hover:text-foreground',
+                      )}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {bulkQuality && (
+                  <button
+                    onClick={() => pendingRef.current?.applyBulk()}
+                    disabled={bulkSaving}
+                    className="h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-30 flex items-center gap-1.5"
+                  >
+                    {bulkSaving && <Loader2 className="size-3 animate-spin" />}
+                    Aplicar
+                  </button>
+                )}
+              </>
+            )}
+
+            {tab === 'history' && (
+              <>
+                {!defaultMaterial && (
+                  <div className="flex border border-border">
+                    {TYPE_FILTERS.map((f, i) => (
+                      <button
+                        key={f.value}
+                        onClick={() => setTypeFilter(f.value)}
+                        className={cn(
+                          'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                          i > 0 && 'border-l border-border',
+                          typeFilter === f.value ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                        )}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div id="receipts-quality-filter" className="flex border border-border">
+                  {QUALITY_FILTERS.map((f, i) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setQualityFilter(f.value)}
+                      className={cn(
+                        'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                        i > 0 && 'border-l border-border',
+                        qualityFilter === f.value ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <DataRefresh
+              updatedAt={updatedAt}
+              isFetching={isFetching}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
+            />
+
+            {/* Page size */}
+            <div id="receipts-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+              <input
+                type="number"
+                min={1}
+                value={pageSizeInput}
+                onChange={e => {
+                  setPageSizeInput(e.target.value)
+                  const n = parseInt(e.target.value, 10)
+                  if (n > 0) setPageSize(n)
+                }}
+                onBlur={() => {
+                  const n = parseInt(pageSizeInput, 10)
+                  if (!n || n < 1) { setPageSizeInput('15'); setPageSize(15) }
+                }}
+                className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
+              />
+            </div>
+
+            {/* Primary tabs */}
+            <div id="receipts-tabs" className="flex border border-border">
+              <button
+                onClick={() => setTab('pending')}
+                className={cn(
+                  'px-4 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2',
+                  tab === 'pending' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                )}
+              >
+                Pendientes
+                {pendingCount > 0 && (
+                  <span className="inline-flex items-center justify-center size-4 rounded-full bg-yellow-500 text-white text-[9px] font-bold">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setTab('history')}
+                className={cn(
+                  'px-4 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors border-l border-border',
+                  tab === 'history' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                )}
+              >
+                Historial
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="py-3">
+          {statsBar}
+        </div>
       </div>
 
-      {tab === 'pending'
-        ? <div key="pending">{pendingPanel}</div>
-        : <div key="history">{historyPanel}</div>
-      }
-    </div>
+      {alert}
+
+      {tab === 'pending' ? (
+        <PendingQualityList
+          ref={pendingRef}
+          key="pending"
+          initialInk={initialPending.inkReceipts}
+          initialPaper={initialPending.paperReceipts}
+          defaultMaterial={defaultMaterial}
+          search={search}
+          pageSize={pageSize}
+          bulkQuality={bulkQuality}
+          onBulkSavingChange={handleBulkSavingChange}
+          onBulkDone={handleBulkDone}
+        />
+      ) : (
+        <ReceiptsHistory
+          key="history"
+          initialInk={initialHistory.inkReceipts}
+          initialPaper={initialHistory.paperReceipts}
+          canEdit={canEdit}
+          defaultMaterial={defaultMaterial}
+          search={search}
+          pageSize={pageSize}
+          qualityFilter={qualityFilter}
+          typeFilter={typeFilter}
+        />
+      )}
+    </>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { PackageSearch } from 'lucide-react'
@@ -55,6 +55,23 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
 
   const lotsByCatalog: Record<number, AvailableInkLot[]> = lotsQuery.data ?? {}
 
+  useEffect(() => {
+    const data = lotsQuery.data
+    if (!data) return
+    setAllocs(prev => {
+      const next = { ...prev }
+      for (const item of unfulfilled) {
+        const lots = data[item.ink_catalog_id] ?? []
+        if (!lots.length) continue
+        next[item.id] = prev[item.id].map((a, i) =>
+          i === 0 && a.inventory_id === 0 ? { ...a, inventory_id: lots[0].id } : a
+        )
+      }
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lotsQuery.data])
+
   function addAlloc(itemId: number) {
     setAllocs(prev => ({
       ...prev,
@@ -99,7 +116,8 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
 
   return (
     <>
-      <div className="px-6 py-5 space-y-5 max-h-[55vh] overflow-y-auto">
+      <div className="max-h-[55vh] overflow-y-auto">
+       <div className="px-6 py-5 space-y-5">
         {unfulfilled.map(item => {
           const lots       = lotsByCatalog[item.ink_catalog_id] ?? []
           const remaining  = item.kg_requested - (item.kg_delivered ?? 0)
@@ -210,6 +228,7 @@ function InkFulfillBody({ req, onClose }: { req: Requisition; onClose: () => voi
             </div>
           )
         })}
+       </div>
       </div>
 
       <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
@@ -264,6 +283,21 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 
   const lotsByCatalog: Record<number, AvailablePaperLot[]> = lotsQuery.data ?? {}
 
+  useEffect(() => {
+    const data = lotsQuery.data
+    if (!data) return
+    setAllocs(prev => {
+      const next = { ...prev }
+      for (const item of unfulfilled) {
+        const lots = data[item.paper_catalog_id] ?? []
+        if (!lots.length || next[item.id]?.inventory_id !== 0) continue
+        next[item.id] = { ...prev[item.id], inventory_id: lots[0].id }
+      }
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lotsQuery.data])
+
   function updateAlloc(itemId: number, patch: Partial<PaperAllocation>) {
     setAllocs(prev => ({ ...prev, [itemId]: { ...prev[itemId], ...patch } }))
   }
@@ -293,7 +327,8 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 
   return (
     <>
-      <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
+      <div className="max-h-[60vh] overflow-y-auto">
+       <div className="px-6 py-5 space-y-5">
         {unfulfilled.map(item => {
           const lots     = lotsByCatalog[item.paper_catalog_id] ?? []
           const alloc    = allocs[item.id]
@@ -407,6 +442,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
             </div>
           )
         })}
+       </div>
       </div>
 
       <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
@@ -433,7 +469,7 @@ function PaperFulfillBody({ req, onClose }: { req: Requisition; onClose: () => v
 export function FulfillForm({ open, onClose, requisition }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-2xl bg-background border border-border p-0 gap-0">
+      <DialogContent className="w-150 max-w-[92vw] sm:max-w-150 bg-background border border-border p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 py-5 border-b border-border/50">
           <DialogTitle className="font-heading text-lg font-bold tracking-tight">
             Surtir requisición #{requisition.requisition_number}

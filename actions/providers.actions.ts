@@ -56,14 +56,21 @@ export async function createProvider(
     logo_url: formData.get('logo_url') || null,
     latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
     longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
+    supply_types: (() => { try { return JSON.parse(formData.get('supply_types') as string) } catch { return null } })(),
   }
 
   const parsed = providerSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
+  const { supply_types, ...rest } = parsed.data
+  const payload: ProviderInsert = {
+    ...rest,
+    supply_types: parsed.data.provider_type === 'BOTH' ? (supply_types ?? null) : null,
+  }
+
   const supabase = await createClient()
   await setAuditUser(supabase, user.id)
-  const { error } = await supabase.from('providers').insert(parsed.data as ProviderInsert)
+  const { error } = await supabase.from('providers').insert(payload)
   if (error) return { error: error.message }
 
   revalidatePath('/dashboard/providers')
@@ -88,14 +95,21 @@ export async function updateProvider(
     logo_url: formData.get('logo_url') || null,
     latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
     longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
+    supply_types: (() => { try { return JSON.parse(formData.get('supply_types') as string) } catch { return null } })(),
   }
 
   const parsed = providerSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
+  const { supply_types, ...rest } = parsed.data
+  const update: ProviderUpdate = {
+    ...rest,
+    supply_types: parsed.data.provider_type === 'BOTH' ? (supply_types ?? null) : null,
+    updated_at: new Date().toISOString(),
+  }
+
   const supabase = await createClient()
   await setAuditUser(supabase, user.id)
-  const update: ProviderUpdate = { ...parsed.data, updated_at: new Date().toISOString() }
   const { error } = await supabase.from('providers').update(update).eq('id', id)
   if (error) return { error: error.message }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   CheckCircle, XCircle, Truck, RotateCcw,
@@ -32,6 +32,7 @@ type Props = {
 }
 
 export function RequisitionSheet({ open, onClose, requisitionId, initialRequisition, userRole }: Props) {
+  const queryClient = useQueryClient()
   const { data: req, refetch } = useQuery({
     queryKey:    ['requisition', requisitionId],
     queryFn:     () => getRequisitionById(requisitionId!),
@@ -50,7 +51,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
     setSubmitting(true)
     const res = await approveRequisition(req!.id)
     if (res.error) toast.error(res.error)
-    else { toast.success('Requisición aprobada'); refetch() }
+    else { toast.success('Requisición aprobada'); refetch(); void queryClient.invalidateQueries({ queryKey: ['requisitions'] }) }
     setSubmitting(false)
   }
 
@@ -59,7 +60,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
     setSubmitting(true)
     const res = await rejectRequisition(req!.id, rejectReason)
     if (res.error) toast.error(res.error)
-    else { toast.success('Requisición rechazada'); setRejectOpen(false); setRejectReason(''); refetch() }
+    else { toast.success('Requisición rechazada'); setRejectOpen(false); setRejectReason(''); refetch(); void queryClient.invalidateQueries({ queryKey: ['requisitions'] }) }
     setSubmitting(false)
   }
 
@@ -67,7 +68,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-xl flex flex-col p-0 bg-background border-l border-border gap-0"
+        className="w-160 max-w-[92vw] sm:max-w-160 flex flex-col p-0 bg-background border-l border-border gap-0"
       >
         {!req ? (
           <div className="flex-1 flex items-center justify-center">
@@ -123,7 +124,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
                       </button>
                     </>
                   )}
-                  {req.status === 'APPROVED' && (
+                  {(req.status === 'APPROVED' || req.status === 'PARTIAL') && (
                     <button
                       disabled={submitting}
                       onClick={() => setFulfillOpen(true)}
@@ -211,8 +212,12 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
                   </div>
                   <div className="divide-y divide-border/30">
                     {(req.ink_items ?? []).map(item => {
-                      const del = item.kg_delivered ?? 0
-                      const pct = item.kg_requested > 0 ? Math.min(100, (del / item.kg_requested) * 100) : 0
+                      const del    = (req.ink_outputs ?? [])
+                        .filter(o => o.ink_inventory?.ink_catalog_id === item.ink_catalog_id)
+                        .reduce((s, o) => s + o.kg_delivered, 0)
+                      const kgReq  = parseFloat(String(item.kg_requested)) || 0
+                      const pct    = kgReq > 0 ? Math.min(100, (del / kgReq) * 100) : 0
+                      const filled = kgReq > 0 && del >= kgReq
                       return (
                         <div key={item.id} className="px-4 py-3">
                           <div className="flex items-center justify-between mb-1.5">
@@ -221,15 +226,15 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
                               <p className="text-[9px] font-mono text-muted-foreground">{item.ink_catalog?.code}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs font-mono font-bold">{del.toFixed(2)} / {item.kg_requested.toFixed(2)} kg</p>
-                              {item.is_fulfilled
+                              <p className="text-xs font-mono font-bold">{del.toFixed(2)} / {kgReq.toFixed(2)} kg</p>
+                              {filled
                                 ? <p className="text-[8px] font-bold uppercase tracking-widest text-green-700 dark:text-green-400">Completo</p>
-                                : <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Pendiente {(item.kg_requested - del).toFixed(2)} kg</p>
+                                : <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Pendiente {(kgReq - del).toFixed(2)} kg</p>
                               }
                             </div>
                           </div>
                           <div className="h-1 bg-muted w-full">
-                            <div className={cn('h-full', item.is_fulfilled ? 'bg-green-500' : 'bg-foreground')} style={{ width: `${pct}%` }} />
+                            <div className={cn('h-full', filled ? 'bg-green-500' : 'bg-foreground')} style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       )
@@ -247,28 +252,33 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
                   </div>
                   <div className="divide-y divide-border/30">
                     {(req.paper_items ?? []).map(item => {
-                      const req2 = item.m2_requested ?? 0
-                      const del  = item.m2_delivered ?? 0
-                      const pct  = req2 > 0 ? Math.min(100, (del / req2) * 100) : 0
+                      const del    = (req.paper_outputs ?? [])
+                        .filter(o => o.paper_inventory?.paper_catalog_id === item.paper_catalog_id)
+                        .reduce((s, o) => s + (o.m2_delivered ?? 0), 0)
+                      const m2Req  = parseFloat(String(item.m2_requested ?? '0')) || 0
+                      const lenReq = parseFloat(String(item.length_m_requested)) || 0
+                      const widReq = parseFloat(String(item.width_m_requested)) || 0
+                      const pct    = m2Req > 0 ? Math.min(100, (del / m2Req) * 100) : 0
+                      const filled = m2Req > 0 && del >= m2Req
                       return (
                         <div key={item.id} className="px-4 py-3">
                           <div className="flex items-center justify-between mb-1.5">
                             <div>
                               <p className="text-xs font-bold">{item.paper_catalog?.name ?? '—'}</p>
                               <p className="text-[9px] font-mono text-muted-foreground">
-                                {item.paper_catalog?.code} · {item.length_m_requested.toFixed(3)} × {item.width_m_requested.toFixed(3)} m
+                                {item.paper_catalog?.code} · {lenReq.toFixed(3)} × {widReq.toFixed(3)} m
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs font-mono font-bold">{del.toFixed(3)} / {req2.toFixed(3)} m²</p>
-                              {item.is_fulfilled
+                              <p className="text-xs font-mono font-bold">{del.toFixed(3)} / {m2Req.toFixed(3)} m²</p>
+                              {filled
                                 ? <p className="text-[8px] font-bold uppercase tracking-widest text-green-700 dark:text-green-400">Completo</p>
-                                : <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Pendiente {(req2 - del).toFixed(3)} m²</p>
+                                : <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Pendiente {(m2Req - del).toFixed(3)} m²</p>
                               }
                             </div>
                           </div>
                           <div className="h-1 bg-muted w-full">
-                            <div className={cn('h-full', item.is_fulfilled ? 'bg-green-500' : 'bg-foreground')} style={{ width: `${pct}%` }} />
+                            <div className={cn('h-full', filled ? 'bg-green-500' : 'bg-foreground')} style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       )
@@ -348,7 +358,7 @@ export function RequisitionSheet({ open, onClose, requisitionId, initialRequisit
       {req && (
         <FulfillForm
           open={fulfillOpen}
-          onClose={() => { setFulfillOpen(false); refetch() }}
+          onClose={() => { setFulfillOpen(false); refetch(); void queryClient.invalidateQueries({ queryKey: ['requisitions'] }) }}
           requisition={req!}
         />
       )}

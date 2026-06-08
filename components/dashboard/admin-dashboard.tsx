@@ -10,13 +10,14 @@ import { ConsumptionChart } from './widgets/consumption-chart'
 import { PendingRequisitionsWidget } from './widgets/pending-requisitions-widget'
 import { ActiveOrdersWidget } from './widgets/active-orders-widget'
 import { RecentActivityWidget } from './widgets/recent-activity-widget'
+import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
 import { DateRangePicker } from './date-range-picker'
 import { getDashboardKPIs } from '@/actions/dashboard.actions'
 import type { DateRange } from '@/types/dashboard.types'
 
 function defaultRange(): DateRange {
   const end = new Date(); end.setHours(23, 59, 59, 999)
-  return { start: subDays(end, 6), end }
+  return { start: subDays(end, 29), end }
 }
 
 export function AdminDashboard({ userName }: { userName: string }) {
@@ -32,19 +33,19 @@ export function AdminDashboard({ userName }: { userName: string }) {
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
-    <div className="px-8 pt-8 pb-16 space-y-8">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">
+    <div className="px-8 pt-6 pb-16 space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             Panel de Operaciones
           </h1>
-          <p className="text-lg text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground">
             {greeting}, <span className="text-[#008dc2] font-bold capitalize">{userName}</span>
           </p>
         </div>
       </header>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           title="Stock de tinta"
           value={kpis?.totalInkKg ?? 0}
@@ -52,6 +53,7 @@ export function AdminDashboard({ userName }: { userName: string }) {
           icon={<Package className="size-4" />}
           color={kpisLoading ? 'default' : (kpis?.totalInkKg ?? 0) < 50 ? 'danger' : 'default'}
           loading={kpisLoading}
+          href="/dashboard/inventory/inks"
         />
         <KpiCard
           title="Stock de papel"
@@ -59,6 +61,7 @@ export function AdminDashboard({ userName }: { userName: string }) {
           unit="m²"
           icon={<Layers className="size-4" />}
           loading={kpisLoading}
+          href="/dashboard/inventory/paper"
         />
         <KpiCard
           title="Requisiciones pendientes"
@@ -66,6 +69,7 @@ export function AdminDashboard({ userName }: { userName: string }) {
           icon={<ClipboardList className="size-4" />}
           color={kpisLoading ? 'default' : (kpis?.pendingReqsCount ?? 0) > 0 ? 'warning' : 'success'}
           loading={kpisLoading}
+          href="/dashboard/requisitions"
         />
         <KpiCard
           title="Órdenes activas"
@@ -73,15 +77,16 @@ export function AdminDashboard({ userName }: { userName: string }) {
           icon={<ShoppingCart className="size-4" />}
           color={kpisLoading ? 'default' : (kpis?.overdueOrdersCount ?? 0) > 0 ? 'danger' : 'default'}
           loading={kpisLoading}
+          href="/dashboard/orders/ink"
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Consumo</p>
           <DateRangePicker onRangeChange={setDateRange} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ConsumptionChart materialType="INK"   dateRange={dateRange} />
           <ConsumptionChart materialType="PAPER" dateRange={dateRange} />
         </div>
@@ -99,8 +104,11 @@ export function AdminDashboard({ userName }: { userName: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <RecentActivityWidget />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
+          <RecentActivityWidget />
+        </div>
+        <SuppliesAlertWidget />
       </div>
     </div>
   )

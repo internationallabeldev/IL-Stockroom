@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
 import { setAuditUser }      from '@/lib/supabase/audit'
+import { notifyRoles, notifyUsers } from './notifications.actions'
 import {
   createInkRequisitionSchema,
   createPaperRequisitionSchema,
@@ -56,7 +57,7 @@ export type InkOutputRecord = {
   output_date:      string
   created_at:       string | null
   delivered_by_user: { first_name: string | null; last_name: string | null } | null
-  ink_inventory:    { internal_batch: string; ink_catalog: { name: string; color_code: string | null } | null } | null
+  ink_inventory:    { internal_batch: string; ink_catalog_id: number; ink_catalog: { name: string; color_code: string | null } | null } | null
 }
 
 export type PaperOutputRecord = {
@@ -78,7 +79,7 @@ export type PaperOutputRecord = {
   output_date:          string
   created_at:           string | null
   delivered_by_user:    { first_name: string | null; last_name: string | null } | null
-  paper_inventory:      { internal_batch: string; paper_catalog: { name: string } | null } | null
+  paper_inventory:      { internal_batch: string; paper_catalog_id: number; paper_catalog: { name: string } | null } | null
 }
 
 export type Requisition = {
@@ -125,6 +126,7 @@ export type AvailablePaperLot = {
 
 export type RequisitionFilters = {
   status?:        RequisitionStatus | ''
+  statuses?:      RequisitionStatus[]
   material_type?: MaterialType | ''
   requested_by?:  string
   date_from?:     string
@@ -153,6 +155,7 @@ const FULL_SELECT = `
     delivered_by_user:delivered_by ( first_name, last_name ),
     ink_inventory:ink_inventory_id (
       internal_batch,
+      ink_catalog_id,
       ink_catalog:ink_catalog_id ( name, color_code )
     )
   ),
@@ -161,6 +164,7 @@ const FULL_SELECT = `
     delivered_by_user:delivered_by ( first_name, last_name ),
     paper_inventory:paper_inventory_id (
       internal_batch,
+      paper_catalog_id,
       paper_catalog:paper_catalog_id ( name )
     )
   )
@@ -181,8 +185,9 @@ export async function getRequisitions(filters?: RequisitionFilters): Promise<Req
 
   if (user.role === 'PRODUCER') query = query.eq('requested_by', user.id)
 
-  if (filters?.status)        query = query.eq('status', filters.status)
-  if (filters?.material_type) query = query.eq('material_type', filters.material_type)
+  if (filters?.statuses?.length) query = query.in('status', filters.statuses)
+  else if (filters?.status)      query = query.eq('status', filters.status)
+  if (filters?.material_type)    query = query.eq('material_type', filters.material_type)
   if (filters?.requested_by)  query = query.eq('requested_by', filters.requested_by)
   if (filters?.date_from)     query = query.gte('request_date', filters.date_from)
   if (filters?.date_to)       query = query.lte('request_date', filters.date_to)
@@ -380,6 +385,15 @@ export async function createInkRequisition(
   const { error: itemsErr } = await (supabase as any).from('requisition_ink_items').insert(items)
   if (itemsErr) return { error: itemsErr.message }
 
+  await notifyRoles(CAN_MANAGE, {
+    type:  'pending_requisitions',
+    title: `Nueva requisición de tinta — OP ${parsed.data.production_order}`,
+    body:  `${parsed.data.items.length} material(es) esperando aprobación.`,
+    link:  `/dashboard/requisitions/${req.id}`,
+    metadata: { requisition_id: req.id, material: 'INK' },
+    email: { badge: '📋 Requisición pendiente', subtitle: `Solicitada por ${user.first_name} ${user.last_name}` },
+  })
+
   PATHS.forEach(p => revalidatePath(p))
   return { success: true, requisitionId: req.id }
 }
@@ -428,6 +442,15 @@ export async function createPaperRequisition(
   const { error: itemsErr } = await (supabase as any).from('requisition_paper_items').insert(items)
   if (itemsErr) return { error: itemsErr.message }
 
+  await notifyRoles(CAN_MANAGE, {
+    type:  'pending_requisitions',
+    title: `Nueva requisición de papel — OP ${parsed.data.production_order}`,
+    body:  `${parsed.data.items.length} material(es) esperando aprobación.`,
+    link:  `/dashboard/requisitions/${req.id}`,
+    metadata: { requisition_id: req.id, material: 'PAPER' },
+    email: { badge: '📋 Requisición pendiente', subtitle: `Solicitada por ${user.first_name} ${user.last_name}` },
+  })
+
   PATHS.forEach(p => revalidatePath(p))
   return { success: true, requisitionId: req.id }
 }
@@ -443,7 +466,7 @@ export async function approveRequisition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: req } = await (supabase as any)
     .from('production_requisitions')
-    .select('status')
+    .select('status, requested_by, production_order')
     .eq('id', id)
     .single()
 
@@ -462,6 +485,18 @@ export async function approveRequisition(
     .eq('id', id)
 
   if (error) return { error: error.message }
+
+  if (req.requested_by) {
+    await notifyUsers([req.requested_by], {
+      type:  'requisition_approved',
+      title: `Requisición aprobada — OP ${req.production_order}`,
+      body:  'Tu requisición de producción fue aprobada.',
+      link:  `/dashboard/requisitions/${id}`,
+      metadata: { requisition_id: id },
+      email: { badge: '✅ Requisición aprobada' },
+    })
+  }
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/requisitions/${id}`)
   return { success: true }
@@ -469,7 +504,7 @@ export async function approveRequisition(
 
 export async function rejectRequisition(
   id: number,
-  _reason: string,
+  reason: string,
 ): Promise<{ success?: boolean; error?: string }> {
   const user = await getSessionUser()
   if (!user || !CAN_MANAGE.includes(user.role)) return { error: 'Sin permisos' }
@@ -479,7 +514,7 @@ export async function rejectRequisition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: req } = await (supabase as any)
     .from('production_requisitions')
-    .select('status')
+    .select('status, requested_by, production_order')
     .eq('id', id)
     .single()
 
@@ -497,6 +532,18 @@ export async function rejectRequisition(
     .eq('id', id)
 
   if (error) return { error: error.message }
+
+  if (req.requested_by) {
+    await notifyUsers([req.requested_by], {
+      type:  'requisition_rejected',
+      title: `Requisición rechazada — OP ${req.production_order}`,
+      body:  reason ? `Motivo: ${reason}` : 'Tu requisición de producción fue rechazada.',
+      link:  `/dashboard/requisitions/${id}`,
+      metadata: { requisition_id: id },
+      email: { badge: '❌ Requisición rechazada' },
+    })
+  }
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/requisitions/${id}`)
   return { success: true }
@@ -515,7 +562,7 @@ export async function fulfillInkRequisition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: req } = await (supabase as any)
     .from('production_requisitions')
-    .select('status, requested_by, ink_items:requisition_ink_items ( id, ink_catalog_id, kg_requested, kg_delivered )')
+    .select('status, requested_by, production_order, ink_items:requisition_ink_items ( id, ink_catalog_id, kg_requested, kg_delivered )')
     .eq('id', requisitionId)
     .single()
 
@@ -538,37 +585,41 @@ export async function fulfillInkRequisition(
 
   if (outErr) return { error: outErr.message }
 
-  // Map lot → catalog
-  const { data: lots } = await supabase
+  // Re-fetch ALL outputs for this requisition as the authoritative source
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allOutputs } = await (supabase as any)
+    .from('ink_outputs')
+    .select('ink_inventory_id, kg_delivered')
+    .eq('requisition_id', requisitionId)
+
+  const allInvIds = [...new Set(((allOutputs ?? []) as { ink_inventory_id: number }[]).map(o => o.ink_inventory_id))]
+  const { data: allLots } = await supabase
     .from('ink_inventory')
     .select('id, ink_catalog_id')
-    .in('id', outputs.map(o => o.inventory_id))
+    .in('id', allInvIds.length ? allInvIds : [0])
 
-  const lotCatalog = new Map((lots ?? []).map(l => [l.id, l.ink_catalog_id]))
+  const lotCatalog = new Map((allLots ?? []).map(l => [l.id, l.ink_catalog_id]))
 
-  // Update each item's kg_delivered
+  const kgByCatalog = new Map<number, number>()
+  for (const o of (allOutputs ?? []) as { ink_inventory_id: number; kg_delivered: number }[]) {
+    const catId = lotCatalog.get(o.ink_inventory_id)
+    if (catId !== undefined) kgByCatalog.set(catId, (kgByCatalog.get(catId) ?? 0) + o.kg_delivered)
+  }
+
+  let allFulfilled = true
   for (const item of req.ink_items as RequisitionInkItem[]) {
-    const related = outputs.filter(o => lotCatalog.get(o.inventory_id) === item.ink_catalog_id)
-    if (!related.length) continue
-
-    const newKg       = (item.kg_delivered ?? 0) + related.reduce((s, o) => s + o.kg_delivered, 0)
-    const isFulfilled = newKg >= item.kg_requested
+    const totalDel    = kgByCatalog.get(item.ink_catalog_id) ?? 0
+    const kgReq       = parseFloat(String(item.kg_requested)) || 0
+    const isFulfilled = kgReq > 0 && totalDel >= kgReq
+    if (!isFulfilled) allFulfilled = false
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('requisition_ink_items')
-      .update({ kg_delivered: newKg, is_fulfilled: isFulfilled })
+      .update({ kg_delivered: totalDel, is_fulfilled: isFulfilled })
       .eq('id', item.id)
   }
 
-  // Determine new status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updated } = await (supabase as any)
-    .from('requisition_ink_items')
-    .select('is_fulfilled')
-    .eq('requisition_id', requisitionId)
-
-  const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
   const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -582,9 +633,62 @@ export async function fulfillInkRequisition(
     })
     .eq('id', requisitionId)
 
+  // Notify the requester that material was delivered (full or partial)
+  await notifyUsers([req.requested_by], {
+    type:  'requisition_fulfilled',
+    title: newStatus === 'FULFILLED'
+      ? `Requisición surtida — OP ${req.production_order}`
+      : `Entrega parcial — OP ${req.production_order}`,
+    body:  newStatus === 'FULFILLED'
+      ? 'Tu requisición fue surtida por completo.'
+      : 'Se entregó parte de tu requisición; queda pendiente el resto.',
+    link:  `/dashboard/requisitions/${requisitionId}`,
+    metadata: { requisition_id: requisitionId, status: newStatus },
+    email: { badge: newStatus === 'FULFILLED' ? '📦 Requisición surtida' : '📦 Entrega parcial' },
+  })
+
+  await alertInkLowStock(supabase, outputs, lotCatalog)
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/requisitions/${requisitionId}`)
   return { success: true }
+}
+
+/** Fire a low-stock notification when a catalog item crosses below its minimum. */
+async function alertInkLowStock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  outputs: FulfillInkOutput[],
+  lotCatalog: Map<number, number>,
+): Promise<void> {
+  const deltaByCatalog = new Map<number, number>()
+  for (const o of outputs) {
+    const catId = lotCatalog.get(o.inventory_id)
+    if (catId !== undefined) deltaByCatalog.set(catId, (deltaByCatalog.get(catId) ?? 0) + o.kg_delivered)
+  }
+  if (deltaByCatalog.size === 0) return
+
+  const { data: cats } = await supabase
+    .from('ink_catalog')
+    .select('id, name, current_stock_kg, min_stock_kg')
+    .in('id', [...deltaByCatalog.keys()])
+
+  for (const c of (cats ?? []) as { id: number; name: string; current_stock_kg: number | null; min_stock_kg: number | null }[]) {
+    const after  = c.current_stock_kg ?? 0
+    const min    = c.min_stock_kg ?? 0
+    const before = after + (deltaByCatalog.get(c.id) ?? 0)
+    // Only when it just crossed below the minimum (avoids repeat spam)
+    if (min > 0 && before >= min && after < min) {
+      await notifyRoles(['ADMIN', 'WAREHOUSE_MANAGER'], {
+        type:  'low_stock',
+        title: `Stock bajo: ${c.name}`,
+        body:  `Quedan ${after.toFixed(2)} kg (mínimo ${min} kg).`,
+        link:  '/dashboard/inventory/inks',
+        metadata: { ink_catalog_id: c.id },
+        email: { badge: '⚠️ Stock bajo', subtitle: c.name },
+      })
+    }
+  }
 }
 
 export async function fulfillPaperRequisition(
@@ -600,7 +704,7 @@ export async function fulfillPaperRequisition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: req } = await (supabase as any)
     .from('production_requisitions')
-    .select('status, requested_by, paper_items:requisition_paper_items ( id, paper_catalog_id, m2_requested, m2_delivered )')
+    .select('status, requested_by, production_order, paper_items:requisition_paper_items ( id, paper_catalog_id, m2_requested, m2_delivered )')
     .eq('id', requisitionId)
     .single()
 
@@ -639,29 +743,42 @@ export async function fulfillPaperRequisition(
     if (outErr) return { error: outErr.message }
   }
 
-  // Update m2_delivered on paper items
-  for (const item of req.paper_items as RequisitionPaperItem[]) {
-    const related  = outputs.filter(o => lotCatalog.get(o.inventory_id) === item.paper_catalog_id)
-    if (!related.length) continue
+  // Re-fetch ALL outputs for this requisition as the authoritative source
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allPaperOutputs } = await (supabase as any)
+    .from('paper_outputs')
+    .select('paper_inventory_id, m2_delivered')
+    .eq('requisition_id', requisitionId)
 
-    const addedM2     = related.reduce((s, o) => s + o.length_m * o.width_m, 0)
-    const newM2       = (item.m2_delivered ?? 0) + addedM2
-    const isFulfilled = item.m2_requested != null && newM2 >= item.m2_requested
+  const allPaperInvIds = [...new Set((allPaperOutputs ?? []).map((o: { paper_inventory_id: number }) => o.paper_inventory_id))]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allPaperLots } = await (supabase as any)
+    .from('paper_inventory')
+    .select('id, paper_catalog_id')
+    .in('id', allPaperInvIds.length ? allPaperInvIds : [0])
+
+  const lotCatalogP = new Map(((allPaperLots ?? []) as { id: number; paper_catalog_id: number }[]).map(l => [l.id, l.paper_catalog_id]))
+
+  const m2ByCatalog = new Map<number, number>()
+  for (const o of (allPaperOutputs ?? []) as { paper_inventory_id: number; m2_delivered: number | null }[]) {
+    const catId = lotCatalogP.get(o.paper_inventory_id)
+    if (catId !== undefined) m2ByCatalog.set(catId, (m2ByCatalog.get(catId) ?? 0) + (o.m2_delivered ?? 0))
+  }
+
+  let allFulfilled = true
+  for (const item of req.paper_items as RequisitionPaperItem[]) {
+    const totalDel    = m2ByCatalog.get(item.paper_catalog_id) ?? 0
+    const m2Req       = parseFloat(String(item.m2_requested ?? '0')) || 0
+    const isFulfilled = m2Req > 0 && totalDel >= m2Req
+    if (!isFulfilled) allFulfilled = false
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('requisition_paper_items')
-      .update({ m2_delivered: newM2, is_fulfilled: isFulfilled })
+      .update({ m2_delivered: totalDel, is_fulfilled: isFulfilled })
       .eq('id', item.id)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updated } = await (supabase as any)
-    .from('requisition_paper_items')
-    .select('is_fulfilled')
-    .eq('requisition_id', requisitionId)
-
-  const allFulfilled = (updated ?? []).every((i: { is_fulfilled: boolean }) => i.is_fulfilled)
   const newStatus: RequisitionStatus = allFulfilled ? 'FULFILLED' : 'PARTIAL'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -675,9 +792,61 @@ export async function fulfillPaperRequisition(
     })
     .eq('id', requisitionId)
 
+  // Notify the requester that material was delivered (full or partial)
+  await notifyUsers([req.requested_by], {
+    type:  'requisition_fulfilled',
+    title: newStatus === 'FULFILLED'
+      ? `Requisición surtida — OP ${req.production_order}`
+      : `Entrega parcial — OP ${req.production_order}`,
+    body:  newStatus === 'FULFILLED'
+      ? 'Tu requisición fue surtida por completo.'
+      : 'Se entregó parte de tu requisición; queda pendiente el resto.',
+    link:  `/dashboard/requisitions/${requisitionId}`,
+    metadata: { requisition_id: requisitionId, status: newStatus },
+    email: { badge: newStatus === 'FULFILLED' ? '📦 Requisición surtida' : '📦 Entrega parcial' },
+  })
+
+  await alertPaperLowStock(supabase, outputs, lotCatalogP)
+
   PATHS.forEach(p => revalidatePath(p))
   revalidatePath(`/dashboard/requisitions/${requisitionId}`)
   return { success: true }
+}
+
+/** Fire a low-stock notification when a paper catalog item crosses below its minimum. */
+async function alertPaperLowStock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  outputs: FulfillPaperOutput[],
+  lotCatalog: Map<number, number>,
+): Promise<void> {
+  const deltaByCatalog = new Map<number, number>()
+  for (const o of outputs) {
+    const catId = lotCatalog.get(o.inventory_id)
+    if (catId !== undefined) deltaByCatalog.set(catId, (deltaByCatalog.get(catId) ?? 0) + o.length_m * o.width_m)
+  }
+  if (deltaByCatalog.size === 0) return
+
+  const { data: cats } = await supabase
+    .from('paper_catalog')
+    .select('id, name, current_stock_m2, min_stock_m2')
+    .in('id', [...deltaByCatalog.keys()])
+
+  for (const c of (cats ?? []) as { id: number; name: string; current_stock_m2: number | null; min_stock_m2: number | null }[]) {
+    const after  = c.current_stock_m2 ?? 0
+    const min    = c.min_stock_m2 ?? 0
+    const before = after + (deltaByCatalog.get(c.id) ?? 0)
+    if (min > 0 && before >= min && after < min) {
+      await notifyRoles(['ADMIN', 'WAREHOUSE_MANAGER'], {
+        type:  'low_stock',
+        title: `Stock bajo: ${c.name}`,
+        body:  `Quedan ${after.toFixed(3)} m² (mínimo ${min} m²).`,
+        link:  '/dashboard/inventory/paper',
+        metadata: { paper_catalog_id: c.id },
+        email: { badge: '⚠️ Stock bajo', subtitle: c.name },
+      })
+    }
+  }
 }
 
 export async function registerInkReturn(

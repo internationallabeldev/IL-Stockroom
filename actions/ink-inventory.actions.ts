@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser }    from './auth.actions'
 import { revalidatePath }    from 'next/cache'
 import { setAuditUser }      from '@/lib/supabase/audit'
+import { notifyRoles }       from './notifications.actions'
 import type { Database }     from '@/types/database.types'
 
 type InkInventoryRow = Database['public']['Tables']['ink_inventory']['Row']
@@ -166,6 +167,16 @@ export async function createRequisition(values: {
     .single()
 
   if (error) return { error: error.message }
+
+  await notifyRoles(['ADMIN', 'WAREHOUSE_MANAGER'], {
+    type:  'pending_requisitions',
+    title: `Nueva requisición de tinta — OP ${values.production_order}`,
+    body:  'Una requisición de producción espera aprobación.',
+    link:  `/dashboard/requisitions/${(data as any).id}`,
+    metadata: { requisition_id: (data as any).id, material: 'INK' },
+    email: { badge: '📋 Requisición pendiente', subtitle: `Solicitada por ${user.first_name} ${user.last_name}` },
+  })
+
   revalidatePath('/dashboard/requisitions')
   return { success: true, requisitionId: (data as any).id }
 }

@@ -2,11 +2,12 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/actions/auth.actions'
-import { differenceInHours, differenceInDays, parseISO, format, startOfMonth, endOfDay } from 'date-fns'
+import { differenceInHours, differenceInDays, parseISO, format, startOfMonth, startOfDay, endOfDay } from 'date-fns'
 import type {
   DateRange,
   LowStockItem,
   ConsumptionResult,
+  ConsumptionDataPoint,
   PendingRequisition,
   ActiveOrder,
   PendingQualityReceipt,
@@ -74,20 +75,22 @@ export async function getLowStockAlerts(): Promise<{ inks: LowStockItem[]; paper
 
 export async function getConsumptionData(dateRange: DateRange): Promise<{ ink: ConsumptionResult; paper: ConsumptionResult }> {
   const supabase = createAdminClient()
-  const startStr = format(dateRange.start, 'yyyy-MM-dd')
-  const endStr   = format(dateRange.end,   'yyyy-MM-dd')
+  // output_date is a timestamptz — use full-day ISO bounds so the last day of
+  // the range is included (a plain 'yyyy-MM-dd' end excludes everything after 00:00).
+  const startISO = startOfDay(dateRange.start).toISOString()
+  const endISO   = endOfDay(dateRange.end).toISOString()
 
   const [inkRows, paperRows] = await Promise.all([
     supabase
       .from('ink_outputs')
       .select('output_date, kg_delivered, kg_returned, ink_inventory(ink_catalog(name, color_code))')
-      .gte('output_date', startStr)
-      .lte('output_date', endStr),
+      .gte('output_date', startISO)
+      .lte('output_date', endISO),
     supabase
       .from('paper_outputs')
       .select('output_date, m2_delivered, m2_returned, paper_inventory(paper_catalog(name))')
-      .gte('output_date', startStr)
-      .lte('output_date', endStr),
+      .gte('output_date', startISO)
+      .lte('output_date', endISO),
   ])
 
   function buildResult(
@@ -114,8 +117,8 @@ export async function getConsumptionData(dateRange: DateRange): Promise<{ ink: C
     }
 
     const sortedDates = [...dayMap.keys()].sort()
-    const points = sortedDates.map(date => {
-      const point: Record<string, number | string> = { date }
+    const points: ConsumptionDataPoint[] = sortedDates.map(date => {
+      const point: ConsumptionDataPoint = { date }
       for (const [name, val] of dayMap.get(date)!) point[name] = Math.round(val * 100) / 100
       return point
     })

@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, X, Eye, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, ArrowUpDown,
   Droplet, FileText, RotateCcw,
+  PackageCheck, Clock, TrendingUp,
+  Timer, CircleDashed, ClipboardList, UserCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -14,6 +17,7 @@ import {
   type MaterialType,
 } from '@/actions/requisitions.actions'
 import { RequisitionSheet } from '@/components/requisitions/requisition-sheet'
+import { DataRefresh }      from '@/components/shared/data-refresh'
 import type { Database }    from '@/types/database.types'
 
 type UserRole     = Database['public']['Enums']['user_role']
@@ -26,13 +30,190 @@ const MAT_TABS: { value: MatFilter; label: string }[] = [
   { value: 'PAPER', label: 'Papel'  },
 ]
 
+function formatDuration(hours: number): string {
+  if (hours < 1)  return `${Math.round(hours * 60)} min`
+  if (hours < 48) return `${hours.toFixed(1)} h`
+  return `${(hours / 24).toFixed(1)} d`
+}
+
+function OutputsStatsBar({ all }: { all: Requisition[] }) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  const totalKg = all.flatMap(r => r.ink_outputs).reduce((s, o) => s + o.kg_delivered, 0)
+  const totalM2 = all.flatMap(r => r.paper_outputs).reduce((s, o) => s + (o.m2_delivered ?? 0), 0)
+  const kgRet   = all.flatMap(r => r.ink_outputs).reduce((s, o) => s + (o.kg_returned ?? 0), 0)
+  const m2Ret   = all.flatMap(r => r.paper_outputs).reduce((s, o) => s + (o.m2_returned ?? 0), 0)
+
+  const todayCount = all.filter(r =>
+    r.ink_outputs.some(o => o.output_date?.startsWith(todayStr)) ||
+    r.paper_outputs.some(o => o.output_date?.startsWith(todayStr))
+  ).length
+
+  const partialCount = all.filter(r => r.status === 'PARTIAL').length
+  const uniqueOps    = new Set(all.map(r => r.production_order)).size
+
+  const fulfilledWithDates = all.filter(r => r.fulfilled_at && r.request_date)
+  const avgHours = fulfilledWithDates.length > 0
+    ? fulfilledWithDates.reduce((s, r) => {
+        const diff = new Date(r.fulfilled_at!).getTime() - new Date(r.request_date).getTime()
+        return s + diff / (1000 * 60 * 60)
+      }, 0) / fulfilledWithDates.length
+    : null
+
+  const inkTotals: Record<string, number> = {}
+  all.flatMap(r => r.ink_outputs).forEach(o => {
+    const name = o.ink_inventory?.ink_catalog?.name
+    if (name) inkTotals[name] = (inkTotals[name] ?? 0) + o.kg_delivered
+  })
+  const topInkEntry = Object.entries(inkTotals).sort((a, b) => b[1] - a[1])[0]
+  const topInkName  = topInkEntry?.[0] ?? null
+  const topInkPct   = topInkEntry && totalKg > 0 ? Math.round((topInkEntry[1] / totalKg) * 100) : null
+
+  const paperTotals: Record<string, number> = {}
+  all.flatMap(r => r.paper_outputs).forEach(o => {
+    const name = o.paper_inventory?.paper_catalog?.name
+    if (name) paperTotals[name] = (paperTotals[name] ?? 0) + (o.m2_delivered ?? 0)
+  })
+  const topPaperEntry = Object.entries(paperTotals).sort((a, b) => b[1] - a[1])[0]
+  const topPaperName  = topPaperEntry?.[0] ?? null
+  const topPaperPct   = topPaperEntry && totalM2 > 0 ? Math.round((topPaperEntry[1] / totalM2) * 100) : null
+
+  const deliverers: Record<string, number> = {}
+  all.forEach(r => {
+    const addOutput = (u: { first_name: string | null; last_name: string | null } | null) => {
+      if (!u || (!u.first_name && !u.last_name)) return
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ')
+      deliverers[name] = (deliverers[name] ?? 0) + 1
+    }
+    r.ink_outputs.forEach(o => addOutput(o.delivered_by_user))
+    r.paper_outputs.forEach(o => addOutput(o.delivered_by_user))
+  })
+  const topDelivererEntry = Object.entries(deliverers).sort((a, b) => b[1] - a[1])[0]
+  const topDelivererName  = topDelivererEntry?.[0] ?? null
+  const topDelivererCount = topDelivererEntry?.[1] ?? null
+
+  const hasReturns   = kgRet > 0 || m2Ret > 0
+  const returnsLabel = kgRet > 0 ? `${kgRet.toFixed(2)} kg` : `${m2Ret.toFixed(3)} m²`
+  const returnsPct   = kgRet > 0 && totalKg > 0
+    ? Math.round((kgRet / totalKg) * 100)
+    : m2Ret > 0 && totalM2 > 0
+      ? Math.round((m2Ret / totalM2) * 100)
+      : null
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-between">
+
+      <div className="flex items-center gap-2">
+        <PackageCheck className="size-3 shrink-0 text-muted-foreground/50" />
+        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Completadas</span>
+        <span className="text-[11px] font-bold tabular-nums text-foreground/80">{all.length}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-border/60 select-none hidden sm:inline">·</span>
+        <ClipboardList className="size-3 shrink-0 text-muted-foreground/50" />
+        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">OPs</span>
+        <span className="text-[11px] font-bold tabular-nums text-foreground/80">{uniqueOps}</span>
+      </div>
+
+      {partialCount > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <CircleDashed className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Parciales</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{partialCount}</span>
+        </div>
+      )}
+
+      {totalKg > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <Droplet className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalKg.toFixed(2)} kg</span>
+        </div>
+      )}
+
+      {totalM2 > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <FileText className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalM2.toFixed(3)} m²</span>
+        </div>
+      )}
+
+      {hasReturns && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <RotateCcw className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Devuelto</span>
+          <span className="text-[11px] font-bold tabular-nums text-green-600 dark:text-green-400">{returnsLabel}</span>
+          {returnsPct !== null && (
+            <span className="text-[10px] text-muted-foreground/50 tabular-nums">{returnsPct}%</span>
+          )}
+        </div>
+      )}
+
+      {avgHours !== null && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <Timer className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Entrega prom.</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{formatDuration(avgHours)}</span>
+        </div>
+      )}
+
+      {todayCount > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <Clock className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Hoy</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80">{todayCount}</span>
+        </div>
+      )}
+
+      {topInkName && topInkPct !== null && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta ppal</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topInkName}</span>
+          <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topInkPct}%</span>
+        </div>
+      )}
+
+      {topPaperName && topPaperPct !== null && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel ppal</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topPaperName}</span>
+          <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topPaperPct}%</span>
+        </div>
+      )}
+
+      {topDelivererName && topDelivererCount !== null && (
+        <div className="flex items-center gap-2">
+          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <UserCheck className="size-3 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Almacenista</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topDelivererName}</span>
+          <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topDelivererCount}</span>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
 type Props = {
   initialRequisitions: Requisition[]
   userRole: UserRole
 }
 
 export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
-  const [search,      setSearch]      = useState('')
+  const [search,      setSearch]      = useSearchSeed()
   const [matFilter,   setMatFilter]   = useState<MatFilter>('ALL')
   const [dateFrom,    setDateFrom]    = useState('')
   const [dateTo,      setDateTo]      = useState('')
@@ -43,9 +224,9 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   const [pageSizeInp, setPageSizeInp] = useState('15')
   const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
 
-  const { data: all = initialRequisitions } = useQuery({
-    queryKey:        ['requisitions', 'fulfilled'],
-    queryFn:         () => getRequisitions({ status: 'FULFILLED' }),
+  const { data: all = initialRequisitions, refetch, isFetching, dataUpdatedAt } = useQuery({
+    queryKey:        ['requisitions', 'with-outputs'],
+    queryFn:         () => getRequisitions({ statuses: ['FULFILLED', 'PARTIAL'] }),
     initialData:     initialRequisitions,
     refetchInterval: 60_000,
   })
@@ -56,7 +237,9 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   }
 
   const filtered = useMemo(() => {
-    let result = all as Requisition[]
+    let result = (all as Requisition[]).filter(r =>
+      r.ink_outputs.length > 0 || r.paper_outputs.length > 0
+    )
 
     if (matFilter !== 'ALL') result = result.filter(r => r.material_type === matFilter)
 
@@ -85,12 +268,6 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
     })
   }, [all, matFilter, search, dateFrom, dateTo, sortKey, sortDir])
 
-  const stats = useMemo(() => ({
-    count:   filtered.length,
-    totalKg: filtered.flatMap(r => r.ink_outputs).reduce((s, o) => s + o.kg_delivered, 0),
-    totalM2: filtered.flatMap(r => r.paper_outputs).reduce((s, o) => s + (o.m2_delivered ?? 0), 0),
-  }), [filtered])
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage   = Math.min(page, totalPages)
   const paginated  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
@@ -102,99 +279,105 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
 
   return (
     <>
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <StatCard label="Total completadas"   value={String(stats.count)} />
-        <StatCard label="Kg tinta entregada"  value={stats.totalKg > 0 ? `${stats.totalKg.toFixed(2)} kg`   : '0 kg'} />
-        <StatCard label="M² papel entregado"  value={stats.totalM2 > 0 ? `${stats.totalM2.toFixed(3)} m²` : '0 m²'} />
-      </div>
-
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 py-3 mb-4 flex flex-wrap items-center gap-3">
+      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-4">
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Buscar #, orden, solicitante…"
-            className="h-8 w-56 pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors"
-          />
-          {search && (
-            <button
-              onClick={() => { setSearch(''); setPage(1) }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
+        {/* Filters row */}
+        <div className="py-3 flex flex-wrap items-center gap-3">
+
+
+          {/* Search */}
+          <div id="outputs-search" className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              placeholder="Buscar #, orden, solicitante…"
+              className="h-8 w-100 pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(''); setPage(1) }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Material type */}
+          <div id="outputs-mat-tabs" className="flex border border-border">
+            {MAT_TABS.map(t => (
+              <button
+                key={t.value}
+                onClick={() => { setMatFilter(t.value); setPage(1) }}
+                className={cn(
+                  'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                  matFilter === t.value
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date range */}
+          <div id="outputs-date-range" className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+              className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+            />
+            <span className="text-[10px] text-muted-foreground">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1) }}
+              className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1" />
+
+          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+
+          {/* Page size */}
+          <div id="outputs-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+            <input
+              type="number"
+              min={1}
+              value={pageSizeInp}
+              onChange={e => {
+                setPageSizeInp(e.target.value)
+                const n = parseInt(e.target.value, 10)
+                if (n > 0) { setPageSize(n); setPage(1) }
+              }}
+              onBlur={() => {
+                const n = parseInt(pageSizeInp, 10)
+                if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
+              }}
+              className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
+            />
+          </div>
         </div>
 
-        {/* Material type */}
-        <div className="flex border border-border">
-          {MAT_TABS.map(t => (
-            <button
-              key={t.value}
-              onClick={() => { setMatFilter(t.value); setPage(1) }}
-              className={cn(
-                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                matFilter === t.value
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Stats bar */}
+        <div id="outputs-stats-bar" className="py-3">
+          <OutputsStatsBar all={all} />
         </div>
 
-        {/* Date range */}
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-            className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
-          />
-          <span className="text-[10px] text-muted-foreground">—</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={e => { setDateTo(e.target.value); setPage(1) }}
-            className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
-          />
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Page size */}
-        <div className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-          <input
-            type="number"
-            min={1}
-            value={pageSizeInp}
-            onChange={e => {
-              setPageSizeInp(e.target.value)
-              const n = parseInt(e.target.value, 10)
-              if (n > 0) { setPageSize(n); setPage(1) }
-            }}
-            onBlur={() => {
-              const n = parseInt(pageSizeInp, 10)
-              if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
-            }}
-            className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
-          />
-        </div>
       </div>
 
       {/* Table */}
@@ -205,7 +388,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
           </p>
         </div>
       ) : (
-        <div className="border border-border overflow-x-auto">
+        <div id="outputs-table" className="border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/40">
@@ -372,19 +555,6 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
         userRole={userRole}
       />
     </>
-  )
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-border p-4">
-      <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-        {label}
-      </p>
-      <p className="font-heading text-2xl font-black tabular-nums">
-        {value}
-      </p>
-    </div>
   )
 }
 

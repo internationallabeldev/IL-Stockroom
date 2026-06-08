@@ -6,9 +6,10 @@ import { toast } from 'sonner'
 import { toggleProviderStatus, type Provider } from '@/actions/providers.actions'
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  INK_SUPPLIER: { label: 'Tintas', color: '#008dc2' },
-  PAPER_SUPPLIER: { label: 'Papel', color: '#5f5e59' },
-  BOTH: { label: 'Tintas & Papel', color: '#1A1A1A' },
+  INK_SUPPLIER:    { label: 'Tintas',       color: '#008dc2' },
+  PAPER_SUPPLIER:  { label: 'Papel',        color: '#5f5e59' },
+  SUPPLY_SUPPLIER: { label: 'Consumibles',  color: '#7c3aed' },
+  BOTH:            { label: 'Múltiples',    color: '#1A1A1A' },
 }
 
 type Props = {

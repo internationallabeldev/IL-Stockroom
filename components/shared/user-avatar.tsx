@@ -34,7 +34,7 @@ function avatarColor(name: string): string {
 export function UserAvatar({ firstName, lastName, avatarUrl, size = 'md', className }: Props) {
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
   const bg       = avatarColor(firstName + lastName)
-  const cls      = cn('shrink-0 flex items-center justify-center font-bold overflow-hidden', SIZE_CLASSES[size], className)
+  const cls      = cn('shrink-0 flex items-center justify-center font-bold overflow-hidden rounded-full', SIZE_CLASSES[size], className)
 
   if (avatarUrl) {
     return (

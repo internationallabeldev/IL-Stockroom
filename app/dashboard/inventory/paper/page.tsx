@@ -19,7 +19,7 @@ export default async function PaperInventoryPage() {
   ])
 
   return (
-    <div className="p-8">
+    <div className="px-8 pb-8">
       <PaperInventoryView
         initialLots={lots}
         canManage={canManage}

@@ -12,7 +12,7 @@ export default async function PaperCatalogPage() {
   const canEdit = user?.role === 'ADMIN' || user?.role === 'WAREHOUSE_MANAGER'
 
   return (
-    <div className="px-8 pt-6 pb-8">
+    <div className="px-8 pb-8">
       <PaperCatalogList items={items} providers={providers} canEdit={canEdit} />
     </div>
   )

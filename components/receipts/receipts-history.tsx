@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ChevronLeft, ChevronRight, FileCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileCheck, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { getAllReceipts, type InkReceiptWithContext, type PaperReceiptWithContext } from '@/actions/receipts.actions'
 import { QualityBadge } from './quality-badge'
 import { QualityUpdateForm } from './quality-update-form'
@@ -11,21 +12,6 @@ type AnyReceipt =
   | { kind: 'ink';   data: InkReceiptWithContext }
   | { kind: 'paper'; data: PaperReceiptWithContext }
 
-const QUALITY_FILTERS = [
-  { value: '',            label: 'Todos' },
-  { value: 'PENDING',     label: 'Pendiente' },
-  { value: 'APPROVED',    label: 'Aprobado' },
-  { value: 'REJECTED',    label: 'Rechazado' },
-  { value: 'CONDITIONAL', label: 'Condicional' },
-]
-
-const TYPE_FILTERS = [
-  { value: '',      label: 'Todos' },
-  { value: 'INK',   label: 'Tinta' },
-  { value: 'PAPER', label: 'Papel' },
-]
-
-const DEFAULT_PAGE_SIZE = 15
 
 function fmtDate(d: string) {
   const [y, m, day] = d.split('T')[0].split('-')
@@ -37,14 +23,24 @@ type Props = {
   initialPaper:    PaperReceiptWithContext[]
   canEdit:         boolean
   defaultMaterial?: 'INK' | 'PAPER'
+  search:          string
+  pageSize:        number
+  qualityFilter:   string
+  typeFilter:      string
 }
 
-export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMaterial }: Props) {
-  const [search,       setSearch]       = useState('')
-  const [qualityFilter, setQualityFilter] = useState('')
-  const [typeFilter,   setTypeFilter]   = useState(defaultMaterial ?? '')
-  const [page,         setPage]         = useState(1)
+type SortKey = 'batch' | 'type' | 'material' | 'order' | 'date' | 'qty' | 'quality'
+
+export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMaterial, search, pageSize, qualityFilter, typeFilter }: Props) {
+  const [page, setPage] = useState(1)
+  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [dialog, setDialog] = useState({ open: false, receiptId: 0, materialType: 'INK' as 'INK' | 'PAPER', batchRef: '', currentQuality: 'PENDING' as any })
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
 
   const { data } = useQuery({
     queryKey:        ['receipts-history'],
@@ -56,7 +52,7 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
   const allRows: AnyReceipt[] = [
     ...data.inkReceipts.map(d  => ({ kind: 'ink'   as const, data: d })),
     ...data.paperReceipts.map(d => ({ kind: 'paper' as const, data: d })),
-  ].sort((a, b) => b.data.receipt_date.localeCompare(a.data.receipt_date))
+  ]
 
   const filtered = allRows.filter(row => {
     const d = row.data
@@ -82,84 +78,41 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
     return matchSearch && matchQuality && matchType
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / DEFAULT_PAGE_SIZE))
-  const safePage   = Math.min(page, totalPages)
-  const paginated  = filtered.slice((safePage - 1) * DEFAULT_PAGE_SIZE, safePage * DEFAULT_PAGE_SIZE)
+  const dir = sortDir === 'asc' ? 1 : -1
+  const sorted = [...filtered].sort((a, b) => {
+    const ad = a.data, bd = b.data
+    switch (sortKey) {
+      case 'batch':    return ad.internal_batch.localeCompare(bd.internal_batch) * dir
+      case 'type':     return a.kind.localeCompare(b.kind) * dir
+      case 'material': {
+        const an = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.ink_catalog?.name   : (ad as PaperReceiptWithContext).purchase_order_item?.paper_catalog?.name
+        const bn = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.ink_catalog?.name   : (bd as PaperReceiptWithContext).purchase_order_item?.paper_catalog?.name
+        return (an ?? '').localeCompare(bn ?? '') * dir
+      }
+      case 'order': {
+        const ao = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (ad as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+        const bo = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (bd as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+        return ((ao ?? 0) - (bo ?? 0)) * dir
+      }
+      case 'date':     return ad.receipt_date.localeCompare(bd.receipt_date) * dir
+      case 'qty': {
+        const aq = a.kind === 'ink' ? (ad as InkReceiptWithContext).kg_received                            : ((ad as PaperReceiptWithContext).total_m2_received ?? 0)
+        const bq = b.kind === 'ink' ? (bd as InkReceiptWithContext).kg_received                            : ((bd as PaperReceiptWithContext).total_m2_received ?? 0)
+        return (aq - bq) * dir
+      }
+      case 'quality':  return ad.quality_certificate.localeCompare(bd.quality_certificate) * dir
+      default:         return 0
+    }
+  })
 
-  useEffect(() => { setPage(1) }, [search, qualityFilter, typeFilter])
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  useEffect(() => { setPage(1) }, [search, qualityFilter, typeFilter, pageSize])
 
   return (
     <>
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar lote, factura, material..."
-            className="h-9 w-72 border border-foreground/20 bg-card pl-8 pr-3 text-xs outline-none focus:border-foreground/50 transition-colors"
-          />
-        </div>
-
-        {!defaultMaterial && (
-          <div className="flex border border-border">
-            {TYPE_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setTypeFilter(f.value)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  typeFilter === f.value ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex border border-border">
-          {QUALITY_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setQualityFilter(f.value)}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                qualityFilter === f.value ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Count + pagination */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {filtered.length} recepci{filtered.length !== 1 ? 'ones' : 'ón'}
-        </p>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="size-3.5" />
-            </button>
-            <span className="text-[10px] font-mono px-2">{safePage}/{totalPages}</span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="size-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
       {paginated.length === 0 ? (
         <div className="border border-dashed border-border p-12 text-center">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -171,13 +124,28 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-muted/60 border-b border-border/50">
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Lote int.</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Tipo</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Material</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Orden</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Fecha</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Cantidad</th>
-                <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Calidad</th>
+                {([
+                  { label: 'Lote int.',  key: 'batch'    },
+                  { label: 'Tipo',       key: 'type'     },
+                  { label: 'Material',   key: 'material' },
+                  { label: 'Orden',      key: 'order'    },
+                  { label: 'Fecha',      key: 'date'     },
+                  { label: 'Cantidad',   key: 'qty'      },
+                  { label: 'Calidad',    key: 'quality'  },
+                ] as { label: string; key: SortKey }[]).map(col => (
+                  <th
+                    key={col.label}
+                    onClick={() => toggleSort(col.key)}
+                    className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {col.label}
+                      {sortKey === col.key
+                        ? sortDir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+                        : <ArrowUpDown className="size-3 opacity-30" />}
+                    </span>
+                  </th>
+                ))}
                 {canEdit && <th className="px-4 py-2.5" />}
               </tr>
             </thead>
@@ -268,6 +236,61 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
           </table>
         </div>
       )}
+
+      {/* Count + pagination — bottom */}
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {sorted.length} recepci{sorted.length !== 1 ? 'ones' : 'ón'}
+          {sorted.length > pageSize && (
+            <span className="ml-1 font-normal normal-case tracking-normal">
+              — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)}
+            </span>
+          )}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={cn(
+                      'size-7 text-[10px] font-bold border transition-colors',
+                      safePage === n
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'border-border hover:bg-muted',
+                    )}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
 
       <QualityUpdateForm
         open={dialog.open}

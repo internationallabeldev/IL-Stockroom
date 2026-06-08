@@ -27,4 +27,8 @@ export type AppSettings = {
     max_response_hours: number
     rejection_placeholder: string
   }
+  supplies: {
+    alert_roles: string[]
+    alert_cooldown_hours: number
+  }
 }

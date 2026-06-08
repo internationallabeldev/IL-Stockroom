@@ -24,10 +24,10 @@ export function ProducerDashboard({ userName }: { userName: string }) {
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
-    <div className="px-8 pt-8 pb-16 space-y-8">
-      <header>
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">Producción</h1>
-        <p className="text-lg text-muted-foreground mt-1">
+    <div className="px-8 pt-6 pb-16 space-y-6">
+      <header className="flex items-baseline gap-3">
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Producción</h1>
+        <p className="text-sm text-muted-foreground">
           {greeting}, <span className="text-[#008dc2] font-bold capitalize">{userName}</span>
         </p>
       </header>
@@ -39,6 +39,7 @@ export function ProducerDashboard({ userName }: { userName: string }) {
           icon={<ClipboardList className="size-4" />}
           color={(kpis?.myActiveReqs ?? 0) > 0 ? 'warning' : 'default'}
           loading={kpisLoading}
+          href="/dashboard/requisitions"
         />
         <KpiCard
           title="Completadas este mes"
@@ -46,6 +47,7 @@ export function ProducerDashboard({ userName }: { userName: string }) {
           icon={<CheckCircle className="size-4" />}
           color="success"
           loading={kpisLoading}
+          href="/dashboard/requisitions"
         />
       </div>
 

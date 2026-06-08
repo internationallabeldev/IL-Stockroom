@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Work_Sans, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -7,11 +7,22 @@ import { cn } from "@/lib/utils";
 import { QueryProvider } from "./query-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-sans' });
+const workSans = Work_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
-const geist = Geist({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   variable: '--font-display',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -44,7 +55,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={cn("h-full antialiased", geistMono.variable, geist.variable)}
+      className={cn("h-full antialiased", workSans.variable, bricolage.variable, jetbrainsMono.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>

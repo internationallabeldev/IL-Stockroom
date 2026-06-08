@@ -5,7 +5,7 @@ import { OutputsHistoryList } from '@/components/outputs-history/outputs-history
 
 export default async function OutputsHistoryPage() {
   const [fulfilled, user] = await Promise.all([
-    getRequisitions({ status: 'FULFILLED' }),
+    getRequisitions({ statuses: ['FULFILLED', 'PARTIAL'] }),
     getSessionUser(),
   ])
 

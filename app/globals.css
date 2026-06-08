@@ -18,7 +18,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -108,8 +108,8 @@
   --secondary-foreground: oklch(0.1 0.026 294);
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.60 0 0);
-  --accent: oklch(0.73 0.185 52);
-  --accent-foreground: oklch(0.068 0.023 294);
+  --accent: oklch(0.27 0 0);
+  --accent-foreground: oklch(0.94 0 0);
   --destructive: oklch(0.65 0.22 27);
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 8%);
@@ -139,6 +139,62 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Chat — Tiptap placeholder + message content (no typography plugin in use) */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.chat-content p { margin: 0.125rem 0; }
+.chat-content ul { list-style: disc; padding-left: 1.25rem; margin: 0.25rem 0; }
+.chat-content ol { list-style: decimal; padding-left: 1.25rem; margin: 0.25rem 0; }
+.chat-content a { color: var(--primary); text-decoration: underline; }
+.chat-content strong { font-weight: 700; }
+.chat-content em { font-style: italic; }
+.chat-content code {
+  font-family: var(--font-mono);
+  background: var(--muted);
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+.chat-content pre {
+  background: var(--muted);
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin: 0.25rem 0;
+}
+.chat-content blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.5rem;
+  color: var(--muted-foreground);
+  margin: 0.25rem 0;
+}
+.chat-content h1, .chat-content h2, .chat-content h3 { font-weight: 700; margin: 0.25rem 0; }
+.mention {
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  border-radius: 0.25rem;
+  padding: 0 0.2rem;
+  font-weight: 600;
+}
+.chat-ref {
+  color: #0ea5e9;
+  background: color-mix(in oklch, #0ea5e9 14%, transparent);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chat-ref:hover {
+  background: color-mix(in oklch, #0ea5e9 26%, transparent);
+  text-decoration: underline;
 }
 
 @utility no-scrollbar {

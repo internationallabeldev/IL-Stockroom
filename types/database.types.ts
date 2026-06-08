@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           changed_fields: string[] | null
@@ -24,7 +48,7 @@ export type Database = {
           operation: string
           performed_by: string | null
           performed_by_name: string | null
-          record_id: number | null
+          record_id: string | null
           table_name: string
         }
         Insert: {
@@ -36,7 +60,7 @@ export type Database = {
           operation: string
           performed_by?: string | null
           performed_by_name?: string | null
-          record_id?: number | null
+          record_id?: string | null
           table_name: string
         }
         Update: {
@@ -48,7 +72,7 @@ export type Database = {
           operation?: string
           performed_by?: string | null
           performed_by_name?: string | null
-          record_id?: number | null
+          record_id?: string | null
           table_name?: string
         }
         Relationships: []
@@ -85,6 +109,199 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      chat_channels: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: number
+          is_default: boolean | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          is_default?: boolean | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          is_default?: boolean | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      chat_mentions: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_read: boolean | null
+          mentioned_user_id: string
+          message_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          mentioned_user_id: string
+          message_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          mentioned_user_id?: string
+          message_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          channel_id: number
+          content: string
+          content_text: string | null
+          created_at: string | null
+          deleted_at: string | null
+          edited_at: string | null
+          id: number
+          is_deleted: boolean | null
+          is_pinned: boolean | null
+          priority: string | null
+          reply_to_id: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          channel_id: number
+          content: string
+          content_text?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: number
+          is_deleted?: boolean | null
+          is_pinned?: boolean | null
+          priority?: string | null
+          reply_to_id?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          channel_id?: number
+          content?: string
+          content_text?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: number
+          is_deleted?: boolean | null
+          is_pinned?: boolean | null
+          priority?: string | null
+          reply_to_id?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: number
+          message_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: number
+          message_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: number
+          message_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_read_status: {
+        Row: {
+          channel_id: number
+          last_read_at: string | null
+          last_read_message_id: number | null
+          user_id: string
+        }
+        Insert: {
+          channel_id: number
+          last_read_at?: string | null
+          last_read_message_id?: number | null
+          user_id: string
+        }
+        Update: {
+          channel_id?: number
+          last_read_at?: string | null
+          last_read_message_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_read_status_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_read_status_last_read_message_id_fkey"
+            columns: ["last_read_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ink_catalog: {
         Row: {
@@ -345,6 +562,50 @@ export type Database = {
           {
             foreignKeyName: "ink_receipts_received_by_fkey"
             columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: number
+          link: string | null
+          metadata: Json | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: number
+          link?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: number
+          link?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -786,6 +1047,7 @@ export type Database = {
           name: string
           phone: string
           provider_type: Database["public"]["Enums"]["provider_type"]
+          supply_types: string[] | null
           updated_at: string | null
           whatsapp: string | null
         }
@@ -801,7 +1063,8 @@ export type Database = {
           longitude?: number | null
           name: string
           phone: string
-          provider_type: Database["public"]["Enums"]["provider_type"]
+          provider_type?: Database["public"]["Enums"]["provider_type"]
+          supply_types?: string[] | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -818,6 +1081,7 @@ export type Database = {
           name?: string
           phone?: string
           provider_type?: Database["public"]["Enums"]["provider_type"]
+          supply_types?: string[] | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -956,6 +1220,7 @@ export type Database = {
           material_type: Database["public"]["Enums"]["material_type"]
           notes: string | null
           order_number: number
+          overdue_notified_at: string | null
           payment_method: string
           provider_id: number
           request_date: string
@@ -973,6 +1238,7 @@ export type Database = {
           material_type: Database["public"]["Enums"]["material_type"]
           notes?: string | null
           order_number?: number
+          overdue_notified_at?: string | null
           payment_method: string
           provider_id: number
           request_date?: string
@@ -990,6 +1256,7 @@ export type Database = {
           material_type?: Database["public"]["Enums"]["material_type"]
           notes?: string | null
           order_number?: number
+          overdue_notified_at?: string | null
           payment_method?: string
           provider_id?: number
           request_date?: string
@@ -1009,6 +1276,44 @@ export type Database = {
           {
             foreignKeyName: "purchase_orders_requested_by_fkey"
             columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: number
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: number
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: number
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -1111,6 +1416,149 @@ export type Database = {
           },
         ]
       }
+      supply_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          id: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: number
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      supply_items: {
+        Row: {
+          alert_email: string | null
+          category_id: number
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          id: number
+          image_url: string | null
+          last_alert_sent_at: string | null
+          name: string
+          provider_id: number | null
+          quantity_current: number
+          quantity_minimum: number
+          quantity_warning: number | null
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          alert_email?: string | null
+          category_id: number
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: number
+          image_url?: string | null
+          last_alert_sent_at?: string | null
+          name: string
+          provider_id?: number | null
+          quantity_current?: number
+          quantity_minimum: number
+          quantity_warning?: number | null
+          unit?: string
+          updated_at?: string | null
+        }
+        Update: {
+          alert_email?: string | null
+          category_id?: number
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          id?: number
+          image_url?: string | null
+          last_alert_sent_at?: string | null
+          name?: string
+          provider_id?: number | null
+          quantity_current?: number
+          quantity_minimum?: number
+          quantity_warning?: number | null
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "supply_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_items_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supply_movements: {
+        Row: {
+          created_at: string | null
+          id: number
+          item_id: number
+          movement_type: string
+          notes: string | null
+          performed_by: string
+          quantity: number
+          quantity_after: number
+          quantity_before: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          item_id: number
+          movement_type: string
+          notes?: string | null
+          performed_by: string
+          quantity: number
+          quantity_after: number
+          quantity_before: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          item_id?: number
+          movement_type?: string
+          notes?: string | null
+          performed_by?: string
+          quantity?: number
+          quantity_after?: number
+          quantity_before?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "supply_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -1122,10 +1570,14 @@ export type Database = {
           id: string
           invited_at: string | null
           invited_by: string | null
+          job_title: string | null
           last_name: string
           last_sign_in_at: string | null
+          nickname: string | null
+          notifications: Json | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          theme: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1138,10 +1590,14 @@ export type Database = {
           id: string
           invited_at?: string | null
           invited_by?: string | null
+          job_title?: string | null
           last_name: string
           last_sign_in_at?: string | null
+          nickname?: string | null
+          notifications?: Json | null
           phone?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          theme?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1154,10 +1610,14 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by?: string | null
+          job_title?: string | null
           last_name?: string
           last_sign_in_at?: string | null
+          nickname?: string | null
+          notifications?: Json | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          theme?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1179,7 +1639,11 @@ export type Database = {
     }
     Enums: {
       material_type: "INK" | "PAPER"
-      provider_type: "INK_SUPPLIER" | "PAPER_SUPPLIER" | "BOTH"
+      provider_type:
+        | "INK_SUPPLIER"
+        | "PAPER_SUPPLIER"
+        | "SUPPLY_SUPPLIER"
+        | "BOTH"
       purchase_order_status: "PENDING" | "PARTIAL" | "COMPLETED" | "CANCELLED"
       quality_certificate: "PENDING" | "APPROVED" | "REJECTED"
       requisition_status:
@@ -1323,7 +1787,12 @@ export const Constants = {
   public: {
     Enums: {
       material_type: ["INK", "PAPER"],
-      provider_type: ["INK_SUPPLIER", "PAPER_SUPPLIER", "BOTH"],
+      provider_type: [
+        "INK_SUPPLIER",
+        "PAPER_SUPPLIER",
+        "SUPPLY_SUPPLIER",
+        "BOTH",
+      ],
       purchase_order_status: ["PENDING", "PARTIAL", "COMPLETED", "CANCELLED"],
       quality_certificate: ["PENDING", "APPROVED", "REJECTED"],
       requisition_status: [

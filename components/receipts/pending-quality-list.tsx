@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle, ChevronLeft, ChevronRight, Loader2,
-  Search, Paperclip, CheckCircle2, XCircle,
+  Paperclip, CheckCircle2, XCircle, ArrowUp, ArrowDown, ArrowUpDown,
 } from 'lucide-react'
 import {
   getPendingQualityReceipts,
@@ -27,10 +27,17 @@ type QualityValue = 'APPROVED' | 'REJECTED' | 'CONDITIONAL'
 type Target       = { receiptId: number; kind: 'ink' | 'paper' }
 
 type Props = {
-  initialInk:       InkReceiptWithContext[]
-  initialPaper:     PaperReceiptWithContext[]
-  defaultMaterial?: 'INK' | 'PAPER'
+  initialInk:           InkReceiptWithContext[]
+  initialPaper:         PaperReceiptWithContext[]
+  defaultMaterial?:     'INK' | 'PAPER'
+  search:               string
+  pageSize:             number
+  bulkQuality:          QualityValue | null
+  onBulkSavingChange:   (v: boolean) => void
+  onBulkDone:           () => void
 }
+
+type Handle = { applyBulk: () => Promise<void> }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -124,7 +131,7 @@ function InlineEvaluator({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Quality toggle */}
-      <div className="flex border border-[#1A1A1A]/20">
+      <div className="flex border border-foreground/20">
         {Q_OPTIONS.map(o => (
           <button
             key={o.value}
@@ -132,7 +139,7 @@ function InlineEvaluator({
             onClick={() => selectQuality(o.value)}
             className={cn(
               'px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-              quality === o.value ? o.activeCls : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
+              quality === o.value ? o.activeCls : 'text-foreground/50 hover:bg-muted hover:text-foreground'
             )}
           >
             {o.label}
@@ -147,7 +154,7 @@ function InlineEvaluator({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="h-7 px-2.5 flex items-center gap-1 border border-[#1A1A1A]/20 text-[9px] font-bold uppercase tracking-widest text-[#5f5e59] hover:bg-[#E5E1D8] hover:text-[#1A1A1A] transition-colors disabled:opacity-50 whitespace-nowrap"
+            className="h-7 px-2.5 flex items-center gap-1 border border-foreground/20 text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {uploading ? <Loader2 className="size-2.5 animate-spin" /> : <Paperclip className="size-2.5" />}
             {uploading ? 'Subiendo…' : certUrl ? 'Reemplazar' : 'Certificado'}
@@ -166,7 +173,7 @@ function InlineEvaluator({
               <button
                 type="button"
                 onClick={() => { setCertUrl(null); if (fileRef.current) fileRef.current.value = '' }}
-                className="text-[#5f5e59] hover:text-red-600 transition-colors"
+                className="text-muted-foreground hover:text-red-600 transition-colors"
               >
                 <XCircle className="size-3" />
               </button>
@@ -189,7 +196,7 @@ function InlineEvaluator({
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Notas (opcional)"
-          className="h-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-[10px] outline-none focus:border-[#1A1A1A]/40 transition-colors w-36"
+          className="h-7 border border-foreground/20 bg-card px-2 text-[10px] outline-none focus:border-foreground/40 transition-colors w-36"
         />
       )}
 
@@ -197,7 +204,7 @@ function InlineEvaluator({
       <button
         onClick={save}
         disabled={!quality || saving}
-        className="h-7 px-3 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-25 flex items-center gap-1 shrink-0"
+        className="h-7 px-3 bg-foreground text-background text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-25 flex items-center gap-1 shrink-0"
       >
         {saving && <Loader2 className="size-2.5 animate-spin" />}
         {applyCount > 1 ? `Guardar (${applyCount})` : 'Guardar'}
@@ -215,14 +222,21 @@ function InlineEvaluator({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }: Props) {
-  const [search,        setSearch]        = useState('')
-  const [pageSizeInput, setPageSizeInput] = useState('20')
-  const [pageSize,      setPageSize]      = useState(20)
-  const [page,          setPage]          = useState(1)
-  const [selected,      setSelected]      = useState<Set<string>>(new Set())
-  const [bulkQuality,   setBulkQuality]   = useState<QualityValue | null>(null)
-  const [bulkSaving,    setBulkSaving]    = useState(false)
+type SortKey = 'batch' | 'material' | 'order' | 'date' | 'days' | 'qty'
+
+export const PendingQualityList = forwardRef<Handle, Props>(
+function PendingQualityList({ initialInk, initialPaper, defaultMaterial, search, pageSize, bulkQuality, onBulkSavingChange, onBulkDone }, ref) {
+  const [page,     setPage]     = useState(1)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [sortKey,  setSortKey]  = useState<SortKey>('date')
+  const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('asc')
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  useEffect(() => { setPage(1) }, [search, pageSize])
 
   const { data, refetch } = useQuery({
     queryKey:    ['pending-quality'],
@@ -236,8 +250,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
       ...data.inkReceipts.map(d => ({ kind: 'ink'   as const, data: d })),
       ...data.paperReceipts.map(d => ({ kind: 'paper' as const, data: d })),
     ]
-      .filter(row => !defaultMaterial || (defaultMaterial === 'INK' ? row.kind === 'ink' : row.kind === 'paper'))
-      .sort((a, b) => a.data.receipt_date.localeCompare(b.data.receipt_date)),
+      .filter(row => !defaultMaterial || (defaultMaterial === 'INK' ? row.kind === 'ink' : row.kind === 'paper')),
   [data, defaultMaterial])
 
   const filtered = useMemo(() => {
@@ -262,9 +275,37 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
     })
   }, [allRows, search])
 
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const sorted = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1
+    return [...filtered].sort((a, b) => {
+      const ad = a.data, bd = b.data
+      switch (sortKey) {
+        case 'batch':    return ad.internal_batch.localeCompare(bd.internal_batch) * dir
+        case 'material': {
+          const ac = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.ink_catalog   : (ad as PaperReceiptWithContext).purchase_order_item?.paper_catalog
+          const bc = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.ink_catalog   : (bd as PaperReceiptWithContext).purchase_order_item?.paper_catalog
+          return (ac?.name ?? '').localeCompare(bc?.name ?? '') * dir
+        }
+        case 'order': {
+          const ao = a.kind === 'ink' ? (ad as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (ad as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+          const bo = b.kind === 'ink' ? (bd as InkReceiptWithContext).purchase_order_item?.purchase_order?.order_number   : (bd as PaperReceiptWithContext).purchase_order_item?.purchase_order?.order_number
+          return ((ao ?? 0) - (bo ?? 0)) * dir
+        }
+        case 'date':    return ad.receipt_date.localeCompare(bd.receipt_date) * dir
+        case 'days':    return ad.receipt_date.localeCompare(bd.receipt_date) * dir
+        case 'qty': {
+          const aq = a.kind === 'ink' ? (ad as InkReceiptWithContext).kg_received                          : ((ad as PaperReceiptWithContext).total_m2_received ?? 0)
+          const bq = b.kind === 'ink' ? (bd as InkReceiptWithContext).kg_received                          : ((bd as PaperReceiptWithContext).total_m2_received ?? 0)
+          return (aq - bq) * dir
+        }
+        default:        return 0
+      }
+    })
+  }, [filtered, sortKey, sortDir])
+
+  const totalPages  = Math.max(1, Math.ceil(sorted.length / pageSize))
   const currentPage = Math.min(page, totalPages)
-  const paged       = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paged       = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // Selected targets (from allRows so selection persists across pages)
   const selectedTargets: Target[] = useMemo(
@@ -295,98 +336,47 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
     })
   }
 
-  function commitPageSize() {
-    const n = parseInt(pageSizeInput, 10)
-    if (n > 0) { setPageSize(n); setPage(1) }
-    else setPageSizeInput(String(pageSize))
-  }
-
   function handleDone() {
     setSelected(new Set())
     refetch()
   }
 
-  // Quick bulk action (no cert/notes — for speed)
-  async function applyBulk() {
-    if (!bulkQuality || filtered.length === 0) return
-    const label = Q_OPTIONS.find(o => o.value === bulkQuality)!.label
-    const ok = window.confirm(
-      `¿Aplicar "${label}" a ${filtered.length} recepción${filtered.length !== 1 ? 'es' : ''}?`
-    )
-    if (!ok) return
-    setBulkSaving(true)
-    let errs = 0
-    for (const row of filtered) {
-      const action = row.kind === 'ink' ? updateInkReceiptQuality : updatePaperReceiptQuality
-      const res = await action(row.data.id, { quality_certificate: bulkQuality })
-      if (res.error) errs++
-    }
-    setBulkSaving(false)
-    if (errs > 0) toast.error(`${errs} error${errs !== 1 ? 'es' : ''} al actualizar`)
-    else toast.success(`${filtered.length} recepcion${filtered.length !== 1 ? 'es' : ''} actualizadas`)
-    setSelected(new Set())
-    refetch()
-    setBulkQuality(null)
-  }
+  useImperativeHandle(ref, () => ({
+    applyBulk: async () => {
+      if (!bulkQuality || filtered.length === 0) return
+      const label = Q_OPTIONS.find(o => o.value === bulkQuality)!.label
+      const ok = window.confirm(
+        `¿Aplicar "${label}" a ${filtered.length} recepción${filtered.length !== 1 ? 'es' : ''}?`
+      )
+      if (!ok) return
+      onBulkSavingChange(true)
+      let errs = 0
+      for (const row of filtered) {
+        const action = row.kind === 'ink' ? updateInkReceiptQuality : updatePaperReceiptQuality
+        const res = await action(row.data.id, { quality_certificate: bulkQuality })
+        if (res.error) errs++
+      }
+      onBulkSavingChange(false)
+      if (errs > 0) toast.error(`${errs} error${errs !== 1 ? 'es' : ''} al actualizar`)
+      else toast.success(`${filtered.length} recepcion${filtered.length !== 1 ? 'es' : ''} actualizadas`)
+      setSelected(new Set())
+      refetch()
+      onBulkDone()
+    },
+  }), [bulkQuality, filtered, onBulkSavingChange, onBulkDone, refetch])
 
   return (
     <div className="space-y-4">
 
-      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-3">
-
-        {/* Search */}
-        <div className="relative flex-1 min-w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#5f5e59] pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Buscar lote, material, OC, proveedor…"
-            className="w-full h-9 border border-[#1A1A1A]/20 bg-[#fdf9f0] pl-9 pr-3 text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
-          />
-        </div>
-
-        {/* Quick bulk action — no cert, no notes */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">
-            Todos ({filtered.length}):
-          </span>
-          <div className="flex border border-[#1A1A1A]/20">
-            {Q_OPTIONS.map(o => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => setBulkQuality(prev => prev === o.value ? null : o.value)}
-                className={cn(
-                  'px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-                  bulkQuality === o.value ? o.activeCls : 'text-[#1A1A1A]/50 hover:bg-[#E5E1D8] hover:text-[#1A1A1A]'
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={applyBulk}
-            disabled={!bulkQuality || bulkSaving || filtered.length === 0}
-            className="h-9 px-3 bg-[#1A1A1A] text-[#F5F2EA] text-[9px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-30 flex items-center gap-1.5 shrink-0"
-          >
-            {bulkSaving && <Loader2 className="size-3 animate-spin" />}
-            Aplicar
-          </button>
-        </div>
-      </div>
-
       {/* ── Selection bar ────────────────────────────────────────────────────── */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700">
+        <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400">
           <span className="text-[9px] font-bold uppercase tracking-widest">
             {selected.size} seleccionado{selected.size !== 1 ? 's' : ''} — al guardar en cualquiera de ellos se aplicará a todos
           </span>
           <button
             onClick={() => setSelected(new Set())}
-            className="ml-auto text-[9px] font-bold uppercase tracking-widest underline underline-offset-2 hover:text-blue-900 transition-colors"
+            className="ml-auto text-[9px] font-bold uppercase tracking-widest underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 transition-colors"
           >
             Limpiar selección
           </button>
@@ -395,8 +385,8 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
 
       {/* ── Empty state ──────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="border border-dashed border-[#1A1A1A]/20 p-16 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e59]">
+        <div className="border border-dashed border-foreground/20 p-16 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {search.trim()
               ? 'Sin resultados para la búsqueda'
               : 'No hay recepciones pendientes de evaluación de calidad'}
@@ -405,10 +395,10 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
       ) : (
         <>
           {/* ── Table ─────────────────────────────────────────────────────── */}
-          <div className="border border-[#1A1A1A]/15 overflow-x-auto">
+          <div id="receipts-pending-table" className="border border-border overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-[#E5E1D8]/60 border-b border-[#1A1A1A]/10">
+                <tr className="bg-muted/60 border-b border-foreground/10">
                   <th className="px-3 py-2.5 w-8">
                     <input
                       type="checkbox"
@@ -418,16 +408,31 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       className="size-3.5 cursor-pointer accent-blue-600"
                     />
                   </th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Lote interno</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Material</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Orden</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Fecha</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Días</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Cantidad</th>
-                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-[#5f5e59]">Evaluar calidad</th>
+                  {([
+                    { label: 'Lote interno', key: 'batch'    },
+                    { label: 'Material',     key: 'material' },
+                    { label: 'Orden',        key: 'order'    },
+                    { label: 'Fecha',        key: 'date'     },
+                    { label: 'Días',         key: 'days'     },
+                    { label: 'Cantidad',     key: 'qty'      },
+                  ] as { label: string; key: SortKey }[]).map(col => (
+                    <th
+                      key={col.label}
+                      onClick={() => toggleSort(col.key)}
+                      className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.label}
+                        {sortKey === col.key
+                          ? sortDir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+                          : <ArrowUpDown className="size-3 opacity-30" />}
+                      </span>
+                    </th>
+                  ))}
+                  <th className="px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Evaluar calidad</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1A1A1A]/8">
+              <tbody className="divide-y divide-foreground/8">
                 {paged.map(row => {
                   const d       = row.data
                   const key     = rowKey(row.kind, d.id)
@@ -448,7 +453,7 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       key={key}
                       className={cn(
                         'transition-colors',
-                        isSelected ? 'bg-blue-50/50' : 'hover:bg-[#E5E1D8]/30'
+                        isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-muted/30'
                       )}
                     >
                       <td className="px-3 py-3 text-center">
@@ -461,18 +466,18 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px]">{d.internal_batch}</td>
                       <td className="px-4 py-3">
-                        <p className="font-mono text-[10px] text-[#5f5e59]">{catalog?.code}</p>
-                        <p className="font-medium text-[#1A1A1A]">{catalog?.name}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground">{catalog?.code}</p>
+                        <p className="font-medium text-foreground">{catalog?.name}</p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-mono text-[10px]">OC-{String(order?.order_number ?? '').padStart(4, '0')}</p>
-                        <p className="text-[10px] text-[#5f5e59]">{order?.providers?.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{order?.providers?.name}</p>
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px]">{fmtDate(d.receipt_date)}</td>
                       <td className="px-4 py-3">
                         <span className={cn(
                           'inline-flex items-center gap-1 font-mono text-[11px]',
-                          alert ? 'text-red-600 font-bold' : 'text-[#5f5e59]'
+                          alert ? 'text-red-600 font-bold' : 'text-muted-foreground'
                         )}>
                           {alert && <AlertTriangle className="size-3" />}
                           {days}d
@@ -482,16 +487,16 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
                         {row.kind === 'ink' ? (
                           <>
                             <p className="font-mono text-[11px]">{inkD.units_received} uds · {inkD.kg_received} kg</p>
-                            <p className="font-mono text-[10px] text-[#5f5e59]">{(inkD.kg_received / inkD.units_received).toFixed(3)} kg/ud</p>
+                            <p className="font-mono text-[10px] text-muted-foreground">{(inkD.kg_received / inkD.units_received).toFixed(3)} kg/ud</p>
                           </>
                         ) : (
                           <>
                             <p className="font-mono text-[11px]">{paperD.units_received} rollos · {paperD.length_m} m × {paperD.width_m} m</p>
-                            <p className="font-mono text-[10px] text-[#5f5e59]">{(paperD.total_m2_received ?? 0).toFixed(2)} m² total</p>
+                            <p className="font-mono text-[10px] text-muted-foreground">{(paperD.total_m2_received ?? 0).toFixed(2)} m² total</p>
                           </>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td id={paged.indexOf(row) === 0 ? 'receipts-inline-evaluator' : undefined} className="px-4 py-3">
                         <InlineEvaluator
                           receiptId={d.id}
                           kind={row.kind}
@@ -507,46 +512,62 @@ export function PendingQualityList({ initialInk, initialPaper, defaultMaterial }
             </table>
           </div>
 
-          {/* ── Pagination bar ────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[#5f5e59]">
-              <span className="text-[9px] font-bold uppercase tracking-widest">Mostrar</span>
-              <input
-                type="text"
-                value={pageSizeInput}
-                onChange={e => setPageSizeInput(e.target.value)}
-                onBlur={commitPageSize}
-                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                className="w-14 h-7 border border-[#1A1A1A]/20 bg-[#fdf9f0] px-2 text-center text-xs outline-none focus:border-[#1A1A1A]/40 transition-colors"
-              />
-              <span className="text-[9px] font-bold uppercase tracking-widest">
-                filas · {filtered.length} total
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] text-[#5f5e59]">
-                {currentPage} / {totalPages}
-              </span>
-              <div className="flex border border-[#1A1A1A]/15">
+          {/* ── Count + pagination ────────────────────────────────────────── */}
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {sorted.length} recepción{sorted.length !== 1 ? 'es' : ''}
+              {sorted.length > pageSize && (
+                <span className="ml-1 font-normal normal-case tracking-normal">
+                  — mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)}
+                </span>
+              )}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  className="size-7 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors disabled:opacity-30"
+                  disabled={currentPage === 1}
+                  className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="size-3.5" />
                 </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
+                  .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                    if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                    acc.push(n)
+                    return acc
+                  }, [])
+                  .map((n, i) =>
+                    n === '…' ? (
+                      <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
+                    ) : (
+                      <button
+                        key={n}
+                        onClick={() => setPage(n as number)}
+                        className={cn(
+                          'size-7 text-[10px] font-bold border transition-colors',
+                          currentPage === n
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'border-border hover:bg-muted',
+                        )}
+                      >
+                        {n}
+                      </button>
+                    )
+                  )}
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                  className="size-7 flex items-center justify-center hover:bg-[#E5E1D8] transition-colors disabled:opacity-30 border-l border-[#1A1A1A]/15"
+                  disabled={currentPage === totalPages}
+                  className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="size-3.5" />
                 </button>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}
     </div>
   )
-}
+})

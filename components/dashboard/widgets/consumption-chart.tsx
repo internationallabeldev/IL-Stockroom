@@ -56,8 +56,8 @@ export function ConsumptionChart({
   }))
 
   return (
-    <div className="bg-card border border-border p-5 flex flex-col">
-      <div className="flex items-center gap-2 mb-5">
+    <div className="bg-card border border-border p-4 flex flex-col">
+      <div className="flex items-center gap-2 mb-4">
         <TrendingUp className="size-3.5 text-foreground/60" />
         <h3 className="text-[10px] font-bold uppercase tracking-widest">
           Consumo de {materialType === 'INK' ? 'tintas' : 'papel'}
