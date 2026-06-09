@@ -11,6 +11,7 @@ import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Mention, { type MentionNodeAttrs, type MentionOptions } from '@tiptap/extension-mention'
 import type { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion'
+import { PluginKey } from '@tiptap/pm/state'
 import { Send, X, Flag, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/shared/user-avatar'
@@ -86,8 +87,14 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
     )
 
     if (items.length === 0) return null
+    // Definite height (capped) so the ScrollArea viewport actually scrolls —
+    // a percentage-height viewport against a max-height-only parent won't.
+    const height = Math.min(items.length * 36 + 8, POPUP_MAX_H)
     return (
-      <ScrollArea className="max-h-72 w-56 rounded-md border border-border bg-popover shadow-md">
+      <ScrollArea
+        style={{ height }}
+        className="w-56 rounded-md border border-border bg-popover shadow-md"
+      >
         <div className="py-1">
           {items.map((u, i) => (
             <button
@@ -119,7 +126,7 @@ function createMentionSuggestion(
       const q = query.toLowerCase()
       return getUsers()
         .filter(u => `${u.nickname ?? ''} ${u.first_name} ${u.last_name}`.toLowerCase().includes(q))
-        .slice(0, 8)
+        .slice(0, 50)
     },
     render: () => {
       let component: ReactRenderer<MentionListHandle, MentionListProps> | null = null
@@ -253,8 +260,16 @@ const ReferenceList = forwardRef<RefListHandle, RefListProps>(
     )
 
     if (items.length === 0) return null
+    // Definite height (capped) so the ScrollArea viewport scrolls. Element rows
+    // with a subtitle are taller than single-line domain/section rows.
+    const rowH = (item: RefItem) =>
+      item.kind === 'element' && item.result.subtitle ? 46 : 32
+    const height = Math.min(items.reduce((sum, item) => sum + rowH(item), 0) + 8, POPUP_MAX_H)
     return (
-      <ScrollArea className="max-h-72 w-72 rounded-md border border-border bg-popover shadow-md">
+      <ScrollArea
+        style={{ height }}
+        className="w-72 rounded-md border border-border bg-popover shadow-md"
+      >
         <div ref={listRef} className="py-1">
           {items.map((item, i) => (
           <button
@@ -293,11 +308,16 @@ const ReferenceList = forwardRef<RefListHandle, RefListProps>(
   },
 )
 
+// Distinct plugin key so the `/` suggestion doesn't collide with `@` mentions
+// (both extend Mention, which otherwise shares one module-level key → PM throws).
+const REFERENCE_PLUGIN_KEY = new PluginKey('chatReference')
+
 function createReferenceSuggestion(
   setOpen: (open: boolean) => void,
 ): Omit<SuggestionOptions<RefItem, RefAttrs>, 'editor'> {
   return {
     char: '/',
+    pluginKey: REFERENCE_PLUGIN_KEY,
     // Keep the suggestion alive across the path separators (`/papel/inventario/…`).
     allowToIncludeChar: true,
     items: ({ query }) => resolveRefItems(query),

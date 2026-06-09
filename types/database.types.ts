@@ -112,33 +112,77 @@ export type Database = {
       }
       chat_channels: {
         Row: {
+          archived_at: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
           id: number
+          is_archived: boolean | null
           is_default: boolean | null
+          is_private: boolean | null
           name: string
+          retention_days: number | null
           slug: string
+          updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: number
+          is_archived?: boolean | null
           is_default?: boolean | null
+          is_private?: boolean | null
           name: string
+          retention_days?: number | null
           slug: string
+          updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: number
+          is_archived?: boolean | null
           is_default?: boolean | null
+          is_private?: boolean | null
           name?: string
+          retention_days?: number | null
           slug?: string
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      chat_channel_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          channel_id: number
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id: number
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_mentions: {
         Row: {

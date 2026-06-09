@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { MessageCircle, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   getGeneralChannel,
-  getUnreadCount,
+  getTotalUnreadCount,
   type ChatChannel,
   type ChatMessage,
 } from '@/actions/chat.actions'
@@ -17,7 +17,7 @@ type Size = { w: number; h: number }
 
 const MIN_W = 320
 const MIN_H = 360
-const DEFAULT: Size = { w: 380, h: 560 }
+const DEFAULT: Size = { w: 440, h: 560 }
 const POS_KEY = 'chat-widget-pos'
 const SIZE_KEY = 'chat-widget-size'
 const MARGIN = 24
@@ -41,9 +41,39 @@ type Props = {
   userRole: Database['public']['Enums']['user_role']
 }
 
+/** Keeps a crash inside the chat from unmounting the whole widget (which would
+ *  make the floating button silently vanish). Surfaces the error instead. */
+class ChatErrorBoundary extends Component<
+  { onClose: () => void; children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null }
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <p className="text-[11px] font-semibold text-red-500">Error en el chat</p>
+          <p className="text-[10px] text-muted-foreground break-words">{this.state.error.message}</p>
+          <button
+            onClick={this.props.onClose}
+            className="rounded border border-border px-3 py-1 text-[11px] hover:bg-muted"
+          >
+            Cerrar
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export function ChatWidget({ userId, userRole }: Props) {
   const [open, setOpen] = useState(false)
   const [channel, setChannel] = useState<ChatChannel | null>(null)
+  const [channelStatus, setChannelStatus] = useState<'loading' | 'error'>('loading')
   const [unread, setUnread] = useState(0)
   const [pos, setPos] = useState<Pos | null>(null)
   const [size, setSize] = useState<Size>(DEFAULT)
@@ -69,22 +99,30 @@ export function ChatWidget({ userId, userRole }: Props) {
     }
   }, [])
 
-  // Load the general channel once.
-  useEffect(() => {
-    getGeneralChannel().then(setChannel)
+  // Load the general channel.
+  const loadChannel = useCallback(() => {
+    setChannelStatus('loading')
+    getGeneralChannel()
+      .then(c => {
+        if (c) setChannel(c)
+        else setChannelStatus('error')
+      })
+      .catch(() => setChannelStatus('error'))
   }, [])
+  useEffect(() => { loadChannel() }, [loadChannel])
 
-  // Unread counter: initial fetch + realtime increments while closed.
+  // Unread counter (summed across all visible channels): initial fetch + realtime
+  // increments while closed.
   useEffect(() => {
     if (!channel) return
-    getUnreadCount(channel.id).then(setUnread)
+    getTotalUnreadCount().then(setUnread)
 
     const supabase = createClient()
     const ch = supabase
-      .channel(`chat-unread:${channel.id}`)
+      .channel('chat-unread-total')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `channel_id=eq.${channel.id}` },
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         payload => {
           const row = payload.new as ChatMessage
           if (row.user_id === userId || row.is_deleted) return
@@ -93,7 +131,7 @@ export function ChatWidget({ userId, userRole }: Props) {
       )
       .subscribe()
 
-    const onFocus = () => { if (!openRef.current) getUnreadCount(channel.id).then(setUnread) }
+    const onFocus = () => { if (!openRef.current) getTotalUnreadCount().then(setUnread) }
     window.addEventListener('focus', onFocus)
     return () => {
       supabase.removeChannel(ch)
@@ -185,22 +223,61 @@ export function ChatWidget({ userId, userRole }: Props) {
     )
   }
 
-  if (!pos || !channel) return null
+  if (!pos) return null
 
   return (
     <div
       className="fixed z-60 flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl"
       style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
     >
-      <ChatView
-        channel={channel}
-        currentUserId={userId}
-        userRole={userRole}
-        maximized={maximized}
-        onToggleMaximize={toggleMaximize}
-        onClose={() => setOpen(false)}
-        onPointerDownDrag={onDragStart}
-      />
+      {channel ? (
+        <ChatErrorBoundary onClose={() => setOpen(false)}>
+          <ChatView
+            initialChannel={channel}
+            currentUserId={userId}
+            userRole={userRole}
+            width={size.w}
+            maximized={maximized}
+            onToggleMaximize={toggleMaximize}
+            onClose={() => setOpen(false)}
+            onPointerDownDrag={onDragStart}
+          />
+        </ChatErrorBoundary>
+      ) : (
+        <div className="flex h-full flex-col">
+          <div
+            onPointerDown={onDragStart}
+            className="flex shrink-0 cursor-move touch-none select-none items-center justify-between border-b border-border bg-background px-3 py-2"
+          >
+            <span className="text-[11px] font-bold uppercase tracking-widest">Chat</span>
+            <button
+              onClick={() => setOpen(false)}
+              onPointerDown={e => e.stopPropagation()}
+              aria-label="Cerrar chat"
+              className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+            {channelStatus === 'loading' ? (
+              <p className="text-[11px] text-muted-foreground">Cargando chat…</p>
+            ) : (
+              <>
+                <p className="text-[11px] text-muted-foreground">
+                  No se pudo cargar el canal general del chat.
+                </p>
+                <button
+                  onClick={loadChannel}
+                  className="rounded border border-border px-3 py-1 text-[11px] hover:bg-muted"
+                >
+                  Reintentar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Resize handle */}
       <div

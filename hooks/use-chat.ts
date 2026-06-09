@@ -78,11 +78,16 @@ export function useChat(channelId: number | null) {
     })
   }, [])
 
-  // Initial page (+ its reactions)
+  // Initial page (+ its reactions). Resets all per-channel state on switch so the
+  // previous channel's messages/reactions don't flash before the new ones load.
   useEffect(() => {
     if (channelId == null) return
     let active = true
     setLoading(true)
+    setMessages([])
+    setReactions(new Map())
+    setReplies(new Map())
+    requestedReplies.current = new Set()
     getMessages(channelId).then(async res => {
       if (!active) return
       setMessages(res.messages)

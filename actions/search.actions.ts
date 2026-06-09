@@ -388,7 +388,7 @@ export async function searchReferences(
   const q = query.trim()
   const like = `%${q}%`
   const isNumeric = /^\d+$/.test(q)
-  const LIM = 8
+  const LIM = 50
   const supabase = createAdminClient()
 
   // ── Suministros ──────────────────────────────────────────────────────────
