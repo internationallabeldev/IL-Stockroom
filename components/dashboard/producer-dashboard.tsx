@@ -1,24 +1,25 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
-import Link from 'next/link'
-import { ClipboardList, CheckCircle, ArrowRight } from 'lucide-react'
-import { KpiCard } from './widgets/kpi-card'
-import { StockOverviewWidget } from './widgets/stock-overview-widget'
-import { getDashboardKPIs, getPendingRequisitions } from '@/actions/dashboard.actions'
+import { useMemo } from 'react'
+import { subDays } from 'date-fns'
+import { DashboardGrid, rects, type DefaultWidget } from './grid/dashboard-grid'
+import type { DateRange } from '@/types/dashboard.types'
+
+function defaultRange(): DateRange {
+  const end = new Date(); end.setHours(23, 59, 59, 999)
+  return { start: subDays(end, 29), end }
+}
+
+const DEFAULTS: DefaultWidget[] = [
+  { id: 'kpi-my-reqs',     type: 'kpi-my-active-reqs', rects: rects([0, 0, 3, 2], [0, 0, 3, 2], [0, 0, 1, 2]) },
+  { id: 'kpi-completed',   type: 'kpi-my-completed',   rects: rects([3, 0, 3, 2], [3, 0, 3, 2], [1, 0, 1, 2]) },
+  { id: 'my-requisitions', type: 'my-requisitions',    rects: rects([0, 2, 6, 7], [0, 2, 6, 6], [0, 2, 2, 6]) },
+  { id: 'stock-ink',       type: 'stock-overview', params: { materialType: 'INK' },   rects: rects([6, 2, 3, 7], [0, 8, 3, 6], [0, 8, 2, 6]) },
+  { id: 'stock-paper',     type: 'stock-overview', params: { materialType: 'PAPER' }, rects: rects([9, 2, 3, 7], [3, 8, 3, 6], [0, 14, 2, 6]) },
+]
 
 export function ProducerDashboard({ userName }: { userName: string }) {
-  const { data: kpis, isLoading: kpisLoading } = useQuery({
-    queryKey: ['dashboard-kpis'],
-    queryFn:  getDashboardKPIs,
-    refetchInterval: 30_000,
-  })
-
-  const { data: reqs, isLoading: reqsLoading } = useQuery({
-    queryKey: ['pending-requisitions'],
-    queryFn:  getPendingRequisitions,
-    refetchInterval: 30_000,
-  })
+  const renderCtx = useMemo(() => ({ dateRange: defaultRange() }), [])
 
   const hour     = new Date().getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
@@ -32,79 +33,7 @@ export function ProducerDashboard({ userName }: { userName: string }) {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        <KpiCard
-          title="Mis req. activas"
-          value={kpis?.myActiveReqs ?? 0}
-          icon={<ClipboardList className="size-4" />}
-          color={(kpis?.myActiveReqs ?? 0) > 0 ? 'warning' : 'default'}
-          loading={kpisLoading}
-          href="/dashboard/requisitions"
-        />
-        <KpiCard
-          title="Completadas este mes"
-          value={kpis?.myCompletedThisMonth ?? 0}
-          icon={<CheckCircle className="size-4" />}
-          color="success"
-          loading={kpisLoading}
-          href="/dashboard/requisitions"
-        />
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-6">
-          <div className="bg-card border border-border p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <ClipboardList className="size-3.5 text-foreground/60" />
-                <h3 className="text-[10px] font-bold uppercase tracking-widest">Mis requisiciones</h3>
-              </div>
-              <Link
-                href="/dashboard/requisitions/ink"
-                className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest text-foreground/40 hover:text-foreground transition-colors"
-              >
-                Nueva requisición <ArrowRight className="size-2.5" />
-              </Link>
-            </div>
-            {reqsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 bg-muted animate-pulse" />)}
-              </div>
-            ) : (reqs?.length ?? 0) === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 gap-2">
-                <CheckCircle className="size-5 text-green-500" />
-                <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40">Sin requisiciones activas</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {reqs!.slice(0, 8).map(req => (
-                  <div key={req.id} className="flex items-center gap-3 px-3 py-2.5 bg-muted/30">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-bold">#{req.requisition_number}</span>
-                        <span className="text-[9px] text-foreground/40 uppercase tracking-wider">
-                          {req.material_type === 'INK' ? 'Tinta' : 'Papel'}
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-foreground/40 mt-0.5">OT: {req.production_order}</p>
-                    </div>
-                    <span className="text-[8px] font-bold uppercase tracking-widest text-yellow-700 bg-yellow-500/10 px-1.5 py-0.5">
-                      {req.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="col-span-3">
-          <StockOverviewWidget materialType="INK" />
-        </div>
-        <div className="col-span-3">
-          <StockOverviewWidget materialType="PAPER" />
-        </div>
-      </div>
+      <DashboardGrid dashboardKey="producer" defaults={DEFAULTS} renderCtx={renderCtx} />
     </div>
   )
 }

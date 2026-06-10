@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Hash, Lock, Plus, Archive, ChevronDown, ChevronRight } from 'lucide-react'
+import { Hash, Lock, Plus, Archive, ChevronDown, ChevronRight, Bot } from 'lucide-react'
 import { ChannelForm } from './channel-form'
 import { cn } from '@/lib/utils'
 import type { ChannelWithMeta, ChatChannel, ChatUser } from '@/actions/chat.actions'
+
+const BOT_ENABLED = !!process.env.NEXT_PUBLIC_BOT_USER_ID
 
 type Props = {
   channels: ChannelWithMeta[]
@@ -12,17 +14,20 @@ type Props = {
   isAdmin: boolean
   onSelect: (channel: ChannelWithMeta) => void
   onCreated: (channel: ChatChannel) => void
+  /** Open (creating it on first use) the private chat with the IA assistant. */
+  onOpenBot: () => void
   /** Directory + creator id, threaded to the create-channel form's member picker. */
   users: ChatUser[]
   currentUserId: string
 }
 
-/** Left column of the chat: channel list, "+" to create (ADMIN), and a collapsed
- *  archived section at the bottom (ADMIN only). */
-export function ChannelSidebar({ channels, activeId, isAdmin, onSelect, onCreated, users, currentUserId }: Props) {
+/** Left column of the chat: channel list, "+" to create (ADMIN), the IA assistant
+ *  DM, and a collapsed archived section at the bottom (ADMIN only). */
+export function ChannelSidebar({ channels, activeId, isAdmin, onSelect, onCreated, onOpenBot, users, currentUserId }: Props) {
   const [showArchived, setShowArchived] = useState(false)
-  const active = channels.filter(c => !c.is_archived)
-  const archived = channels.filter(c => c.is_archived)
+  const botChannel = channels.find(c => c.is_bot_dm)
+  const active = channels.filter(c => !c.is_archived && !c.is_bot_dm)
+  const archived = channels.filter(c => c.is_archived && !c.is_bot_dm)
 
   return (
     <div className="flex h-full w-36 shrink-0 flex-col border-r border-border bg-muted/30">
@@ -47,6 +52,32 @@ export function ChannelSidebar({ channels, activeId, isAdmin, onSelect, onCreate
         {active.map(ch => (
           <ChannelRow key={ch.id} channel={ch} active={ch.id === activeId} onSelect={onSelect} />
         ))}
+
+        {BOT_ENABLED && (
+          <div className="mt-2 border-t border-border/60 pt-2">
+            <span className="block px-1.5 pb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              Asistente IA
+            </span>
+            <button
+              onClick={() => (botChannel ? onSelect(botChannel) : onOpenBot())}
+              title="Chat con el asistente IA"
+              className={cn(
+                'flex w-full items-center gap-1 rounded px-1.5 py-1.5 text-left text-xs',
+                botChannel && botChannel.id === activeId
+                  ? 'bg-foreground/10 font-medium text-foreground'
+                  : 'text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <Bot className="size-3 shrink-0 text-violet-500" />
+              <span className="min-w-0 flex-1 truncate">Claude</span>
+              {botChannel && botChannel.unread_count > 0 && botChannel.id !== activeId && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                  {botChannel.unread_count > 9 ? '9+' : botChannel.unread_count}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {isAdmin && archived.length > 0 && (
           <div className="mt-2 border-t border-border/60 pt-2">

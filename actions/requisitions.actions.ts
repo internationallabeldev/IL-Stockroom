@@ -226,6 +226,7 @@ export type PaperCatalogForRequisition = {
   id: number; code: string; name: string
   current_stock_m2: number | null; standard_width_m: number | null
   weight_gsm: number | null; min_stock_m2: number | null
+  available_width_m: number | null; available_length_m: number | null
 }
 
 export async function getInkCatalogWithStock(): Promise<InkCatalogForRequisition[]> {
@@ -259,16 +260,31 @@ export async function getPaperCatalogWithStock(): Promise<PaperCatalogForRequisi
 
   const { data: lots } = await (supabase as any)
     .from('paper_inventory')
-    .select('paper_catalog_id, receipt:receipt_id ( quality_certificate )')
+    .select('paper_catalog_id, remaining_length_m, initial_width_m, remaining_width_m, receipt:receipt_id ( quality_certificate )')
     .eq('enabled', true)
     .gt('remaining_m2', 0)
 
-  const ids = [...new Set(
-    ((lots ?? []) as Array<{ paper_catalog_id: number; receipt: { quality_certificate: string } | null }>)
-      .filter(l => l.receipt?.quality_certificate === 'APPROVED')
-      .map(l => l.paper_catalog_id),
-  )]
+  const approved = ((lots ?? []) as Array<{
+    paper_catalog_id: number
+    remaining_length_m: number | null
+    initial_width_m: number | null
+    remaining_width_m: number | null
+    receipt: { quality_certificate: string } | null
+  }>).filter(l => l.receipt?.quality_certificate === 'APPROVED')
+
+  const ids = [...new Set(approved.map(l => l.paper_catalog_id))]
   if (!ids.length) return []
+
+  // Largest available roll dimensions per catalog — what the requester can ask for.
+  const dims = new Map<number, { width: number; length: number }>()
+  for (const l of approved) {
+    const cur   = dims.get(l.paper_catalog_id) ?? { width: 0, length: 0 }
+    const width = l.remaining_width_m ?? l.initial_width_m ?? 0
+    dims.set(l.paper_catalog_id, {
+      width:  Math.max(cur.width,  width),
+      length: Math.max(cur.length, l.remaining_length_m ?? 0),
+    })
+  }
 
   const { data } = await supabase
     .from('paper_catalog')
@@ -277,7 +293,11 @@ export async function getPaperCatalogWithStock(): Promise<PaperCatalogForRequisi
     .eq('enabled', true)
     .order('name')
 
-  return (data ?? []) as PaperCatalogForRequisition[]
+  return ((data ?? []) as Omit<PaperCatalogForRequisition, 'available_width_m' | 'available_length_m'>[]).map(c => ({
+    ...c,
+    available_width_m:  dims.get(c.id)?.width  ?? null,
+    available_length_m: dims.get(c.id)?.length ?? null,
+  }))
 }
 
 export async function getAvailableInkLots(inkCatalogId: number): Promise<AvailableInkLot[]> {

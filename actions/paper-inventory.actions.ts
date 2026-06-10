@@ -84,7 +84,7 @@ export async function getPaperLotHistory(inventoryId: number): Promise<PaperLotH
         requisition:requisition_id ( id, requisition_number, production_order, status ),
         delivered_by_user:delivered_by ( first_name, last_name )
       `)
-      .eq('inventory_id', inventoryId)
+      .eq('paper_inventory_id', inventoryId)
       .order('output_date', { ascending: true }),
   ])
 
@@ -145,6 +145,23 @@ export async function createPaperRequisition(values: {
   if (!user || user.role !== 'PRODUCER') return { error: 'Sin permisos' }
 
   const supabase = createAdminClient()
+
+  // Restricción física: el ancho/largo solicitado no puede superar el de la
+  // bobina más ancha / más larga disponible para ese papel. Espeja la
+  // validación del cliente y evita que se la salten enviando directo al action.
+  const { data: lots } = await supabase
+    .from('paper_inventory')
+    .select('initial_width_m, remaining_length_m, remaining_m2, enabled')
+    .eq('paper_catalog_id', values.paper_catalog_id)
+
+  const activeLots = (lots ?? []).filter(l => l.enabled && (l.remaining_m2 ?? 0) > 0)
+  const maxWidthM  = activeLots.reduce((m, l) => Math.max(m, l.initial_width_m), 0)
+  const maxLengthM = activeLots.reduce((m, l) => Math.max(m, l.remaining_length_m ?? 0), 0)
+
+  if (maxWidthM > 0 && values.width_m_requested > maxWidthM)
+    return { error: `El ancho solicitado supera el máximo disponible (${maxWidthM.toFixed(2)} m)` }
+  if (maxLengthM > 0 && values.length_m_requested > maxLengthM)
+    return { error: `El largo solicitado supera el máximo disponible (${maxLengthM.toFixed(2)} m)` }
 
   const { count } = await supabase
     .from('production_requisitions')

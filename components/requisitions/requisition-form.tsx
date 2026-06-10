@@ -31,15 +31,19 @@ type PaperItem = {
   length_m_requested: string
   width_m_requested:  string
   stock_m2:           number
+  available_width_m:  number | null
+  available_length_m: number | null
 }
 
 export type RequisitionPreselected = {
-  materialType: MaterialType
-  catalogId:    number
-  name:         string
-  code:         string
-  colorCode?:   string | null
-  stock?:       number
+  materialType:      MaterialType
+  catalogId:         number
+  name:              string
+  code:              string
+  colorCode?:        string | null
+  stock?:            number
+  availableWidthM?:  number | null
+  availableLengthM?: number | null
 }
 
 type Props = {
@@ -214,7 +218,7 @@ export function RequisitionForm({ open, onClose, inkCatalog, paperCatalog, prese
   )
   const [paperItems, setPaperItems] = useState<PaperItem[]>(() =>
     preselected?.materialType === 'PAPER'
-      ? [{ paper_catalog_id: preselected.catalogId, name: preselected.name, code: preselected.code, length_m_requested: '', width_m_requested: '', stock_m2: preselected.stock ?? 0 }]
+      ? [{ paper_catalog_id: preselected.catalogId, name: preselected.name, code: preselected.code, length_m_requested: '', width_m_requested: '', stock_m2: preselected.stock ?? 0, available_width_m: preselected.availableWidthM ?? null, available_length_m: preselected.availableLengthM ?? null }]
       : [],
   )
   const [submitting, setSubmitting] = useState(false)
@@ -228,7 +232,7 @@ export function RequisitionForm({ open, onClose, inkCatalog, paperCatalog, prese
         setInkItems([{ ink_catalog_id: preselected.catalogId, name: preselected.name, code: preselected.code, color_code: preselected.colorCode ?? null, kg_requested: '', stock: preselected.stock ?? 0 }])
         setPaperItems([])
       } else {
-        setPaperItems([{ paper_catalog_id: preselected.catalogId, name: preselected.name, code: preselected.code, length_m_requested: '', width_m_requested: '', stock_m2: preselected.stock ?? 0 }])
+        setPaperItems([{ paper_catalog_id: preselected.catalogId, name: preselected.name, code: preselected.code, length_m_requested: '', width_m_requested: '', stock_m2: preselected.stock ?? 0, available_width_m: preselected.availableWidthM ?? null, available_length_m: preselected.availableLengthM ?? null }])
         setInkItems([])
       }
     } else {
@@ -254,7 +258,7 @@ export function RequisitionForm({ open, onClose, inkCatalog, paperCatalog, prese
   }
 
   function addPaperItem(c: PaperCatalogForRequisition) {
-    setPaperItems(prev => [...prev, { paper_catalog_id: c.id, name: c.name, code: c.code, length_m_requested: '', width_m_requested: '', stock_m2: c.current_stock_m2 ?? 0 }])
+    setPaperItems(prev => [...prev, { paper_catalog_id: c.id, name: c.name, code: c.code, length_m_requested: '', width_m_requested: '', stock_m2: c.current_stock_m2 ?? 0, available_width_m: c.available_width_m, available_length_m: c.available_length_m }])
   }
 
   function removePaperItem(idx: number) {
@@ -474,6 +478,13 @@ export function RequisitionForm({ open, onClose, inkCatalog, paperCatalog, prese
                         <p className="text-[10px] font-mono text-muted-foreground">
                           {item.code} · Stock: {item.stock_m2.toFixed(2)} m²
                         </p>
+                        {(item.available_width_m || item.available_length_m) && (
+                          <p className="text-[10px] font-mono text-muted-foreground">
+                            Bobina:
+                            {item.available_width_m  ? ` Ancho ${item.available_width_m.toFixed(2)} m` : ''}
+                            {item.available_length_m ? `${item.available_width_m ? ' ·' : ''} Largo ${item.available_length_m.toFixed(2)} m` : ''}
+                          </p>
+                        )}
                       </div>
                       {!(preselected && idx === 0) && (
                         <button type="button" onClick={() => removePaperItem(idx)} className="text-muted-foreground hover:text-red-600 transition-colors">

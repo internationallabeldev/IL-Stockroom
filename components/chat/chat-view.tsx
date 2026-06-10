@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  MessageCircle, Pin, X, Info, Maximize2, Minimize2, Settings, PanelLeftClose, PanelLeftOpen, Hash, Archive, Lock,
+  MessageCircle, Pin, X, Info, Maximize2, Minimize2, Settings, PanelLeftClose, PanelLeftOpen, Hash, Archive, Lock, Eraser,
 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { createClient } from '@/lib/supabase/client'
@@ -13,6 +13,7 @@ import { ReplyPreview } from './reply-preview'
 import { PinnedMessages } from './pinned-messages'
 import { ChannelSidebar } from './channel-sidebar'
 import { ChannelSettings } from './channel-settings'
+import { BotTypingIndicator } from './bot-typing-indicator'
 import { useChat } from '@/hooks/use-chat'
 import {
   getChannels,
@@ -23,6 +24,7 @@ import {
   type ChatMessage,
   type ChatUser,
 } from '@/actions/chat.actions'
+import { askBot, getOrCreateBotChannel, clearBotConversation } from '@/actions/bot.actions'
 import type { Database } from '@/types/database.types'
 import type { ChatPriority } from '@/lib/chat/constants'
 
@@ -43,6 +45,13 @@ type Props = {
  *  so we auto-collapse it. */
 const SIDEBAR_BREAKPOINT = 480
 
+const BOT_USER_ID = process.env.NEXT_PUBLIC_BOT_USER_ID
+
+/** True when the sent message @mentions the bot (its id appears in a mention span). */
+function mentionsBot(html: string): boolean {
+  return !!BOT_USER_ID && html.includes(BOT_USER_ID)
+}
+
 export function ChatView({
   initialChannel, currentUserId, userRole, width, maximized, onToggleMaximize, onClose, onPointerDownDrag,
 }: Props) {
@@ -56,6 +65,7 @@ export function ChatView({
   const [scrollToId, setScrollToId] = useState<number | null>(null)
   const narrow = width < SIDEBAR_BREAKPOINT
   const [sidebarOpen, setSidebarOpen] = useState(!narrow)
+  const [botTyping, setBotTyping] = useState(false)
   const lastReadRef = useRef(0)
 
   // Auto-collapse/expand the sidebar when the widget crosses the narrow threshold
@@ -169,11 +179,49 @@ export function ChatView({
   const handleSend = useCallback(
     async (content: string, contentText: string, priority?: ChatPriority | null) => {
       const res = await send(content, contentText, replyTarget?.id, priority)
-      if (res?.error) toast.error(res.error)
-      else setReplyTarget(null)
+      if (res?.error) {
+        toast.error(res.error)
+        return
+      }
+      setReplyTarget(null)
+
+      // Trigger the assistant: every message in its DM, or any @mention elsewhere.
+      const isBotDm = !!activeChannel.is_bot_dm
+      if (!isBotDm && !mentionsBot(content)) return
+      setBotTyping(true)
+      try {
+        const r = await askBot({ question: contentText, channelId: activeChannelId, withContext: isBotDm })
+        if (r?.error && isBotDm) toast.error(r.error)
+      } finally {
+        setBotTyping(false)
+      }
     },
-    [send, replyTarget],
+    [send, replyTarget, activeChannel.is_bot_dm, activeChannelId],
   )
+
+  // Open (lazily creating) the private chat with the IA assistant.
+  const handleOpenBot = useCallback(async () => {
+    const res = await getOrCreateBotChannel()
+    if (res.error || !res.channel) {
+      toast.error(res.error ?? 'No se pudo abrir el asistente')
+      return
+    }
+    setActiveChannelId(res.channel.id)
+    setReplyTarget(null)
+    setEditingId(null)
+    refreshChannels()
+  }, [refreshChannels])
+
+  // Wipe the bot DM history (resets context + frees tokens).
+  const handleClearBot = useCallback(async () => {
+    if (!window.confirm('¿Borrar toda la conversación con el asistente?')) return
+    const res = await clearBotConversation(activeChannelId)
+    if (res.error) {
+      toast.error(res.error)
+      return
+    }
+    await chat.reload()
+  }, [activeChannelId, chat])
 
   const handleReact = useCallback(
     async (messageId: number, emoji: string) => {
@@ -227,6 +275,7 @@ export function ChatView({
           isAdmin={isAdmin}
           onSelect={handleSelectChannel}
           onCreated={handleChannelCreated}
+          onOpenBot={handleOpenBot}
           users={mentionUsers}
           currentUserId={currentUserId}
         />
@@ -283,6 +332,18 @@ export function ChatView({
                   <Settings className="size-4" />
                 </button>
               </ChannelSettings>
+            )}
+
+            {/* Clear conversation (bot DM only) */}
+            {activeChannel.is_bot_dm && (
+              <button
+                onClick={handleClearBot}
+                title="Limpiar conversación"
+                aria-label="Limpiar conversación"
+                className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Eraser className="size-4" />
+              </button>
             )}
 
             {/* Formatting help */}
@@ -382,6 +443,8 @@ export function ChatView({
             onCancelEdit={() => setEditingId(null)}
           />
         )}
+
+        {botTyping && <BotTypingIndicator />}
 
         {/* Reply banner */}
         {replyTarget && (

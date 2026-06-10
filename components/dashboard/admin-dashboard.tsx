@@ -1,18 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Package, Layers, ClipboardList, ShoppingCart } from 'lucide-react'
 import { subDays } from 'date-fns'
-import { KpiCard } from './widgets/kpi-card'
-import { LowStockWidget } from './widgets/low-stock-widget'
-import { ConsumptionChart } from './widgets/consumption-chart'
-import { PendingRequisitionsWidget } from './widgets/pending-requisitions-widget'
-import { ActiveOrdersWidget } from './widgets/active-orders-widget'
-import { RecentActivityWidget } from './widgets/recent-activity-widget'
-import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
 import { DateRangePicker } from './date-range-picker'
-import { getDashboardKPIs } from '@/actions/dashboard.actions'
+import { DashboardGrid, rects, type DefaultWidget } from './grid/dashboard-grid'
 import type { DateRange } from '@/types/dashboard.types'
 
 function defaultRange(): DateRange {
@@ -20,14 +11,22 @@ function defaultRange(): DateRange {
   return { start: subDays(end, 29), end }
 }
 
+const DEFAULTS: DefaultWidget[] = [
+  { id: 'kpi-ink',         type: 'kpi-metric', params: { metricId: 'ink_total_kg' },   rects: rects([0, 0, 3, 2], [0, 0, 3, 2], [0, 0, 1, 2]) },
+  { id: 'kpi-paper',       type: 'kpi-metric', params: { metricId: 'paper_total_m2' },  rects: rects([3, 0, 3, 2], [3, 0, 3, 2], [1, 0, 1, 2]) },
+  { id: 'kpi-reqs',        type: 'kpi-metric', params: { metricId: 'pending_reqs' },    rects: rects([6, 0, 3, 2], [0, 2, 3, 2], [0, 2, 1, 2]) },
+  { id: 'kpi-orders',      type: 'kpi-metric', params: { metricId: 'active_orders' },   rects: rects([9, 0, 3, 2], [3, 2, 3, 2], [1, 2, 1, 2]) },
+  { id: 'chart-ink',       type: 'consumption-chart',     params: { materialType: 'INK' },   rects: rects([0, 2, 6, 5], [0, 4, 6, 5], [0, 4, 2, 5]) },
+  { id: 'chart-paper',     type: 'consumption-chart',     params: { materialType: 'PAPER' }, rects: rects([6, 2, 6, 5], [0, 9, 6, 5], [0, 9, 2, 5]) },
+  { id: 'pending-reqs',    type: 'pending-requisitions',  rects: rects([0, 7, 5, 6], [0, 14, 6, 6], [0, 14, 2, 6]) },
+  { id: 'active-orders',   type: 'active-orders',         rects: rects([5, 7, 4, 6], [0, 20, 3, 6], [0, 20, 2, 6]) },
+  { id: 'low-stock',       type: 'low-stock', params: { materialType: 'BOTH' }, rects: rects([9, 7, 3, 6], [3, 20, 3, 6], [0, 26, 2, 6]) },
+  { id: 'recent-activity', type: 'recent-activity',       rects: rects([0, 13, 8, 6], [0, 26, 6, 6], [0, 32, 2, 6]) },
+  { id: 'supplies-alert',  type: 'supplies-alert',        rects: rects([8, 13, 4, 6], [0, 32, 6, 6], [0, 38, 2, 6]) },
+]
+
 export function AdminDashboard({ userName }: { userName: string }) {
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange)
-
-  const { data: kpis, isLoading: kpisLoading } = useQuery({
-    queryKey: ['dashboard-kpis'],
-    queryFn:  getDashboardKPIs,
-    refetchInterval: 30_000,
-  })
 
   const hour     = new Date().getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
@@ -45,71 +44,12 @@ export function AdminDashboard({ userName }: { userName: string }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          title="Stock de tinta"
-          value={kpis?.totalInkKg ?? 0}
-          unit="kg"
-          icon={<Package className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.totalInkKg ?? 0) < 50 ? 'danger' : 'default'}
-          loading={kpisLoading}
-          href="/dashboard/inventory/inks"
-        />
-        <KpiCard
-          title="Stock de papel"
-          value={kpis?.totalPaperM2 ?? 0}
-          unit="m²"
-          icon={<Layers className="size-4" />}
-          loading={kpisLoading}
-          href="/dashboard/inventory/paper"
-        />
-        <KpiCard
-          title="Requisiciones pendientes"
-          value={kpis?.pendingReqsCount ?? 0}
-          icon={<ClipboardList className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.pendingReqsCount ?? 0) > 0 ? 'warning' : 'success'}
-          loading={kpisLoading}
-          href="/dashboard/requisitions"
-        />
-        <KpiCard
-          title="Órdenes activas"
-          value={kpis?.activeOrdersCount ?? 0}
-          icon={<ShoppingCart className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.overdueOrdersCount ?? 0) > 0 ? 'danger' : 'default'}
-          loading={kpisLoading}
-          href="/dashboard/orders/ink"
-        />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Consumo</p>
-          <DateRangePicker onRangeChange={setDateRange} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ConsumptionChart materialType="INK"   dateRange={dateRange} />
-          <ConsumptionChart materialType="PAPER" dateRange={dateRange} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-5">
-          <PendingRequisitionsWidget />
-        </div>
-        <div className="col-span-4">
-          <ActiveOrdersWidget />
-        </div>
-        <div className="col-span-3">
-          <LowStockWidget materialType="BOTH" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <RecentActivityWidget />
-        </div>
-        <SuppliesAlertWidget />
-      </div>
+      <DashboardGrid
+        dashboardKey="admin"
+        defaults={DEFAULTS}
+        renderCtx={{ dateRange }}
+        toolbar={<DateRangePicker onRangeChange={setDateRange} />}
+      />
     </div>
   )
 }

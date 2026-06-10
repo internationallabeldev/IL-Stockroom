@@ -151,6 +151,23 @@ export function useChat(channelId: number | null) {
     return () => { supabase.removeChannel(channel) }
   }, [channelId, mergeMessages, addReaction, removeReactionById])
 
+  // Re-fetch the channel from scratch (used after clearing the bot DM, since the
+  // realtime layer ignores message DELETEs).
+  const reload = useCallback(async () => {
+    if (channelId == null) return
+    setLoading(true)
+    setMessages([])
+    setReactions(new Map())
+    setReplies(new Map())
+    requestedReplies.current = new Set()
+    const res = await getMessages(channelId)
+    setMessages(res.messages)
+    setHasMore(res.hasMore)
+    setLoading(false)
+    const rx = await getReactions(res.messages.map(m => m.id))
+    mergeReactions(rx)
+  }, [channelId, mergeReactions])
+
   const loadMore = useCallback(async () => {
     if (channelId == null || messages.length === 0) return
     const oldest = messages[0].id
@@ -206,6 +223,7 @@ export function useChat(channelId: number | null) {
     hasMore,
     sending,
     loadMore,
+    reload,
     send,
     toggleReaction,
     editMessage,

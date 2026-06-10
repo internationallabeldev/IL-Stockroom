@@ -87,7 +87,7 @@ export async function getInkLotHistory(inventoryId: number): Promise<InkLotHisto
         requisition:requisition_id ( id, requisition_number, production_order, status ),
         delivered_by_user:delivered_by ( first_name, last_name )
       `)
-      .eq('inventory_id', inventoryId)
+      .eq('ink_inventory_id', inventoryId)
       .order('output_date', { ascending: true }),
   ])
 

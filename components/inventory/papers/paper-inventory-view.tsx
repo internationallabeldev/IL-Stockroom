@@ -512,11 +512,13 @@ export function PaperInventoryView({ initialLots, canManage, canRequest, paperCa
         inkCatalog={[]}
         paperCatalog={paperCatalog}
         preselected={selectedLot?.paper_catalog ? {
-          materialType: 'PAPER',
-          catalogId:    selectedLot.paper_catalog.id,
-          name:         selectedLot.paper_catalog.name,
-          code:         selectedLot.paper_catalog.code,
-          stock:        selectedLot.paper_catalog.current_stock_m2 ?? undefined,
+          materialType:     'PAPER',
+          catalogId:        selectedLot.paper_catalog.id,
+          name:             selectedLot.paper_catalog.name,
+          code:             selectedLot.paper_catalog.code,
+          stock:            selectedLot.paper_catalog.current_stock_m2 ?? undefined,
+          availableWidthM:  selectedLot.remaining_width_m ?? selectedLot.initial_width_m ?? null,
+          availableLengthM: selectedLot.remaining_length_m ?? null,
         } : undefined}
       />
     </>
