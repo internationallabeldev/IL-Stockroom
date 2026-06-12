@@ -115,7 +115,7 @@ export function ReceiptsStatsBar({ initialInk, initialPaper, material }: Props) 
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-between">
       {stats.map(({ icon: Icon, label, value, accent }, i) => (
         <div key={label} className="flex items-center gap-2">
-          {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
+          {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn(
             'size-3 shrink-0',
             accent === 'red'   ? 'text-red-500'  :
@@ -138,7 +138,7 @@ export function ReceiptsStatsBar({ initialInk, initialPaper, material }: Props) 
 
       {topIncident && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Building2 className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
             Mayor incidencias

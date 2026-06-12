@@ -6,6 +6,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { QueryProvider } from "./query-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { TopProgressBar } from "./_components/top-progress-bar";
 
 const workSans = Work_Sans({
   subsets: ['latin'],
@@ -61,6 +62,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <ThemeProvider defaultTheme={defaultTheme}>
         <QueryProvider>
+          <TopProgressBar />
           {children}
           <Toaster
             position="bottom-right"

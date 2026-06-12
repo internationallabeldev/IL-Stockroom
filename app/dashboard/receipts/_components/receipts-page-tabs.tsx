@@ -2,8 +2,10 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
-import { Search, X, Loader2 } from 'lucide-react'
+import { Search, X, Loader2, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { PendingQualityList } from '@/components/receipts/pending-quality-list'
 import { ReceiptsHistory } from '@/components/receipts/receipts-history'
 import { DataRefresh } from '@/components/shared/data-refresh'
@@ -58,6 +60,8 @@ export function ReceiptsPageTabs({
   const [pageSize,      setPageSize]      = useState(15)
   const [pageSizeInput, setPageSizeInput] = useState('15')
 
+  const embedded = useEmbedded()
+
   const pendingRef = useRef<{ applyBulk: () => Promise<void> }>(null)
 
   // Freshness + manual refresh for the active tab's query
@@ -75,20 +79,51 @@ export function ReceiptsPageTabs({
     ? initialPending.paperReceipts.length
     : initialPending.inkReceipts.length + initialPending.paperReceipts.length
 
+  // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
+  const pageSizeControl = (
+    <div id="receipts-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={1}
+        value={pageSizeInput}
+        onChange={e => {
+          setPageSizeInput(e.target.value)
+          const n = parseInt(e.target.value, 10)
+          if (n > 0) setPageSize(n)
+        }}
+        onBlur={() => {
+          const n = parseInt(pageSizeInput, 10)
+          if (!n || n < 1) { setPageSizeInput('15'); setPageSize(15) }
+        }}
+        className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
+      />
+    </div>
+  )
+
   return (
     <>
-      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 mb-6">
-        <div className="py-3 flex items-center justify-between gap-3">
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-6', toolbarStickyClass(embedded))}>
+        <div className="@container">
+        <div className={cn(
+          'py-3 flex gap-2',
+          embedded
+            ? 'flex-row flex-wrap items-center'
+            : 'flex-col @2xl:flex-row @2xl:items-center @2xl:justify-between @2xl:gap-3',
+        )}>
 
           {/* Search */}
-          <div id="receipts-search" className="relative">
+          <div id="receipts-search" className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar lote, material, OC, proveedor…"
-              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+              className={cn(
+                'h-8 w-full border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors',
+                !embedded && '@2xl:w-100',
+              )}
             />
             {search && (
               <button
@@ -101,7 +136,7 @@ export function ReceiptsPageTabs({
           </div>
 
           {/* Right group: secondary controls + page size + primary tabs */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
 
             {/* Dynamic secondary controls */}
             {tab === 'pending' && (
@@ -171,34 +206,33 @@ export function ReceiptsPageTabs({
               </>
             )}
 
-            <DataRefresh
-              updatedAt={updatedAt}
-              isFetching={isFetching}
-              onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
-            />
-
-            {/* Page size */}
-            <div id="receipts-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-              <input
-                type="number"
-                min={1}
-                value={pageSizeInput}
-                onChange={e => {
-                  setPageSizeInput(e.target.value)
-                  const n = parseInt(e.target.value, 10)
-                  if (n > 0) setPageSize(n)
-                }}
-                onBlur={() => {
-                  const n = parseInt(pageSizeInput, 10)
-                  if (!n || n < 1) { setPageSizeInput('15'); setPageSize(15) }
-                }}
-                className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
-              />
-            </div>
+            {embedded ? (
+              <>
+                <EmbeddedSummaryChip>{statsBar}</EmbeddedSummaryChip>
+                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                  <div className="flex flex-col items-start gap-2.5">
+                    <DataRefresh
+                      updatedAt={updatedAt}
+                      isFetching={isFetching}
+                      onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
+                    />
+                    {pageSizeControl}
+                  </div>
+                </ToolbarHoverMenu>
+              </>
+            ) : (
+              <>
+                <DataRefresh
+                  updatedAt={updatedAt}
+                  isFetching={isFetching}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
+                />
+                {pageSizeControl}
+              </>
+            )}
 
             {/* Primary tabs */}
-            <div id="receipts-tabs" className="flex border border-border">
+            <div id="receipts-tabs" className="flex border border-border shrink-0">
               <button
                 onClick={() => setTab('pending')}
                 className={cn(
@@ -226,8 +260,11 @@ export function ReceiptsPageTabs({
           </div>
         </div>
 
-        <div className="py-3">
-          {statsBar}
+        {!embedded && (
+          <div className="py-3">
+            {statsBar}
+          </div>
+        )}
         </div>
       </div>
 

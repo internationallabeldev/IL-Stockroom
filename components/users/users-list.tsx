@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, UserPlus, X } from 'lucide-react'
+import { Search, UserPlus, X, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu } from '@/components/shared/toolbar-hover-menu'
 import { RoleBadge } from './role-badge'
 import { InviteUserForm } from './invite-user-form'
 import { UserDetailSheet } from './user-detail-sheet'
@@ -45,6 +47,7 @@ type Props = {
 }
 
 export function UsersList({ initialUsers, currentUserId }: Props) {
+  const embedded = useEmbedded()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -80,15 +83,18 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 py-3 mb-6 flex flex-wrap items-center gap-3">
-        <div className="relative">
+      <div className={cn('@container sticky z-30 bg-background border-b border-border py-3 mb-6 flex flex-wrap items-center gap-3', toolbarStickyClass(embedded))}>
+        <div className={cn('relative min-w-40', embedded ? 'flex-1' : 'flex-1 @2xl:flex-none')}>
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nombre o email..."
-            className="h-8 w-56 border border-foreground/20 bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/50 transition-colors"
+            className={cn(
+              'h-8 w-full border border-foreground/20 bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/50 transition-colors',
+              !embedded && '@2xl:w-56',
+            )}
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -97,7 +103,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           )}
         </div>
 
-        <div className="flex border border-border">
+        <div className="flex border border-border shrink-0">
           {ROLE_FILTERS.map(f => (
             <button
               key={f.value}
@@ -114,7 +120,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           ))}
         </div>
 
-        <div className="flex border border-border">
+        <div className="flex border border-border shrink-0">
           {STATUS_FILTERS.map(f => (
             <button
               key={f.value}
@@ -131,16 +137,29 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           ))}
         </div>
 
-        <div className="flex-1" />
+        {!embedded && <div className="flex-1" />}
 
-        <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+        {embedded ? (
+          <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+            <div className="flex flex-col items-start gap-2.5">
+              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+            </div>
+          </ToolbarHoverMenu>
+        ) : (
+          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+        )}
 
         <button
           onClick={() => setInviteOpen(true)}
-          className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+          title={embedded ? 'Invitar usuario' : undefined}
+          aria-label={embedded ? 'Invitar usuario' : undefined}
+          className={cn(
+            'flex items-center gap-2 h-8 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0',
+            embedded ? 'px-2.5' : 'px-4',
+          )}
         >
           <UserPlus className="size-3.5" />
-          Invitar usuario
+          {!embedded && 'Invitar usuario'}
         </button>
       </div>
 

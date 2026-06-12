@@ -17,8 +17,11 @@ import {
   Users,
   Database,
   Layers,
+  Settings2,
 } from 'lucide-react'
 import { cn }                from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { OperationBadge }    from './operation-badge'
 import { AuditLogDetail }    from './audit-log-detail'
 import { DataRefresh }       from '@/components/shared/data-refresh'
@@ -98,7 +101,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
       {/* Operation distribution mini stacked bar */}
       {opTotal > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
@@ -117,7 +120,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
       {/* Top affected table */}
       {topTable && topTable.count > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Database className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Top tabla</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-40 truncate">
@@ -142,6 +145,7 @@ type Props = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AuditLogList({ initialData, initialTotal, initialStats, users }: Props) {
+  const embedded = useEmbedded()
   const [page,          setPage]          = useState(1)
   const [pageSize,      setPageSize]      = useState(DEFAULT_PAGE_SIZE)
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
@@ -210,20 +214,45 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
 
   const advancedFilterCount = [tableFilter, userFilter, dateFrom, dateTo].filter(Boolean).length
 
+  // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
+  const pageSizeControl = (
+    <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="audit-page-size">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={10}
+        max={200}
+        value={pageSizeInput}
+        onChange={handlePageSizeChange}
+        onBlur={handlePageSizeBlur}
+        className="w-10 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+      />
+    </div>
+  )
+
   return (
     <>
       {/* ── Toolbar — providers-style: sticky, search + filters inside ──────── */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 mb-6">
-        <div className="py-3 flex flex-wrap justify-between items-center gap-3">
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-6', toolbarStickyClass(embedded))}>
+        <div className="@container">
+        <div className={cn(
+          'py-3 flex gap-2',
+          embedded
+            ? 'flex-row flex-wrap items-center'
+            : 'flex-col @2xl:flex-row @2xl:flex-wrap @2xl:justify-between @2xl:items-center @2xl:gap-3',
+        )}>
           {/* Search */}
-          <div className="relative" id="audit-search">
+          <div className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')} id="audit-search">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar por usuario o ID de registro..."
-              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+              className={cn(
+                'h-8 w-full border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors',
+                !embedded && '@2xl:w-100',
+              )}
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -232,15 +261,17 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
             )}
           </div>
 
-          <div className="gap-2 flex flex-row items-center">
-            <DataRefresh
-              updatedAt={dataUpdatedAt}
-              isFetching={fetchingLog || fetchingStats}
-              onRefresh={() => { refetchLog(); refetchStats() }}
-            />
+          <div className="gap-2 flex flex-row flex-wrap items-center">
+            {!embedded && (
+              <DataRefresh
+                updatedAt={dataUpdatedAt}
+                isFetching={fetchingLog || fetchingStats}
+                onRefresh={() => { refetchLog(); refetchStats() }}
+              />
+            )}
 
             {/* Operation filter pills */}
-            <div className="flex border border-border" id="audit-op-filter">
+            <div className="flex border border-border shrink-0" id="audit-op-filter">
               {OPERATION_FILTERS.map(f => (
                 <button
                   key={f.value || 'all'}
@@ -257,42 +288,56 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
               ))}
             </div>
 
-            {/* Page size */}
-            <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="audit-page-size">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-              <input
-                type="number"
-                min={10}
-                max={200}
-                value={pageSizeInput}
-                onChange={handlePageSizeChange}
-                onBlur={handlePageSizeBlur}
-                className="w-10 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
-              />
-            </div>
+            {embedded ? (
+              <>
+                <EmbeddedSummaryChip>
+                  <AuditStatsBar stats={stats} />
+                </EmbeddedSummaryChip>
+                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                  <div className="flex flex-col items-start gap-2.5">
+                    <DataRefresh
+                      updatedAt={dataUpdatedAt}
+                      isFetching={fetchingLog || fetchingStats}
+                      onRefresh={() => { refetchLog(); refetchStats() }}
+                    />
+                    {pageSizeControl}
+                  </div>
+                </ToolbarHoverMenu>
+              </>
+            ) : (
+              pageSizeControl
+            )}
 
             {hasFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 h-8 px-2.5 border border-border text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/40 transition-colors"
+                title={embedded ? 'Limpiar' : undefined}
+                aria-label={embedded ? 'Limpiar' : undefined}
+                className={cn(
+                  'flex items-center gap-1 h-8 border border-border text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/40 transition-colors shrink-0',
+                  embedded ? 'px-2' : 'px-2.5',
+                )}
               >
                 <X className="size-3" />
-                Limpiar
+                {!embedded && 'Limpiar'}
               </button>
             )}
 
             <button
               id="audit-filters-btn"
               onClick={() => setFiltersOpen(f => !f)}
+              title={embedded ? 'Filtros' : undefined}
+              aria-label={embedded ? 'Filtros' : undefined}
               className={cn(
-                'flex items-center gap-1.5 h-8 px-4 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                'flex items-center gap-1.5 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors shrink-0',
+                embedded ? 'px-2' : 'px-4',
                 filtersOpen || advancedFilterCount > 0
                   ? 'bg-foreground text-background'
                   : 'border border-border text-foreground/60 hover:text-foreground hover:border-foreground/40',
               )}
             >
               <Filter className="size-3.5" />
-              Filtros
+              {!embedded && 'Filtros'}
               {advancedFilterCount > 0 && (
                 <span className="ml-0.5 rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold bg-background/20 text-background">
                   {advancedFilterCount}
@@ -304,7 +349,7 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
 
         {/* Advanced filter panel — collapsible, inside the sticky div */}
         {filtersOpen && (
-          <div className="pb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="pb-3 grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-4 gap-3">
             <FilterField label="Tabla">
               <select
                 value={tableFilter}
@@ -356,8 +401,11 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
           </div>
         )}
 
-        <div className="py-3" id="audit-stats-bar">
-          <AuditStatsBar stats={stats} />
+        {!embedded && (
+          <div className="py-3" id="audit-stats-bar">
+            <AuditStatsBar stats={stats} />
+          </div>
+        )}
         </div>
       </div>
 

@@ -8,9 +8,11 @@ import {
   ArrowUp, ArrowDown, ArrowUpDown,
   Droplet, FileText, RotateCcw,
   PackageCheck, Clock, TrendingUp,
-  Timer, CircleDashed, ClipboardList, UserCheck,
+  Timer, CircleDashed, ClipboardList, UserCheck, Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import {
   getRequisitions,
   type Requisition,
@@ -110,7 +112,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-border/60 select-none hidden sm:inline">·</span>
+        <span className="text-border/60 select-none hidden @2xl:inline">·</span>
         <ClipboardList className="size-3 shrink-0 text-muted-foreground/50" />
         <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">OPs</span>
         <span className="text-[11px] font-bold tabular-nums text-foreground/80">{uniqueOps}</span>
@@ -118,7 +120,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {partialCount > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <CircleDashed className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Parciales</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{partialCount}</span>
@@ -127,7 +129,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {totalKg > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Droplet className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalKg.toFixed(2)} kg</span>
@@ -136,7 +138,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {totalM2 > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <FileText className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalM2.toFixed(3)} m²</span>
@@ -145,7 +147,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {hasReturns && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <RotateCcw className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Devuelto</span>
           <span className="text-[11px] font-bold tabular-nums text-green-600 dark:text-green-400">{returnsLabel}</span>
@@ -157,7 +159,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {avgHours !== null && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Timer className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Entrega prom.</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{formatDuration(avgHours)}</span>
@@ -166,7 +168,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {todayCount > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Clock className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Hoy</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{todayCount}</span>
@@ -175,7 +177,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {topInkName && topInkPct !== null && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topInkName}</span>
@@ -185,7 +187,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {topPaperName && topPaperPct !== null && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topPaperName}</span>
@@ -195,7 +197,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       {topDelivererName && topDelivererCount !== null && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <UserCheck className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Almacenista</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topDelivererName}</span>
@@ -213,6 +215,7 @@ type Props = {
 }
 
 export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
+  const embedded = useEmbedded()
   const [search,      setSearch]      = useSearchSeed()
   const [matFilter,   setMatFilter]   = useState<MatFilter>('ALL')
   const [dateFrom,    setDateFrom]    = useState('')
@@ -277,23 +280,75 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
       ? sortDir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
       : <ArrowUpDown className="size-3 opacity-30" />
 
+  // Date range + page size — inline on full pages, tucked into "Controles" when embedded.
+  const dateRangeControl = (
+    <div id="outputs-date-range" className="flex items-center gap-2">
+      <input
+        type="date"
+        value={dateFrom}
+        onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+        className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+      />
+      <span className="text-[10px] text-muted-foreground">—</span>
+      <input
+        type="date"
+        value={dateTo}
+        onChange={e => { setDateTo(e.target.value); setPage(1) }}
+        className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+      />
+      {(dateFrom || dateTo) && (
+        <button
+          onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+    </div>
+  )
+
+  const pageSizeControl = (
+    <div id="outputs-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={1}
+        value={pageSizeInp}
+        onChange={e => {
+          setPageSizeInp(e.target.value)
+          const n = parseInt(e.target.value, 10)
+          if (n > 0) { setPageSize(n); setPage(1) }
+        }}
+        onBlur={() => {
+          const n = parseInt(pageSizeInp, 10)
+          if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
+        }}
+        className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
+      />
+    </div>
+  )
+
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-4">
+      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-4', toolbarStickyClass(embedded))}>
+        <div className="@container">
 
         {/* Filters row */}
-        <div className="py-3 flex flex-wrap items-center gap-3">
+        <div className="py-3 flex flex-wrap items-center gap-2">
 
 
           {/* Search */}
-          <div id="outputs-search" className="relative">
+          <div id="outputs-search" className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="Buscar #, orden, solicitante…"
-              className="h-8 w-100 pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors"
+              className={cn(
+                'h-8 w-full pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors',
+                !embedded && '@2xl:w-100',
+              )}
             />
             {search && (
               <button
@@ -306,7 +361,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
           </div>
 
           {/* Material type */}
-          <div id="outputs-mat-tabs" className="flex border border-border">
+          <div id="outputs-mat-tabs" className="flex border border-border shrink-0">
             {MAT_TABS.map(t => (
               <button
                 key={t.value}
@@ -323,61 +378,39 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             ))}
           </div>
 
-          {/* Date range */}
-          <div id="outputs-date-range" className="flex items-center gap-2">
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-              className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
-            />
-            <span className="text-[10px] text-muted-foreground">—</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(1) }}
-              className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
-            />
-            {(dateFrom || dateTo) && (
-              <button
-                onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+          {!embedded && dateRangeControl}
 
-          <div className="flex-1" />
+          {!embedded && <div className="flex-1" />}
 
-          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-
-          {/* Page size */}
-          <div id="outputs-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-            <input
-              type="number"
-              min={1}
-              value={pageSizeInp}
-              onChange={e => {
-                setPageSizeInp(e.target.value)
-                const n = parseInt(e.target.value, 10)
-                if (n > 0) { setPageSize(n); setPage(1) }
-              }}
-              onBlur={() => {
-                const n = parseInt(pageSizeInp, 10)
-                if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
-              }}
-              className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
-            />
-          </div>
+          {embedded ? (
+            <>
+              <EmbeddedSummaryChip>
+                <OutputsStatsBar all={all} />
+              </EmbeddedSummaryChip>
+              <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                <div className="flex flex-col items-start gap-2.5">
+                  <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                  {dateRangeControl}
+                  {pageSizeControl}
+                </div>
+              </ToolbarHoverMenu>
+            </>
+          ) : (
+            <>
+              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+              {pageSizeControl}
+            </>
+          )}
         </div>
 
         {/* Stats bar */}
-        <div id="outputs-stats-bar" className="py-3">
-          <OutputsStatsBar all={all} />
-        </div>
+        {!embedded && (
+          <div id="outputs-stats-bar" className="py-3">
+            <OutputsStatsBar all={all} />
+          </div>
+        )}
 
+        </div>
       </div>
 
       {/* Table */}

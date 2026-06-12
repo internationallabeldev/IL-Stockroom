@@ -128,6 +128,10 @@ export function SidebarNav({ user, companyName }: { user: AppUser; companyName?:
 
   const sections = NAV_SECTIONS[role]
 
+  // En el espacio dual ocultamos el menú lateral para ganar todo el ancho; se
+  // navega de vuelta con el toggle del topbar o el command palette (Ctrl+K).
+  if (pathname === '/dashboard/workspace') return null
+
   function resolveHref(item: AnyItem): string {
     return item.kind === 'static'
       ? item.href
