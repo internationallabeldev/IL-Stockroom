@@ -1,0 +1,14 @@
+/* Overrides on top of react-grid-layout/css/styles.css (imported right before
+   this file in dashboard-grid.tsx, so these rules win at equal specificity). */
+
+.react-grid-item.react-grid-placeholder {
+  background: #008dc2;
+  opacity: 0.12;
+}
+
+/* The stock chevron uses rgba(0,0,0,.4) — invisible in dark mode. */
+.react-grid-item > .react-resizable-handle::after {
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  opacity: 0.45;
+}

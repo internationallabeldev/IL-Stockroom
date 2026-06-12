@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Plus, ChevronLeft, ChevronRight, X, Activity, AlertTriangle, PackageX, Layers, Clock } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, X, Activity, AlertTriangle, PackageX, Layers, Clock, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { PaperCatalogCard } from './paper-catalog-card'
 import { PaperCatalogForm } from './paper-catalog-form'
 import { getPaperCatalog, type PaperCatalogItem } from '@/actions/paper-catalog.actions'
@@ -48,7 +50,7 @@ function PaperStatsBar({ items }: { items: PaperCatalogItem[] }) {
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-between">
       {stats.map(({ icon: Icon, label, value, accent }, i) => (
         <div key={label} className="flex items-center gap-2">
-          {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
+          {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accent === 'red' ? 'text-red-500' : accent === 'amber' ? 'text-amber-400' : 'text-muted-foreground/50')} />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', accent === 'red' ? 'text-red-500' : accent === 'amber' ? 'text-amber-400' : 'text-foreground/80')}>
@@ -82,6 +84,7 @@ type Props = {
 }
 
 export function PaperCatalogList({ items: initialItems, providers, canEdit }: Props) {
+  const embedded = useEmbedded()
   const [search, setSearch] = useSearchSeed()
   const [stockFilter, setStockFilter] = useState('')
   const [page, setPage] = useState(1)
@@ -138,12 +141,34 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
     setPageSizeInput(String(clamped))
   }
 
+  // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
+  const pageSizeControl = (
+    <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={1}
+        max={100}
+        value={pageSizeInput}
+        onChange={handlePageSizeChange}
+        onBlur={handlePageSizeBlur}
+        className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+      />
+    </div>
+  )
+
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-6">
-        <div className="py-3 flex flex-wrap items-center gap-3 justify-between">
-          <div className="relative">
+      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-6', toolbarStickyClass(embedded))}>
+        <div className="@container">
+        <div className={cn(
+          'py-3 flex gap-2',
+          embedded
+            ? 'flex-row flex-wrap items-center'
+            : 'flex-col @2xl:flex-row @2xl:flex-wrap @2xl:items-center @2xl:gap-3 @2xl:justify-between',
+        )}>
+          <div className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               id="catalog-search"
@@ -151,7 +176,10 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar papel..."
-              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+              className={cn(
+                'h-8 w-full border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors',
+                !embedded && '@2xl:w-100',
+              )}
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -160,10 +188,10 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
             )}
           </div>
 
-          <div className='flex flex-row gap-2'>
+          <div className='flex flex-row flex-wrap items-center gap-2'>
 
             {/* Stock filter */}
-            <div id="catalog-stock-filter" className="flex border border-border">
+            <div id="catalog-stock-filter" className="flex border border-border shrink-0">
               {STOCK_FILTERS.map(f => (
                 <button
                   key={f.value}
@@ -180,46 +208,58 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
               ))}
             </div>
 
-            <div className="flex-1" />
+            {!embedded && <div className="flex-1" />}
 
-            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-
-            {/* Page size */}
-            <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={pageSizeInput}
-                onChange={handlePageSizeChange}
-                onBlur={handlePageSizeBlur}
-                className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
-              />
-            </div>
+            {embedded ? (
+              <>
+                <EmbeddedSummaryChip>
+                  <PaperStatsBar items={items} />
+                </EmbeddedSummaryChip>
+                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                  <div className="flex flex-col items-start gap-2.5">
+                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                    {pageSizeControl}
+                  </div>
+                </ToolbarHoverMenu>
+              </>
+            ) : (
+              <>
+                <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                {pageSizeControl}
+              </>
+            )}
 
             {canEdit && (
               <button
                 id="catalog-new-btn"
                 onClick={openCreate}
-                className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                title={embedded ? 'Nuevo papel' : undefined}
+                aria-label={embedded ? 'Nuevo papel' : undefined}
+                className={cn(
+                  'flex items-center gap-2 h-8 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0',
+                  embedded ? 'px-2.5' : 'px-4',
+                )}
               >
                 <Plus className="size-3.5" />
-                Nuevo papel
+                {!embedded && 'Nuevo papel'}
               </button>
             )}
 
           </div>
         </div>
 
-        <div className="py-3">
-          <PaperStatsBar items={items} />
+        {!embedded && (
+          <div className="py-3">
+            <PaperStatsBar items={items} />
+          </div>
+        )}
         </div>
       </div>
 
       {/* Grid */}
       {paginated.length > 0 ? (
-        <div id="catalog-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="@container">
+        <div id="catalog-grid" className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
           {paginated.map(item => (
             <PaperCatalogCard
               key={item.id}
@@ -230,6 +270,7 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
               onEdit={openEdit}
             />
           ))}
+        </div>
         </div>
       ) : (
         <div className="border border-dashed border-border p-16 text-center">

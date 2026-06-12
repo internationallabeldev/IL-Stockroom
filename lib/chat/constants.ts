@@ -1,3 +1,19 @@
+// ── Channel message retention ────────────────────────────────────────────────
+// `null` = keep forever. Used by the channel form/settings and to label channels.
+
+export const RETENTION_OPTIONS: { value: number | null; label: string }[] = [
+  { value: 30, label: '30 días' },
+  { value: 60, label: '60 días' },
+  { value: 90, label: '90 días' },
+  { value: 180, label: '180 días' },
+  { value: null, label: 'Sin límite' },
+]
+
+export function retentionLabel(days: number | null): string {
+  if (days == null) return 'Sin límite'
+  return RETENTION_OPTIONS.find(o => o.value === days)?.label ?? `${days} días`
+}
+
 export type ChatPriority = 'important' | 'warning' | 'urgent'
 
 export const PRIORITY_ORDER: ChatPriority[] = ['important', 'warning', 'urgent']

@@ -12,6 +12,16 @@ export type ChatChannel = Database['public']['Tables']['chat_channels']['Row']
 export type ChatMessage = Database['public']['Tables']['chat_messages']['Row']
 export type ChatReaction = Database['public']['Tables']['chat_reactions']['Row']
 
+/** A channel enriched with the current user's unread count and a last-message preview.
+ *  `is_member` drives the read-only composer: a viewer of a private channel who isn't
+ *  a member (e.g. an ADMIN moderating) can read but not post. Always true for the
+ *  channels a non-ADMIN sees (they only see public channels or ones they belong to). */
+export type ChannelWithMeta = ChatChannel & {
+  unread_count: number
+  last_message: { content_text: string | null; created_at: string | null } | null
+  is_member: boolean
+}
+
 /** Lightweight user directory used to render message authors (and @mentions later).
  *  chat_messages.user_id FKs auth.users, so authors are resolved client-side by id
  *  rather than via a PostgREST embed. */
@@ -39,6 +49,77 @@ export async function getGeneralChannel(): Promise<ChatChannel | null> {
     .limit(1)
     .maybeSingle()
   return data ?? null
+}
+
+/** Channels visible to the current user, each with unread count + last-message preview.
+ *  Non-ADMINs never see archived channels; ADMINs see them (rendered collapsed in the UI).
+ *  Default channel first, then alphabetical. */
+export async function getChannels(): Promise<ChannelWithMeta[]> {
+  const me = await getSessionUser()
+  if (!me) return []
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('chat_channels')
+    .select('*')
+    .order('is_default', { ascending: false })
+    .order('name')
+  if (me.role !== 'ADMIN') query = query.eq('is_archived', false)
+
+  const { data: channels } = await query
+  const list = channels ?? []
+  if (list.length === 0) return []
+
+  // The user's read markers (RLS already scopes chat_read_status to the caller).
+  const { data: statuses } = await supabase
+    .from('chat_read_status')
+    .select('channel_id, last_read_message_id')
+    .eq('user_id', me.id)
+  const lastReadByChannel = new Map(
+    (statuses ?? []).map(s => [s.channel_id, s.last_read_message_id ?? 0]),
+  )
+
+  // The user's channel memberships (own rows pass RLS) → drives is_member.
+  const { data: memberships } = await supabase
+    .from('chat_channel_members')
+    .select('channel_id')
+    .eq('user_id', me.id)
+  const memberOf = new Set((memberships ?? []).map(m => m.channel_id))
+
+  return Promise.all(
+    list.map(async channel => {
+      const lastRead = lastReadByChannel.get(channel.id) ?? 0
+      const [{ count }, { data: lastMsg }] = await Promise.all([
+        supabase
+          .from('chat_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('channel_id', channel.id)
+          .eq('is_deleted', false)
+          .gt('id', lastRead)
+          .neq('user_id', me.id),
+        supabase
+          .from('chat_messages')
+          .select('content_text, created_at')
+          .eq('channel_id', channel.id)
+          .eq('is_deleted', false)
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
+      return {
+        ...channel,
+        unread_count: count ?? 0,
+        last_message: lastMsg ?? null,
+        is_member: !channel.is_private || memberOf.has(channel.id),
+      }
+    }),
+  )
+}
+
+/** Sum of unread messages across every channel the user can see (for the launcher badge). */
+export async function getTotalUnreadCount(): Promise<number> {
+  const channels = await getChannels()
+  return channels.reduce((sum, c) => sum + c.unread_count, 0)
 }
 
 /** Directory of enabled users, for resolving authors and (later) mentions.
@@ -193,6 +274,216 @@ export async function updateReadStatus(
       },
       { onConflict: 'user_id,channel_id' },
     )
+}
+
+// ── Channels (ADMIN) ───────────────────────────────────────────────────────────
+
+/** URL-safe slug from a channel name (accent-stripped, lowercased, dash-joined). */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '') // strip diacritics
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/** Create a non-default channel. ADMIN only. Slug derived from the name (deduped).
+ *  When `is_private`, the creator plus `member_ids` are seeded as members; nobody
+ *  else can see or post to the channel (ADMINs excepted, who can moderate any). */
+export async function createChannel(data: {
+  name: string
+  description?: string | null
+  retention_days: number | null
+  is_private?: boolean
+  member_ids?: string[]
+}): Promise<{ channel?: ChatChannel; error?: string }> {
+  const me = await getSessionUser()
+  if (!me || me.role !== 'ADMIN') return { error: 'Sin permisos' }
+
+  const name = data.name.trim()
+  if (!name) return { error: 'El nombre es obligatorio' }
+
+  const supabase = await createClient()
+  const base = slugify(name) || 'canal'
+  const { data: existing } = await supabase
+    .from('chat_channels')
+    .select('slug')
+    .like('slug', `${base}%`)
+  const taken = new Set((existing ?? []).map(c => c.slug))
+  let slug = base
+  for (let i = 2; taken.has(slug); i++) slug = `${base}-${i}`
+
+  const isPrivate = !!data.is_private
+  const { data: channel, error } = await supabase
+    .from('chat_channels')
+    .insert({
+      name,
+      description: data.description?.trim() || null,
+      slug,
+      is_default: false,
+      is_private: isPrivate,
+      created_by: me.id,
+      retention_days: data.retention_days,
+    })
+    .select('*')
+    .single()
+
+  if (error || !channel) return { error: error?.message ?? 'No se pudo crear el canal' }
+
+  // Seed membership for private channels (creator is always a member).
+  if (isPrivate) {
+    const ids = new Set<string>([me.id, ...(data.member_ids ?? [])])
+    const admin = createAdminClient()
+    await admin
+      .from('chat_channel_members')
+      .insert([...ids].map(uid => ({ channel_id: channel.id, user_id: uid, added_by: me.id })))
+  }
+
+  return { channel }
+}
+
+/** User ids that belong to a channel (empty for public channels). */
+export async function getChannelMembers(channelId: number): Promise<string[]> {
+  const me = await getSessionUser()
+  if (!me) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('chat_channel_members')
+    .select('user_id')
+    .eq('channel_id', channelId)
+  return (data ?? []).map(m => m.user_id)
+}
+
+/** Replace a private channel's membership with `memberIds` (the creator is always
+ *  kept). Creator-only; the general channel never has members. */
+export async function setChannelMembers(
+  channelId: number,
+  memberIds: string[],
+): Promise<{ error?: string }> {
+  const { channel, error: authError } = await authorizeChannelOwner(channelId)
+  if (authError) return { error: authError }
+  if (channel!.is_default) return { error: 'El canal general no admite miembros' }
+
+  const desired = new Set<string>(memberIds)
+  if (channel!.created_by) desired.add(channel!.created_by) // creator always belongs
+
+  const admin = createAdminClient()
+  await admin.from('chat_channel_members').delete().eq('channel_id', channelId)
+  if (desired.size > 0) {
+    const { error } = await admin
+      .from('chat_channel_members')
+      .insert([...desired].map(uid => ({ channel_id: channelId, user_id: uid, added_by: channel!.created_by })))
+    if (error) return { error: error.message }
+  }
+  return {}
+}
+
+/** Look up a channel's guard fields and confirm the caller is its ADMIN creator. */
+async function authorizeChannelOwner(
+  channelId: number,
+): Promise<{ channel?: Pick<ChatChannel, 'is_default' | 'created_by'>; error?: string }> {
+  const me = await getSessionUser()
+  if (!me || me.role !== 'ADMIN') return { error: 'Sin permisos' }
+  const supabase = await createClient()
+  const { data: channel } = await supabase
+    .from('chat_channels')
+    .select('is_default, created_by')
+    .eq('id', channelId)
+    .maybeSingle()
+  if (!channel) return { error: 'Canal no encontrado' }
+  if (channel.created_by !== me.id) return { error: 'Solo el creador puede modificar este canal' }
+  return { channel }
+}
+
+/** Edit name/description/retention. The general channel may be edited by any ADMIN
+ *  (it has no creator); other channels only by their creator. slug/is_default are immutable. */
+export async function updateChannel(
+  channelId: number,
+  data: {
+    name?: string
+    description?: string | null
+    retention_days?: number | null
+    is_private?: boolean
+  },
+): Promise<{ channel?: ChatChannel; error?: string }> {
+  const me = await getSessionUser()
+  if (!me || me.role !== 'ADMIN') return { error: 'Sin permisos' }
+  const supabase = await createClient()
+
+  const { data: existing } = await supabase
+    .from('chat_channels')
+    .select('is_default, created_by')
+    .eq('id', channelId)
+    .maybeSingle()
+  if (!existing) return { error: 'Canal no encontrado' }
+  if (!existing.is_default && existing.created_by !== me.id)
+    return { error: 'Solo el creador puede modificar este canal' }
+
+  const patch: Database['public']['Tables']['chat_channels']['Update'] = {}
+  if (data.name !== undefined) {
+    const name = data.name.trim()
+    if (!name) return { error: 'El nombre es obligatorio' }
+    patch.name = name
+  }
+  if (data.description !== undefined) patch.description = data.description?.trim() || null
+  if (data.retention_days !== undefined) patch.retention_days = data.retention_days
+  if (data.is_private !== undefined) {
+    if (existing.is_default && data.is_private)
+      return { error: 'El canal general no puede ser privado' }
+    patch.is_private = data.is_private
+  }
+
+  const { data: channel, error } = await supabase
+    .from('chat_channels')
+    .update(patch)
+    .eq('id', channelId)
+    .select('*')
+    .single()
+  if (error) return { error: error.message }
+
+  // Made private → guarantee the creator is a member so the channel isn't orphaned.
+  if (data.is_private === true && existing.created_by) {
+    const admin = createAdminClient()
+    await admin
+      .from('chat_channel_members')
+      .upsert(
+        { channel_id: channelId, user_id: existing.created_by, added_by: existing.created_by },
+        { onConflict: 'channel_id,user_id' },
+      )
+  }
+
+  return { channel }
+}
+
+/** Archive (hide from non-ADMINs) or restore a channel. Creator only; never the general channel. */
+export async function setChannelArchived(
+  channelId: number,
+  archived: boolean,
+): Promise<{ error?: string }> {
+  const { channel, error: authError } = await authorizeChannelOwner(channelId)
+  if (authError) return { error: authError }
+  if (channel!.is_default) return { error: 'No se puede archivar el canal general' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('chat_channels')
+    .update({ is_archived: archived, archived_at: archived ? new Date().toISOString() : null })
+    .eq('id', channelId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+/** Permanently delete a channel and its messages (FK cascade). Creator only; never the general channel. */
+export async function deleteChannel(channelId: number): Promise<{ error?: string }> {
+  const { channel, error: authError } = await authorizeChannelOwner(channelId)
+  if (authError) return { error: authError }
+  if (channel!.is_default) return { error: 'No se puede eliminar el canal general' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('chat_channels').delete().eq('id', channelId)
+  if (error) return { error: error.message }
+  return {}
 }
 
 // ── Reactions ────────────────────────────────────────────────────────────────

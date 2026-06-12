@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation'
 import { useCommandPalette } from '@/hooks/use-command-palette'
 import { CommandPalette } from '@/components/search/command-palette'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { WorkspaceToggle } from './workspace-toggle'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { SettingsDrawer } from '@/components/settings/settings-drawer'
 import { NotificationBell } from '@/components/notifications/notification-bell'
@@ -39,7 +40,8 @@ export function TopNav({ user }: { user: AppUser }) {
   const { material, setMaterial } = useMaterial()
   const pathname = usePathname()
   const pageTitle = PAGE_TITLES[pathname] ?? null
-  const showMaterialToggle = pathname !== '/dashboard/providers'
+  // Workspace panes carry their own per-pane material toggle, so the global one is redundant there.
+  const showMaterialToggle = pathname !== '/dashboard/providers' && pathname !== '/dashboard/workspace'
   const { isOpen, open, close } = useCommandPalette()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -109,6 +111,8 @@ export function TopNav({ user }: { user: AppUser }) {
         </button>
 
         <div className="w-px h-5 bg-border" />
+
+        <WorkspaceToggle />
 
         <ThemeToggle />
 

@@ -54,11 +54,14 @@ export function PaperRequisitionSheet({ open, onClose, preselectedPaper, availab
   const activeLots = availableLots.filter(
     l => l.paper_catalog_id === catalogId && l.enabled && (l.remaining_m2 ?? 0) > 0
   )
-  const availableM2  = activeLots.reduce((s, l) => s + (l.remaining_m2 ?? 0), 0)
-  const maxWidthM    = activeLots.reduce((m, l) => Math.max(m, l.initial_width_m), 0)
-  const requestedM2  = (lengthReq || 0) * (widthReq || 0)
-  const widthWarning = widthReq > 0 && maxWidthM > 0 && widthReq > maxWidthM
-  const stockLow     = requestedM2 > 0 && requestedM2 > availableM2
+  const availableM2   = activeLots.reduce((s, l) => s + (l.remaining_m2 ?? 0), 0)
+  const maxWidthM     = activeLots.reduce((m, l) => Math.max(m, l.initial_width_m), 0)
+  const maxLengthM    = activeLots.reduce((m, l) => Math.max(m, l.remaining_length_m ?? 0), 0)
+  const requestedM2   = (lengthReq || 0) * (widthReq || 0)
+  const widthExceeds  = widthReq > 0 && maxWidthM > 0 && widthReq > maxWidthM
+  const lengthExceeds = lengthReq > 0 && maxLengthM > 0 && lengthReq > maxLengthM
+  const stockLow      = requestedM2 > 0 && requestedM2 > availableM2
+  const blockSubmit   = widthExceeds || lengthExceeds
 
   const uniqueCatalogs = Array.from(
     new Map(
@@ -124,6 +127,9 @@ export function PaperRequisitionSheet({ open, onClose, preselectedPaper, availab
               {maxWidthM > 0 && (
                 <p>Ancho máx. disponible: <span className="font-bold text-foreground">{maxWidthM.toFixed(2)} m</span></p>
               )}
+              {maxLengthM > 0 && (
+                <p>Largo máx. disponible: <span className="font-bold text-foreground">{maxLengthM.toFixed(2)} m</span></p>
+              )}
             </div>
           )}
 
@@ -134,18 +140,20 @@ export function PaperRequisitionSheet({ open, onClose, preselectedPaper, availab
               <input
                 {...register('length_m_requested', { valueAsNumber: true })}
                 type="number" step="0.01" min="0.01"
-                className={inputCls}
+                className={inputCls + (lengthExceeds ? ' border-red-400' : '')}
               />
               {errors.length_m_requested && <p className={errCls}>{errors.length_m_requested.message}</p>}
+              {lengthExceeds && <p className={errCls}>Supera el largo máx. ({maxLengthM.toFixed(2)} m)</p>}
             </div>
             <div>
               <label className={labelCls}>Ancho solicitado (m) *</label>
               <input
                 {...register('width_m_requested', { valueAsNumber: true })}
                 type="number" step="0.01" min="0.01"
-                className={inputCls}
+                className={inputCls + (widthExceeds ? ' border-red-400' : '')}
               />
               {errors.width_m_requested && <p className={errCls}>{errors.width_m_requested.message}</p>}
+              {widthExceeds && <p className={errCls}>Supera el ancho máx. ({maxWidthM.toFixed(2)} m)</p>}
             </div>
           </div>
 
@@ -156,12 +164,6 @@ export function PaperRequisitionSheet({ open, onClose, preselectedPaper, availab
                 M² solicitados: <span className="font-bold text-foreground">{requestedM2.toFixed(2)} m²</span>
                 {stockLow && ' — stock insuficiente'}
               </p>
-              {widthWarning && (
-                <p className="text-yellow-700 text-[10px]">
-                  ⚠ El ancho solicitado supera el máximo disponible ({maxWidthM.toFixed(2)} m).
-                  Considera el corte físico.
-                </p>
-              )}
             </div>
           )}
 
@@ -197,7 +199,7 @@ export function PaperRequisitionSheet({ open, onClose, preselectedPaper, availab
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || blockSubmit}
               className="flex-1 py-2.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 flex items-center justify-center gap-1.5"
             >
               {isSubmitting && <Loader2 className="size-3 animate-spin" />}

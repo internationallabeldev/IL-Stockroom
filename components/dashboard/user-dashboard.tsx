@@ -1,9 +1,24 @@
 'use client'
 
-import { StockOverviewWidget } from './widgets/stock-overview-widget'
-import { ActiveOrdersWidget } from './widgets/active-orders-widget'
+import { useMemo } from 'react'
+import { subDays } from 'date-fns'
+import { DashboardGrid, rects, type DefaultWidget } from './grid/dashboard-grid'
+import type { DateRange } from '@/types/dashboard.types'
+
+function defaultRange(): DateRange {
+  const end = new Date(); end.setHours(23, 59, 59, 999)
+  return { start: subDays(end, 29), end }
+}
+
+const DEFAULTS: DefaultWidget[] = [
+  { id: 'stock-ink',     type: 'stock-overview', params: { materialType: 'INK' },   rects: rects([0, 0, 4, 6], [0, 0, 3, 6], [0, 0, 2, 6]) },
+  { id: 'stock-paper',   type: 'stock-overview', params: { materialType: 'PAPER' }, rects: rects([4, 0, 4, 6], [3, 0, 3, 6], [0, 6, 2, 6]) },
+  { id: 'active-orders', type: 'active-orders',  rects: rects([8, 0, 4, 6], [0, 6, 6, 6], [0, 12, 2, 6]) },
+]
 
 export function UserDashboard({ userName }: { userName: string }) {
+  const renderCtx = useMemo(() => ({ dateRange: defaultRange() }), [])
+
   const hour     = new Date().getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
 
@@ -16,17 +31,7 @@ export function UserDashboard({ userName }: { userName: string }) {
         </p>
       </header>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-4">
-          <StockOverviewWidget materialType="INK" />
-        </div>
-        <div className="col-span-4">
-          <StockOverviewWidget materialType="PAPER" />
-        </div>
-        <div className="col-span-4">
-          <ActiveOrdersWidget />
-        </div>
-      </div>
+      <DashboardGrid dashboardKey="user" defaults={DEFAULTS} renderCtx={renderCtx} />
     </div>
   )
 }

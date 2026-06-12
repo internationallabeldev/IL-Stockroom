@@ -5,7 +5,7 @@ import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Plus, Eye, ChevronLeft, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown, ArrowUpDown, Search, PackageCheck, AlertTriangle, Clock, CheckCircle2, TrendingUp, CalendarClock } from 'lucide-react'
+import { Plus, Eye, ChevronLeft, ChevronRight, SlidersHorizontal, X, ArrowUp, ArrowDown, ArrowUpDown, Search, PackageCheck, AlertTriangle, Clock, CheckCircle2, TrendingUp, CalendarClock, Settings2 } from 'lucide-react'
 import {
   getPurchaseOrders,
   type PurchaseOrderSummary,
@@ -19,7 +19,9 @@ import type { Provider } from '@/actions/providers.actions'
 import type { InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
 import { DataRefresh } from '@/components/shared/data-refresh'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 
 const STATUS_TABS: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'Todas' },
@@ -111,6 +113,7 @@ type Props = {
 export function OrdersList({
   initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive,
 }: Props) {
+  const embedded = useEmbedded()
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
   const [search, setSearch] = useSearchSeed()
@@ -220,14 +223,36 @@ export function OrdersList({
   const safePage = Math.min(page, totalPages)
   const paginated = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
+  // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
+  const pageSizeControl = (
+    <div id="orders-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8 shrink-0">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={1}
+        value={pageSizeInput}
+        onChange={e => {
+          setPageSizeInput(e.target.value)
+          const n = parseInt(e.target.value, 10)
+          if (n > 0) { setPageSize(n); setPage(1) }
+        }}
+        onBlur={() => {
+          const n = parseInt(pageSizeInput, 10)
+          if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
+        }}
+        className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
+      />
+    </div>
+  )
+
   return (
     <>
       {/* Toolbar */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-6">
-        <div className="py-3 flex items-center gap-2">
+      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-6', toolbarStickyClass(embedded))}>
+        <div className="py-3 flex flex-wrap items-center gap-2">
 
           {/* Search */}
-          <div id="orders-search" className="relative shrink min-w-0 basis-72">
+          <div id="orders-search" className={cn('relative min-w-0', embedded ? 'flex-1' : 'shrink basis-72')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
@@ -264,52 +289,57 @@ export function OrdersList({
             <button
               id="orders-filters-btn"
               onClick={() => setFiltersOpen(v => !v)}
+              title={embedded ? 'Filtros' : undefined}
+              aria-label={embedded ? 'Filtros' : undefined}
               className={cn(
-                'flex items-center gap-1.5 h-8 px-3 border text-[10px] font-bold uppercase tracking-widest transition-colors shrink-0',
+                'flex items-center gap-1.5 h-8 border text-[10px] font-bold uppercase tracking-widest transition-colors shrink-0',
+                embedded ? 'px-2' : 'px-3',
                 filtersOpen || activeFilters > 0
                   ? 'bg-foreground text-background border-foreground'
                   : 'border-border text-muted-foreground hover:text-foreground'
               )}
             >
               <SlidersHorizontal className="size-3.5" />
-              Filtros
+              {!embedded && 'Filtros'}
               {activeFilters > 0 && (
                 <span className="ml-0.5 bg-white/20 text-[9px] px-1 rounded-sm">{activeFilters}</span>
               )}
             </button>
 
-            <div className="flex-1" />
+            {!embedded && <div className="flex-1" />}
 
-            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} className="shrink-0" />
-
-            {/* Page size */}
-            <div id="orders-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8 shrink-0">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-              <input
-                type="number"
-                min={1}
-                value={pageSizeInput}
-                onChange={e => {
-                  setPageSizeInput(e.target.value)
-                  const n = parseInt(e.target.value, 10)
-                  if (n > 0) { setPageSize(n); setPage(1) }
-                }}
-                onBlur={() => {
-                  const n = parseInt(pageSizeInput, 10)
-                  if (!n || n < 1) { setPageSizeInput('10'); setPageSize(10); setPage(1) }
-                }}
-                className="w-9 bg-transparent text-[11px] font-mono text-center outline-none"
-              />
-            </div>
+            {embedded ? (
+              <>
+                <EmbeddedSummaryChip>
+                  <OrdersStatsBar orders={allOrders} />
+                </EmbeddedSummaryChip>
+                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                  <div className="flex flex-col items-start gap-2.5">
+                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                    {pageSizeControl}
+                  </div>
+                </ToolbarHoverMenu>
+              </>
+            ) : (
+              <>
+                <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} className="shrink-0" />
+                {pageSizeControl}
+              </>
+            )}
 
             {canCreate && (
               <button
                 id="orders-new-btn"
                 onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0 whitespace-nowrap"
+                title={embedded ? 'Nueva orden' : undefined}
+                aria-label={embedded ? 'Nueva orden' : undefined}
+                className={cn(
+                  'flex items-center gap-2 h-8 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0 whitespace-nowrap',
+                  embedded ? 'px-2.5' : 'px-4',
+                )}
               >
                 <Plus className="size-3.5" />
-                Nueva orden
+                {!embedded && 'Nueva orden'}
               </button>
             )}
 
@@ -394,9 +424,11 @@ export function OrdersList({
           </div>
         )}
 
-        <div className="py-3">
-          <OrdersStatsBar orders={allOrders} />
-        </div>
+        {!embedded && (
+          <div className="py-3">
+            <OrdersStatsBar orders={allOrders} />
+          </div>
+        )}
       </div>
 
       {/* Table */}

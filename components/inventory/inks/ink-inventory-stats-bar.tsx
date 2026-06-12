@@ -1,11 +1,11 @@
 'use client'
 
 import { Layers, Package, AlertTriangle, Activity, ArrowRight, Minus } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import type { InkLot } from '@/actions/ink-inventory.actions'
+import { InventoryStatsBar, type StatItem } from '../inventory-stats-bar-shell'
 import { getLotDailyRate } from './lot-utils'
 
-export function InkInventoryStatsBar({ lots }: { lots: InkLot[] }) {
+export function InkInventoryStatsBar({ lots, iconOnly = false }: { lots: InkLot[]; iconOnly?: boolean }) {
   const active = lots.filter(l => l.enabled)
 
   const totalKg = active.reduce((s, l) => s + (l.remaining_kg ?? 0), 0)
@@ -26,12 +26,12 @@ export function InkInventoryStatsBar({ lots }: { lots: InkLot[] }) {
       (a.receipt!.receipt_date as string).localeCompare(b.receipt!.receipt_date as string)
     )[0]
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       icon: Layers,
       label: 'Lotes activos',
       value: String(active.length),
-      accent: null as 'amber' | 'red' | null,
+      accent: null,
     },
     {
       icon: Package,
@@ -63,49 +63,16 @@ export function InkInventoryStatsBar({ lots }: { lots: InkLot[] }) {
           accent: null,
         }]
       : []),
+    ...(fifoLot
+      ? [{
+          icon: ArrowRight,
+          label: 'Prioridad FIFO',
+          value: fifoLot.internal_batch,
+          accent: null,
+          mono: true,
+        } as StatItem]
+      : []),
   ]
 
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-y-2">
-      {stats.map(({ icon: Icon, label, value, accent }, i) => (
-        <div key={label} className="flex items-center gap-2">
-          {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
-          <Icon
-            className={cn(
-              'size-3 shrink-0',
-              accent === 'red'   ? 'text-red-500'   :
-              accent === 'amber' ? 'text-amber-400'  :
-              'text-muted-foreground/50',
-            )}
-          />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
-            {label}
-          </span>
-          <span
-            className={cn(
-              'text-[11px] font-bold tabular-nums',
-              accent === 'red'   ? 'text-red-500'   :
-              accent === 'amber' ? 'text-amber-400'  :
-              'text-foreground/80',
-            )}
-          >
-            {value}
-          </span>
-        </div>
-      ))}
-
-      {fifoLot && (
-        <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
-          <ArrowRight className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
-            Prioridad FIFO
-          </span>
-          <span className="text-[11px] font-bold font-mono text-foreground/80">
-            {fifoLot.internal_batch}
-          </span>
-        </div>
-      )}
-    </div>
-  )
+  return <InventoryStatsBar stats={stats} iconOnly={iconOnly} />
 }

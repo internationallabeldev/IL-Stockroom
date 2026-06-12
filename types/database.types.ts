@@ -112,33 +112,83 @@ export type Database = {
       }
       chat_channels: {
         Row: {
+          archived_at: string | null
+          bot_owner_id: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
           id: number
+          is_archived: boolean | null
+          is_bot_dm: boolean | null
           is_default: boolean | null
+          is_private: boolean | null
           name: string
+          retention_days: number | null
           slug: string
+          updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
+          bot_owner_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: number
+          is_archived?: boolean | null
+          is_bot_dm?: boolean | null
           is_default?: boolean | null
+          is_private?: boolean | null
           name: string
+          retention_days?: number | null
           slug: string
+          updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
+          bot_owner_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: number
+          is_archived?: boolean | null
+          is_bot_dm?: boolean | null
           is_default?: boolean | null
+          is_private?: boolean | null
           name?: string
+          retention_days?: number | null
           slug?: string
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      chat_channel_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          channel_id: number
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id: number
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_mentions: {
         Row: {
@@ -299,6 +349,38 @@ export type Database = {
             columns: ["last_read_message_id"]
             isOneToOne: false
             referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboard_layouts: {
+        Row: {
+          dashboard_key: string
+          layouts: Json
+          updated_at: string | null
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          dashboard_key: string
+          layouts: Json
+          updated_at?: string | null
+          user_id: string
+          widgets?: Json
+        }
+        Update: {
+          dashboard_key?: string
+          layouts?: Json
+          updated_at?: string | null
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_layouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1562,6 +1644,8 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null
+          bot_queries_reset_at: string | null
+          bot_queries_today: number | null
           code: string | null
           created_at: string | null
           email: string
@@ -1582,6 +1666,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bot_queries_reset_at?: string | null
+          bot_queries_today?: number | null
           code?: string | null
           created_at?: string | null
           email: string
@@ -1602,6 +1688,8 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bot_queries_reset_at?: string | null
+          bot_queries_today?: number | null
           code?: string | null
           created_at?: string | null
           email?: string

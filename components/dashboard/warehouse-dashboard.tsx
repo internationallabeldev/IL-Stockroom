@@ -2,15 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ClipboardList, ClipboardCheck, AlertTriangle, PackageCheck } from 'lucide-react'
+import { ClipboardList } from 'lucide-react'
 import { subDays } from 'date-fns'
-import { KpiCard } from './widgets/kpi-card'
-import { LowStockWidget } from './widgets/low-stock-widget'
-import { SuppliesAlertWidget } from './widgets/supplies-alert-widget'
-import { ConsumptionChart } from './widgets/consumption-chart'
-import { PendingRequisitionsWidget } from './widgets/pending-requisitions-widget'
-import { PendingQualityWidget } from './widgets/pending-quality-widget'
 import { DateRangePicker } from './date-range-picker'
+import { DashboardGrid, rects, type DefaultWidget } from './grid/dashboard-grid'
 import { getDashboardKPIs } from '@/actions/dashboard.actions'
 import type { DateRange } from '@/types/dashboard.types'
 
@@ -19,9 +14,23 @@ function defaultRange(): DateRange {
   return { start: subDays(end, 29), end }
 }
 
+const DEFAULTS: DefaultWidget[] = [
+  { id: 'kpi-reqs',    type: 'kpi-metric', params: { metricId: 'pending_reqs' },    rects: rects([0, 0, 3, 2], [0, 0, 3, 2], [0, 0, 1, 2]) },
+  { id: 'kpi-quality', type: 'kpi-metric', params: { metricId: 'pending_quality' }, rects: rects([3, 0, 3, 2], [3, 0, 3, 2], [1, 0, 1, 2]) },
+  { id: 'kpi-low',     type: 'kpi-metric', params: { metricId: 'low_stock_count' }, rects: rects([6, 0, 3, 2], [0, 2, 3, 2], [0, 2, 1, 2]) },
+  { id: 'kpi-deliv',   type: 'kpi-metric', params: { metricId: 'deliveries_today' }, rects: rects([9, 0, 3, 2], [3, 2, 3, 2], [1, 2, 1, 2]) },
+  { id: 'pending-reqs',    type: 'pending-requisitions', rects: rects([0, 2, 5, 6], [0, 4, 6, 6], [0, 4, 2, 6]) },
+  { id: 'pending-quality', type: 'pending-quality',      rects: rects([5, 2, 3, 6], [0, 10, 3, 6], [0, 10, 2, 6]) },
+  { id: 'low-stock',       type: 'low-stock', params: { materialType: 'BOTH' }, rects: rects([8, 2, 2, 6], [3, 10, 3, 6], [0, 16, 2, 6]) },
+  { id: 'supplies-alert',  type: 'supplies-alert',       rects: rects([10, 2, 2, 6], [0, 16, 6, 6], [0, 22, 2, 6]) },
+  { id: 'chart-ink',       type: 'consumption-chart', params: { materialType: 'INK' },   rects: rects([0, 8, 6, 5], [0, 22, 6, 5], [0, 28, 2, 5]) },
+  { id: 'chart-paper',     type: 'consumption-chart', params: { materialType: 'PAPER' }, rects: rects([6, 8, 6, 5], [0, 27, 6, 5], [0, 33, 2, 5]) },
+]
+
 export function WarehouseDashboard({ userName }: { userName: string }) {
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange)
 
+  // The urgent banner stays fixed outside the grid, so it still needs the count.
   const { data: kpis, isLoading: kpisLoading } = useQuery({
     queryKey: ['dashboard-kpis'],
     queryFn:  getDashboardKPIs,
@@ -50,66 +59,12 @@ export function WarehouseDashboard({ userName }: { userName: string }) {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          title="Requisiciones pendientes"
-          value={kpis?.pendingReqsCount ?? 0}
-          icon={<ClipboardList className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.pendingReqsCount ?? 0) > 0 ? 'danger' : 'success'}
-          loading={kpisLoading}
-          href="/dashboard/requisitions"
-        />
-        <KpiCard
-          title="Recepciones por aprobar"
-          value={kpis?.pendingQualityCount ?? 0}
-          icon={<ClipboardCheck className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.pendingQualityCount ?? 0) > 0 ? 'warning' : 'success'}
-          loading={kpisLoading}
-          href="/dashboard/receipts"
-        />
-        <KpiCard
-          title="Stock bajo mínimo"
-          value={kpis?.lowStockCount ?? 0}
-          icon={<AlertTriangle className="size-4" />}
-          color={kpisLoading ? 'default' : (kpis?.lowStockCount ?? 0) > 0 ? 'warning' : 'success'}
-          loading={kpisLoading}
-          href="/dashboard/inventory/inks"
-        />
-        <KpiCard
-          title="Entregas hoy"
-          value={kpis?.deliveriesToday ?? 0}
-          icon={<PackageCheck className="size-4" />}
-          color="success"
-          loading={kpisLoading}
-          href="/dashboard/outputs/history"
-        />
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-5">
-          <PendingRequisitionsWidget />
-        </div>
-        <div className="col-span-3">
-          <PendingQualityWidget />
-        </div>
-        <div className="col-span-2">
-          <LowStockWidget materialType="BOTH" />
-        </div>
-        <div className="col-span-2">
-          <SuppliesAlertWidget />
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Consumo del período</p>
-          <DateRangePicker onRangeChange={setDateRange} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ConsumptionChart materialType="INK"   dateRange={dateRange} />
-          <ConsumptionChart materialType="PAPER" dateRange={dateRange} />
-        </div>
-      </div>
+      <DashboardGrid
+        dashboardKey="warehouse"
+        defaults={DEFAULTS}
+        renderCtx={{ dateRange }}
+        toolbar={<DateRangePicker onRangeChange={setDateRange} />}
+      />
     </div>
   )
 }

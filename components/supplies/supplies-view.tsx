@@ -16,8 +16,11 @@ import {
   CheckCircle2,
   Layers,
   TrendingDown,
+  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { getSupplyCategories } from '@/actions/supplies.actions'
 import { type SupplyCategoryWithItems, type SupplyItemWithStatus } from '@/lib/supplies/types'
@@ -83,7 +86,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-between">
       {items.map(({ icon: Icon, label, value, accent }, i) => (
         <div key={label} className="flex items-center gap-2">
-          {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
+          {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accentClass(accent))} />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', valueClass(accent))}>
@@ -95,7 +98,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
       {/* Distribution mini stacked bar */}
       {totalTracked > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
@@ -114,7 +117,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
       {/* Most affected category */}
       {worstCategory && worstCategory.risky > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-border/60 select-none hidden sm:inline">·</span>
+          <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingDown className="size-3 shrink-0 text-muted-foreground/50" />
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Crítica</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">
@@ -284,6 +287,7 @@ type Props = {
 }
 
 export function SuppliesView({ categories: initialCategories, canEdit }: Props) {
+  const embedded = useEmbedded()
   const [filter, setFilter]           = useState<StatusFilter>('all')
   const [search, setSearch]           = useSearchSeed()
   const [page, setPage]               = useState(0)
@@ -350,17 +354,26 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
   return (
     <>
       {/* Toolbar — providers-style: sticky, two rows */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border -mx-8 px-8 mb-6">
-        <div className="py-3 flex flex-wrap justify-between items-center gap-3">
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-6', toolbarStickyClass(embedded))}>
+        <div className="@container">
+        <div className={cn(
+          'py-3 flex gap-2',
+          embedded
+            ? 'flex-row flex-wrap items-center'
+            : 'flex-col @2xl:flex-row @2xl:flex-wrap @2xl:justify-between @2xl:items-center @2xl:gap-3',
+        )}>
           {/* Search */}
-          <div className="relative" id="supplies-search">
+          <div className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')} id="supplies-search">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar item, descripción o proveedor..."
-              className="h-8 w-100 border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors"
+              className={cn(
+                'h-8 w-full border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors',
+                !embedded && '@2xl:w-100',
+              )}
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -369,9 +382,9 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
             )}
           </div>
 
-          <div className="gap-2 flex flex-row">
+          <div className="gap-2 flex flex-row flex-wrap items-center">
             {/* Status filter */}
-            <div className="flex border border-border" id="supplies-status-filter">
+            <div className="flex border border-border shrink-0" id="supplies-status-filter">
               {FILTER_OPTIONS.map(f => {
                 const count    = filterCounts[f.value]
                 const isActive = filter === f.value
@@ -404,37 +417,63 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
               })}
             </div>
 
-            <div className="flex-1" />
+            {!embedded && <div className="flex-1" />}
 
-            <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+            {embedded ? (
+              <>
+                <EmbeddedSummaryChip>
+                  <SuppliesStatsBar categories={categories} />
+                </EmbeddedSummaryChip>
+                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                  <div className="flex flex-col items-start gap-2.5">
+                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                  </div>
+                </ToolbarHoverMenu>
+              </>
+            ) : (
+              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+            )}
 
             {canEdit && (
               <>
                 <button
                   id="supplies-new-category-btn"
                   onClick={openNewCat}
-                  className="flex items-center gap-2 h-8 px-3 border border-border text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/40 transition-colors"
+                  title={embedded ? 'Nueva categoría' : undefined}
+                  aria-label={embedded ? 'Nueva categoría' : undefined}
+                  className={cn(
+                    'flex items-center gap-2 h-8 border border-border text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/40 transition-colors shrink-0',
+                    embedded ? 'px-2.5' : 'px-3',
+                  )}
                 >
                   <Plus className="size-3.5" />
-                  Categoría
+                  {!embedded && 'Categoría'}
                 </button>
 
                 <button
                   id="supplies-new-item-btn"
                   onClick={() => openNewItem()}
                   disabled={categories.length === 0}
-                  className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={embedded ? 'Nuevo item' : undefined}
+                  aria-label={embedded ? 'Nuevo item' : undefined}
+                  className={cn(
+                    'flex items-center gap-2 h-8 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0',
+                    embedded ? 'px-2.5' : 'px-4',
+                  )}
                 >
                   <Plus className="size-3.5" />
-                  Nuevo item
+                  {!embedded && 'Nuevo item'}
                 </button>
               </>
             )}
           </div>
         </div>
 
-        <div className="py-3">
-          <SuppliesStatsBar categories={categories} />
+        {!embedded && (
+          <div className="py-3">
+            <SuppliesStatsBar categories={categories} />
+          </div>
+        )}
         </div>
       </div>
 

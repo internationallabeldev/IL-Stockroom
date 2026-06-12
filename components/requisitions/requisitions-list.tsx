@@ -6,9 +6,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Search, X, Plus, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, ArrowUpDown, Droplet, FileText,
-  Clock, AlertCircle, ChevronDown, ChevronUp, Package, TrendingUp,
+  Clock, AlertCircle, ChevronDown, ChevronUp, Package, TrendingUp, Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import {
   getRequisitions,
   type Requisition,
@@ -234,6 +236,7 @@ export function RequisitionsList({
   paperCatalog,
   materialType,
 }: Props) {
+  const embedded = useEmbedded()
   const [tab,         setTab]         = useState<TabValue>('pending')
   const [search,      setSearch]      = useSearchSeed()
   const [sortKey,     setSortKey]     = useState<SortKey>('date')
@@ -301,22 +304,47 @@ export function RequisitionsList({
   const pendingCount = (all as Requisition[]).filter(r => r.status === 'PENDING').length
   const colCount     = !materialType ? 7 : 6
 
+  // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
+  const pageSizeControl = (
+    <div id="req-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
+      <input
+        type="number"
+        min={1}
+        value={pageSizeInp}
+        onChange={e => {
+          setPageSizeInp(e.target.value)
+          const n = parseInt(e.target.value, 10)
+          if (n > 0) { setPageSize(n); setPage(1) }
+        }}
+        onBlur={() => {
+          const n = parseInt(pageSizeInp, 10)
+          if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
+        }}
+        className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
+      />
+    </div>
+  )
+
   return (
     <>
       {/* ── Sticky toolbar ────────────────────────────────────────────────── */}
-      <div className="sticky top-16 z-30 bg-background border-b border-border/50 -mx-8 px-8 mb-4">
+      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-4', toolbarStickyClass(embedded))}>
 
         {/* Toolbar row */}
-        <div className="py-3 flex flex-wrap items-center gap-3">
+        <div className="py-3 flex flex-wrap items-center gap-2">
 
           {/* Search */}
-          <div id="req-search" className="relative">
+          <div id="req-search" className={cn('relative', embedded ? 'flex-1 min-w-0' : 'flex-none')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="Buscar #, orden, solicitante…"
-              className="h-8 w-100 pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
+              className={cn(
+                'h-8 pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors',
+                embedded ? 'w-full' : 'w-100',
+              )}
             />
             {search && (
               <button
@@ -329,7 +357,7 @@ export function RequisitionsList({
           </div>
 
           {/* Tabs */}
-          <div id="req-tabs" className="flex border border-border">
+          <div id="req-tabs" className="flex border border-border shrink-0">
             {TABS.map(t => (
               <button
                 key={t.value}
@@ -354,46 +382,50 @@ export function RequisitionsList({
             ))}
           </div>
 
-          <div className="flex-1" />
+          {!embedded && <div className="flex-1" />}
 
-          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-
-          {/* Page size */}
-          <div id="req-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
-            <input
-              type="number"
-              min={1}
-              value={pageSizeInp}
-              onChange={e => {
-                setPageSizeInp(e.target.value)
-                const n = parseInt(e.target.value, 10)
-                if (n > 0) { setPageSize(n); setPage(1) }
-              }}
-              onBlur={() => {
-                const n = parseInt(pageSizeInp, 10)
-                if (!n || n < 1) { setPageSizeInp('15'); setPageSize(15); setPage(1) }
-              }}
-              className="w-9 bg-transparent text-[11px] font-mono text-center outline-none text-foreground"
-            />
-          </div>
+          {embedded ? (
+            <>
+              <EmbeddedSummaryChip>
+                <RequisitionsStatsBar reqs={all as Requisition[]} />
+              </EmbeddedSummaryChip>
+              <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
+                <div className="flex flex-col items-start gap-2.5">
+                  <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+                  {pageSizeControl}
+                </div>
+              </ToolbarHoverMenu>
+            </>
+          ) : (
+            <>
+              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+              {pageSizeControl}
+            </>
+          )}
 
           {canCreate && (
             <button
               id="req-new-btn"
               onClick={() => setFormOpen(true)}
-              className="flex items-center gap-2 h-8 px-4 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+              title={embedded ? 'Nueva requisición' : undefined}
+              aria-label={embedded ? 'Nueva requisición' : undefined}
+              className={cn(
+                'flex items-center gap-2 h-8 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-80 transition-opacity shrink-0',
+                embedded ? 'px-2.5' : 'px-4',
+              )}
             >
               <Plus className="size-3.5" />
-              Nueva requisición
+              {!embedded && 'Nueva requisición'}
             </button>
           )}
         </div>
 
-        {/* Stats bar row */}
-        <div id="req-stats" className="pb-3">
-          <RequisitionsStatsBar reqs={all as Requisition[]} />
-        </div>
+        {/* Stats bar row — embedded collapses it into the toolbar Resumen chip */}
+        {!embedded && (
+          <div id="req-stats" className="pb-3">
+            <RequisitionsStatsBar reqs={all as Requisition[]} />
+          </div>
+        )}
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}
