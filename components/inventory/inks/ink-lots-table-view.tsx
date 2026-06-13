@@ -5,6 +5,7 @@ import { History, PowerOff, FlaskConical, ArrowUp, ArrowDown, ArrowUpDown } from
 import { toast } from 'sonner'
 import { disableLot, type InkLot } from '@/actions/ink-inventory.actions'
 import { DisponibleCellInk } from './disponible-cell-ink'
+import { InkInfoHoverCard, ProviderInfoHoverCard } from '@/components/inventory/shared/inventory-hover-cards'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { getLotStatusInfo } from './lot-utils'
@@ -121,14 +122,18 @@ export function InkLotsTableView({ lots, canManage, canRequest, onHistory, onReq
 
                   {/* Lote proveedor */}
                   <td className="px-4 py-3">
-                    <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                    <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                    <ProviderInfoHoverCard receipt={lot.receipt}>
+                      <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                    </ProviderInfoHoverCard>
                   </td>
 
                   {/* Tinta */}
                   <td className="px-4 py-3">
-                    <p className="font-mono text-[10px] text-muted-foreground">{lot.ink_catalog?.code}</p>
-                    <p className="font-medium">{lot.ink_catalog?.name}</p>
+                    <InkInfoHoverCard lot={lot}>
+                      <p className="font-mono text-[10px] text-muted-foreground">{lot.ink_catalog?.code}</p>
+                      <p className="font-medium">{lot.ink_catalog?.name}</p>
+                    </InkInfoHoverCard>
                   </td>
 
                   {/* Disponible */}

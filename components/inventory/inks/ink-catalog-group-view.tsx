@@ -5,6 +5,7 @@ import { ChevronRight, FlaskConical, History, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { InkLot } from '@/actions/ink-inventory.actions'
 import { DisponibleCellInk } from './disponible-cell-ink'
+import { ProviderInfoHoverCard } from '@/components/inventory/shared/inventory-hover-cards'
 import { toast } from 'sonner'
 import { disableLot } from '@/actions/ink-inventory.actions'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -213,8 +214,10 @@ export function InkCatalogGroupView({ lots, canManage, canRequest, onHistory, on
                           </td>
 
                           <td className="px-4 py-2.5">
-                            <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                            <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                            <ProviderInfoHoverCard receipt={lot.receipt}>
+                              <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                              <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                            </ProviderInfoHoverCard>
                           </td>
 
                           <td className="px-4 py-2.5">

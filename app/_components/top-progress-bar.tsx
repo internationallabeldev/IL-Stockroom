@@ -13,8 +13,8 @@ const SAFETY_MS   = 10000  // auto-complete if a navigation never resolves
  *
  * Mounted once at the root layout so it covers every route. Starts on any
  * internal link click and on browser back/forward, trickles toward 90%, and
- * completes when the pathname commits. Colour comes from the `--progress`
- * token so it adapts to light/dark themes. Zero dependencies.
+ * completes when the pathname commits. Colour comes from the `--foreground`
+ * token, so it's black in light theme and white in dark. Zero dependencies.
  */
 export function TopProgressBar() {
   const pathname = usePathname()
@@ -98,7 +98,7 @@ export function TopProgressBar() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[9999] h-[3px]">
       <div
-        className="h-full bg-[var(--progress)] transition-[width,opacity] duration-200 ease-out"
+        className="h-full bg-foreground transition-[width,opacity] duration-200 ease-out"
         style={{ width: `${progress}%`, opacity: progress >= 100 ? 0 : 1 }}
       />
     </div>

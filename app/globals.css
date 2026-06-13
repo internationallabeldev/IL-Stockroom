@@ -237,3 +237,28 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in oklch, var(--foreground) 40%, transparent);
 }
+/* Unlayered reinforcement: the @utility above lives in the `utilities` cascade
+   layer, which unlayered scrollbar rules would otherwise override. Repeat it
+   here, unlayered + more specific, so `no-scrollbar` actually hides the bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* ── landing: fallbacks estáticos para prefers-reduced-motion ──
+   GSAP solo crea animaciones bajo (prefers-reduced-motion: no-preference);
+   estas reglas devuelven el contenido a un layout plano y visible. */
+.landing-reduced .nosotros-wrap { height: auto !important; }
+.landing-reduced .nosotros-sticky { position: static !important; height: auto !important; padding-top: 6rem; padding-bottom: 6rem; }
+.landing-reduced .nosotros-moments { height: auto !important; }
+.landing-reduced .nosotros-moment { position: static !important; opacity: 1 !important; transform: none !important; clip-path: none !important; margin-bottom: 2.5rem; }
+.landing-reduced .products-track { flex-direction: column !important; width: 100% !important; transform: none !important; }
+.landing-reduced .product-panel { width: 100% !important; height: auto !important; padding-top: 5rem; padding-bottom: 5rem; }
+.landing-reduced .esp-wrap { height: auto !important; }
+.landing-reduced .esp-sticky { position: static !important; }
+.landing-reduced .esp-texture { clip-path: none !important; opacity: 0.3; }
+.landing-reduced .esp-plate,
+.landing-reduced .esp-desc { opacity: 1 !important; }
+.landing-reduced .contacto-wipe { clip-path: none !important; }
+.landing-reduced .hero-backdrop { display: none; }

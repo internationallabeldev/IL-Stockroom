@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { LoginForm } from './_components/login-form'
 
 export const metadata: Metadata = {
@@ -12,7 +13,12 @@ export default function LoginPage() {
       {/* Left — brand panel (intentionally always dark) */}
       <div className="hidden lg:flex w-80 shrink-0 flex-col justify-between bg-[#1A1A1A] text-[#F5F2EA] p-10">
         <div>
-          <span className="font-heading font-bold text-xl tracking-tighter">IL_STOCKROOM</span>
+          <Link
+            href="/"
+            className="font-heading font-bold text-xl tracking-tighter transition-opacity hover:opacity-70"
+          >
+            IL_STOCKROOM
+          </Link>
         </div>
         <div>
           <p className="font-heading text-3xl font-bold leading-tight mb-4">
@@ -43,7 +49,12 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
 
           <div className="mb-10 lg:hidden">
-            <span className="font-heading font-bold text-xl tracking-tighter">IL_STOCKROOM</span>
+            <Link
+              href="/"
+              className="font-heading font-bold text-xl tracking-tighter transition-opacity hover:opacity-70"
+            >
+              IL_STOCKROOM
+            </Link>
           </div>
 
           <div className="mb-8">

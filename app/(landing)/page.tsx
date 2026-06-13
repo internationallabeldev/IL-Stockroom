@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { LandingContent } from './_components/landing-content'
+import { LandingExperience } from '@/components/landing/landing-experience'
 
 export const metadata: Metadata = {
   title: 'International Label — Materiales de Empaque de Alta Calidad',
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function LandingPage() {
-  return <LandingContent />
+  return <LandingExperience />
 }
