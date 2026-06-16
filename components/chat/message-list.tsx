@@ -128,6 +128,7 @@ export function MessageList({
               <div className="px-3 py-1">
                 <MessageEditor
                   mentionUsers={mentionUsers}
+                  currentUserId={currentUserId}
                   initialContent={m.content}
                   onSend={(content, text) => onSaveEdit(m.id, content, text)}
                   onCancel={onCancelEdit}

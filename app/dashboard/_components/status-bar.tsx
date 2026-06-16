@@ -208,6 +208,22 @@ export function StatusBar() {
     }).drive()
   }
 
+  // Auto-start the tour when arriving from the welcome flow ("Iniciar tour").
+  // The param is stripped so a refresh or back-navigation doesn't replay it.
+  useEffect(() => {
+    if (!tourSteps) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tour') !== '1') return
+
+    params.delete('tour')
+    const qs = params.toString()
+    window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''))
+
+    const id = setTimeout(() => startTour(), 500)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, tourSteps])
+
   return (
     <TooltipProvider>
       {/* ── Status bar ──────────────────────────────────────────────────────── */}

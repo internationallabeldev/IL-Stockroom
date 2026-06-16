@@ -201,6 +201,20 @@
   text-decoration: underline;
 }
 
+/* ── providers depth preview ──────────────────────────────────────────────
+   Hunde el lienzo de la página un escalón por debajo del fondo de las cards
+   para crear separación de planos (canvas recesivo → cards elevadas).
+   Theme-safe: valores propios para claro y oscuro. Scoped solo a proveedores. */
+.surface-recessed {
+  background: oklch(0.928 0.013 87);
+}
+.dark .surface-recessed {
+  /* Lienzo más hundido + cards más claras → mayor separación de planos.
+     En oscuro la profundidad se lee por luminosidad, no por sombra. */
+  background: oklch(0.135 0 0);
+  --card: oklch(0.235 0 0);
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {

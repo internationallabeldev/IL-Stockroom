@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { Search, X, Loader2, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
 import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { PendingQualityList } from '@/components/receipts/pending-quality-list'
 import { ReceiptsHistory } from '@/components/receipts/receipts-history'
-import { DataRefresh } from '@/components/shared/data-refresh'
 import type { InkReceiptWithContext, PaperReceiptWithContext } from '@/actions/receipts.actions'
 
 type Tab          = 'pending' | 'history'
@@ -63,12 +61,6 @@ export function ReceiptsPageTabs({
   const embedded = useEmbedded()
 
   const pendingRef = useRef<{ applyBulk: () => Promise<void> }>(null)
-
-  // Freshness + manual refresh for the active tab's query
-  const queryClient = useQueryClient()
-  const activeKey   = tab === 'pending' ? ['pending-quality'] : ['receipts-history']
-  const isFetching  = useIsFetching({ queryKey: activeKey }) > 0
-  const updatedAt   = queryClient.getQueryState(activeKey)?.dataUpdatedAt ?? 0
 
   const handleBulkSavingChange = useCallback((v: boolean) => setBulkSaving(v), [])
   const handleBulkDone         = useCallback(() => setBulkQuality(null), [])
@@ -211,22 +203,12 @@ export function ReceiptsPageTabs({
                 <EmbeddedSummaryChip>{statsBar}</EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh
-                      updatedAt={updatedAt}
-                      isFetching={isFetching}
-                      onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
-                    />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
               </>
             ) : (
               <>
-                <DataRefresh
-                  updatedAt={updatedAt}
-                  isFetching={isFetching}
-                  onRefresh={() => queryClient.invalidateQueries({ queryKey: activeKey })}
-                />
                 {pageSizeControl}
               </>
             )}

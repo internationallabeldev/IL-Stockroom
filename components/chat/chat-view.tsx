@@ -6,6 +6,17 @@ import {
   MessageCircle, Pin, X, Info, Maximize2, Minimize2, Settings, PanelLeftClose, PanelLeftOpen, Hash, Archive, Lock, Eraser,
 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { createClient } from '@/lib/supabase/client'
 import { MessageList } from './message-list'
 import { MessageEditor } from './message-editor'
@@ -18,6 +29,7 @@ import { useChat } from '@/hooks/use-chat'
 import {
   getChannels,
   getChatUsers,
+  getChannelMemberIds,
   updateReadStatus,
   type ChannelWithMeta,
   type ChatChannel,
@@ -36,6 +48,10 @@ type Props = {
   /** Current widget width — drives auto-collapsing the channel sidebar when narrow. */
   width: number
   maximized: boolean
+  /** When set (e.g. from a chat-mention toast), switch to this channel. */
+  requestedChannelId?: number | null
+  /** Called once the requested channel has been applied, so the parent can reset it. */
+  onChannelOpened?: () => void
   onToggleMaximize: () => void
   onClose: () => void
   onPointerDownDrag: (e: React.PointerEvent) => void
@@ -53,7 +69,7 @@ function mentionsBot(html: string): boolean {
 }
 
 export function ChatView({
-  initialChannel, currentUserId, userRole, width, maximized, onToggleMaximize, onClose, onPointerDownDrag,
+  initialChannel, currentUserId, userRole, width, maximized, requestedChannelId, onChannelOpened, onToggleMaximize, onClose, onPointerDownDrag,
 }: Props) {
   const isAdmin = userRole === 'ADMIN'
 
@@ -66,6 +82,10 @@ export function ChatView({
   const narrow = width < SIDEBAR_BREAKPOINT
   const [sidebarOpen, setSidebarOpen] = useState(!narrow)
   const [botTyping, setBotTyping] = useState(false)
+  const [clearBotOpen, setClearBotOpen] = useState(false)
+  // Mentionable ids in the active channel: a Set for private channels (members
+  // only), `null` for public ones (everyone). Mirrors the server-side guard.
+  const [mentionableIds, setMentionableIds] = useState<Set<string> | null>(null)
   const lastReadRef = useRef(0)
 
   // Auto-collapse/expand the sidebar when the widget crosses the narrow threshold
@@ -94,7 +114,10 @@ export function ChatView({
   const { messages, reactions, loading, hasMore, sending, loadMore, send, getReply } = chat
 
   const mentionUsers = useMemo(() => [...users.values()], [users])
-  const canManageChannel = isAdmin && (activeChannel.is_default || activeChannel.created_by === currentUserId)
+  // Bot DMs are per-user system channels: no settings gear (can't be renamed,
+  // made public, re-membered, archived or deleted) — they only get "Limpiar".
+  const canManageChannel =
+    isAdmin && !activeChannel.is_bot_dm && (activeChannel.is_default || activeChannel.created_by === currentUserId)
 
   const refreshChannels = useCallback(() => {
     getChannels().then(setChannels)
@@ -104,6 +127,32 @@ export function ChatView({
   useEffect(() => {
     getChatUsers().then(list => setUsers(new Map(list.map(u => [u.id, u]))))
   }, [])
+
+  // Scope @mentions to the people who can see the channel. Public channels carry
+  // no restriction (null); private ones fail closed (empty set) while members load
+  // so we never momentarily offer outsiders.
+  useEffect(() => {
+    if (!activeChannel.is_private) {
+      setMentionableIds(null)
+      return
+    }
+    setMentionableIds(new Set())
+    let cancelled = false
+    getChannelMemberIds(activeChannelId).then(ids => {
+      if (!cancelled) setMentionableIds(new Set(ids))
+    })
+    return () => { cancelled = true }
+  }, [activeChannelId, activeChannel.is_private])
+
+  // Honor an externally requested channel (e.g. opening from a mention toast),
+  // then let the parent clear it so the same channel can be requested again later.
+  useEffect(() => {
+    if (requestedChannelId == null) return
+    setActiveChannelId(requestedChannelId)
+    setReplyTarget(null)
+    setEditingId(null)
+    onChannelOpened?.()
+  }, [requestedChannelId, onChannelOpened])
 
   // Reset the read marker when switching channels, and clear the unread badge of the
   // channel we just opened.
@@ -212,14 +261,14 @@ export function ChatView({
     refreshChannels()
   }, [refreshChannels])
 
-  // Wipe the bot DM history (resets context + frees tokens).
+  // Wipe the bot DM history (resets context + frees tokens). Confirmed via dialog.
   const handleClearBot = useCallback(async () => {
-    if (!window.confirm('¿Borrar toda la conversación con el asistente?')) return
     const res = await clearBotConversation(activeChannelId)
     if (res.error) {
       toast.error(res.error)
       return
     }
+    setClearBotOpen(false)
     await chat.reload()
   }, [activeChannelId, chat])
 
@@ -268,6 +317,26 @@ export function ChatView({
 
   return (
     <div className="flex h-full">
+      <AlertDialog open={clearBotOpen} onOpenChange={setClearBotOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <Eraser />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Limpiar conversación</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borrarán todos los mensajes de tu chat con el asistente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleClearBot}>
+              Borrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {sidebarOpen && (
         <ChannelSidebar
           channels={channels}
@@ -313,6 +382,19 @@ export function ChatView({
           </div>
 
           <div className="flex items-center gap-0.5" onPointerDown={e => e.stopPropagation()}>
+            {/* Clear conversation (bot DM only) */}
+            {activeChannel.is_bot_dm && (
+              <button
+                onClick={() => setClearBotOpen(true)}
+                title="Limpiar conversación"
+                aria-label="Limpiar conversación"
+                className="flex h-6 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 text-[11px] font-semibold text-destructive transition-colors hover:bg-destructive hover:text-white"
+              >
+                <Eraser className="size-3.5" />
+                Limpiar
+              </button>
+            )}
+
             {/* Channel settings (ADMIN creator / general) */}
             {canManageChannel && (
               <ChannelSettings
@@ -332,18 +414,6 @@ export function ChatView({
                   <Settings className="size-4" />
                 </button>
               </ChannelSettings>
-            )}
-
-            {/* Clear conversation (bot DM only) */}
-            {activeChannel.is_bot_dm && (
-              <button
-                onClick={handleClearBot}
-                title="Limpiar conversación"
-                aria-label="Limpiar conversación"
-                className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Eraser className="size-4" />
-              </button>
             )}
 
             {/* Formatting help */}
@@ -456,7 +526,7 @@ export function ChatView({
         )}
 
         {canPost ? (
-          <MessageEditor onSend={handleSend} disabled={sending} mentionUsers={mentionUsers} />
+          <MessageEditor onSend={handleSend} disabled={sending} mentionUsers={mentionUsers} currentUserId={currentUserId} allowedMentionIds={mentionableIds} />
         ) : (
           <div className="flex shrink-0 items-center gap-2 border-t border-border bg-muted/30 px-3 py-3 text-[11px] text-muted-foreground">
             <Lock className="size-3.5 shrink-0" />

@@ -16,6 +16,7 @@ import {
 } from '@/actions/receipts.actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useEmbedded } from '@/lib/embedded-context'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -226,6 +227,7 @@ type SortKey = 'batch' | 'material' | 'order' | 'date' | 'days' | 'qty'
 
 export const PendingQualityList = forwardRef<Handle, Props>(
 function PendingQualityList({ initialInk, initialPaper, defaultMaterial, search, pageSize, bulkQuality, onBulkSavingChange, onBulkDone }, ref) {
+  const embedded = useEmbedded()
   const [page,     setPage]     = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sortKey,  setSortKey]  = useState<SortKey>('date')
@@ -512,17 +514,22 @@ function PendingQualityList({ initialInk, initialPaper, defaultMaterial, search,
             </table>
           </div>
 
-          {/* ── Count + pagination ────────────────────────────────────────── */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {sorted.length} recepción{sorted.length !== 1 ? 'es' : ''}
-              {sorted.length > pageSize && (
-                <span className="ml-1 font-normal normal-case tracking-normal">
-                  — mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)}
-                </span>
-              )}
-            </p>
-            {totalPages > 1 && (
+          {/* ── Count + pagination — dos pastillas flotantes en página completa; inline embebido ── */}
+          {(() => {
+            const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
+
+            const countEl = (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {sorted.length} recepción{sorted.length !== 1 ? 'es' : ''}
+                {sorted.length > pageSize && (
+                  <span className="ml-1 font-normal normal-case tracking-normal">
+                    — mostrando {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)}
+                  </span>
+                )}
+              </p>
+            )
+
+            const paginationEl = totalPages > 1 ? (
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -564,8 +571,30 @@ function PendingQualityList({ initialInk, initialPaper, defaultMaterial, search,
                   <ChevronRight className="size-3.5" />
                 </button>
               </div>
-            )}
-          </div>
+            ) : null
+
+            if (embedded) {
+              return (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+                  {countEl}
+                  {paginationEl}
+                </div>
+              )
+            }
+
+            return (
+              <>
+                <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+                  {countEl}
+                </div>
+                {paginationEl && (
+                  <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                    {paginationEl}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </>
       )}
     </div>

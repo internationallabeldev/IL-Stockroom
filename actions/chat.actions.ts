@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from './auth.actions'
 import { notifyUsers } from './notifications.actions'
+import { parseRoleMentionId, type Role } from '@/lib/chat/roles'
 import type { Database } from '@/types/database.types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -137,6 +138,18 @@ export async function getChatUsers(): Promise<ChatUser[]> {
   return (data ?? []) as ChatUser[]
 }
 
+/** Member user-ids of a channel, to scope @mentions in private channels to people
+ *  who can actually see it. RLS lets members/admins read the full member list;
+ *  non-members can't post there anyway, so the editor is never shown to them. */
+export async function getChannelMemberIds(channelId: number): Promise<string[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('chat_channel_members')
+    .select('user_id')
+    .eq('channel_id', channelId)
+  return (data ?? []).map(m => m.user_id)
+}
+
 /** Cursor-based page of messages, oldest→newest for rendering.
  *  `cursor` = id of the oldest message already loaded (fetch strictly older). */
 export async function getMessages(
@@ -228,15 +241,56 @@ export async function sendMessage(
   if (error) return { error: error.message }
 
   // Mentions → chat_mentions rows + system notifications (don't block the send).
-  const mentionIds = parseMentionIds(content).filter(id => id !== me.id)
-  if (mentionIds.length > 0) {
+  // A mention id is either a user id or a `role:<ROLE>` token that fans out to
+  // every enabled user holding that role (e.g. @Admin → all admins).
+  const rawIds = parseMentionIds(content)
+  const roles = [...new Set(rawIds.map(parseRoleMentionId).filter((r): r is Role => r !== null))]
+  const userIds = rawIds.filter(id => parseRoleMentionId(id) === null)
+
+  if (userIds.length > 0 || roles.length > 0) {
     const admin = createAdminClient()
-    const { data: valid } = await admin
-      .from('users')
-      .select('id')
-      .in('id', mentionIds)
-      .eq('enabled', true)
-    const targets = (valid ?? []).map(u => u.id)
+    const targetIds = new Set<string>()
+
+    if (userIds.length > 0) {
+      const { data: byId } = await admin
+        .from('users')
+        .select('id')
+        .in('id', userIds)
+        .eq('enabled', true)
+      byId?.forEach(u => targetIds.add(u.id))
+    }
+    if (roles.length > 0) {
+      const { data: byRole } = await admin
+        .from('users')
+        .select('id')
+        .in('role', roles)
+        .eq('enabled', true)
+      byRole?.forEach(u => targetIds.add(u.id))
+    }
+    targetIds.delete(me.id) // never mention/notify yourself
+
+    // Private channels: a mention must not reach someone who can't see the channel.
+    // Notifications are written with the admin client (bypassing RLS), so without
+    // this an outsider would receive the message snippet in `body` and a link to a
+    // channel they can't open. Restrict targets to the channel's members (the same
+    // people chat_can_access_channel lets read it). Public channels reach everyone.
+    if (targetIds.size > 0) {
+      const { data: ch } = await admin
+        .from('chat_channels')
+        .select('is_private')
+        .eq('id', channelId)
+        .single()
+      if (ch?.is_private) {
+        const { data: members } = await admin
+          .from('chat_channel_members')
+          .select('user_id')
+          .eq('channel_id', channelId)
+        const memberSet = new Set((members ?? []).map(m => m.user_id))
+        for (const id of [...targetIds]) if (!memberSet.has(id)) targetIds.delete(id)
+      }
+    }
+
+    const targets = [...targetIds]
     if (targets.length > 0) {
       await admin
         .from('chat_mentions')
@@ -388,10 +442,14 @@ async function authorizeChannelOwner(
   const supabase = await createClient()
   const { data: channel } = await supabase
     .from('chat_channels')
-    .select('is_default, created_by')
+    .select('is_default, created_by, is_bot_dm')
     .eq('id', channelId)
     .maybeSingle()
   if (!channel) return { error: 'Canal no encontrado' }
+  // Bot DMs are per-user system channels — they can't be managed like normal
+  // channels (renamed, made public, re-membered, archived, deleted). Use
+  // clearBotConversation to reset one.
+  if (channel.is_bot_dm) return { error: 'El chat con el asistente no se puede modificar' }
   if (channel.created_by !== me.id) return { error: 'Solo el creador puede modificar este canal' }
   return { channel }
 }
@@ -413,10 +471,13 @@ export async function updateChannel(
 
   const { data: existing } = await supabase
     .from('chat_channels')
-    .select('is_default, created_by')
+    .select('is_default, created_by, is_bot_dm')
     .eq('id', channelId)
     .maybeSingle()
   if (!existing) return { error: 'Canal no encontrado' }
+  // The assistant DM is a private system channel — never editable (esp. it must
+  // not be made public, which would expose one user's bot history to everyone).
+  if (existing.is_bot_dm) return { error: 'El chat con el asistente no se puede modificar' }
   if (!existing.is_default && existing.created_by !== me.id)
     return { error: 'Solo el creador puede modificar este canal' }
 

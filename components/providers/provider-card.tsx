@@ -33,7 +33,7 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
 
   return (
     <div
-      className={`bg-card border border-border p-6 flex flex-col gap-4 transition-opacity ${!provider.enabled ? 'opacity-50' : ''
+      className={`bg-card border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-border dark:border-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:hover:border-white/20 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] p-6 flex flex-col gap-4 transition-all duration-200 ${!provider.enabled ? 'opacity-50 shadow-none hover:translate-y-0' : ''
         }`}
     >
       {/* Header */}
@@ -57,22 +57,22 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
             </div>
           )}
           <div className="min-w-0">
-            <p className="cursor-pointer font-heading font-bold text-base truncate">{provider.name}</p>
+            <p className="cursor-pointer font-heading font-bold text-[15px] leading-tight text-foreground truncate">{provider.name}</p>
             {provider.contact_person && (
-              <p className="text-[11px] text-muted-foreground truncate">{provider.contact_person}</p>
+              <p className="text-[11px] text-muted-foreground/80 truncate">{provider.contact_person}</p>
             )}
           </div>
         </button>
         <span
           className="shrink-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border"
-          style={{ color: type.color, borderColor: type.color + '40' }}
+          style={{ color: type.color, borderColor: type.color + '33', backgroundColor: type.color + '14' }}
         >
           {type.label}
         </span>
       </div>
 
       {/* Contact */}
-      <div className="space-y-1.5 border-t border-border pt-4">
+      <div className="space-y-1.5 border-t border-border/50 pt-4">
         <a
           href={`mailto:${provider.email}`}
           className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
@@ -103,10 +103,10 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
 
       {/* Actions */}
       {canEdit && (
-        <div className="flex gap-2 border-t border-border pt-3">
+        <div className="flex gap-2 border-t border-border/50 pt-3">
           <button
             onClick={() => onEdit(provider)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border bg-muted/60 text-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors"
           >
             <Pencil className="size-3" />
             Editar
@@ -114,7 +114,7 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
           <button
             onClick={handleToggle}
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-border/60 text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
           >
             <Power className="size-3" />
             {provider.enabled ? 'Desactivar' : 'Activar'}

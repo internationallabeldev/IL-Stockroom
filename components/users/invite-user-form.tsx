@@ -22,7 +22,7 @@ const ROLE_OPTIONS = [
   { value: 'USER', label: 'Usuario' },
 ]
 
-type Result = { email: string; inviteLink?: string }
+type Result = { email: string; emailSent?: boolean; inviteLink?: string }
 
 type Props = {
   open: boolean
@@ -49,7 +49,7 @@ export function InviteUserForm({ open, onClose }: Props) {
       toast.error(res.error)
       return
     }
-    setResult({ email: values.email, inviteLink: res.inviteLink })
+    setResult({ email: values.email, emailSent: res.emailSent, inviteLink: res.inviteLink })
     reset()
   }
 
@@ -92,9 +92,13 @@ export function InviteUserForm({ open, onClose }: Props) {
                 </div>
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
-                    Usuario creado
+                    {result.emailSent ? 'Invitación enviada' : 'Usuario creado'}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">{result.email}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {result.emailSent
+                      ? `Se envió un correo de invitación a ${result.email}`
+                      : `${result.email} — el correo no se envió, comparte el link manualmente`}
+                  </p>
                 </div>
               </div>
 
@@ -103,7 +107,7 @@ export function InviteUserForm({ open, onClose }: Props) {
                   <div className="flex items-center gap-1.5 mb-2">
                     <Link className="size-3 text-muted-foreground" />
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Link de activación
+                      {result.emailSent ? 'Link de respaldo' : 'Link de activación'}
                     </p>
                   </div>
                   <div className="bg-muted border border-border p-3 flex items-start gap-2">
@@ -122,7 +126,7 @@ export function InviteUserForm({ open, onClose }: Props) {
                     </button>
                   </div>
                   <p className="mt-2 text-[10px] text-muted-foreground">
-                    Comparte este link con el usuario por WhatsApp, email u otro medio. Expira en 24 horas.
+                    Si el correo no llega (revisa spam), comparte este link por WhatsApp u otro medio. Expira en 24 horas.
                   </p>
                 </div>
               )}

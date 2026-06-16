@@ -16,6 +16,10 @@ export default async function DashboardLayout({
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
+  // Business rule (not auth): new users must finish the welcome experience
+  // first. /welcome lives outside this layout, so there's no redirect loop.
+  if (!user.onboarding_completed) redirect('/welcome')
+
   const settings = await getPublicSettings()
 
   return (

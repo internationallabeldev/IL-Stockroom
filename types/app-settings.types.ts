@@ -31,4 +31,7 @@ export type AppSettings = {
     alert_roles: string[]
     alert_cooldown_hours: number
   }
+  onboarding: {
+    welcome_message: string
+  }
 }

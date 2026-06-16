@@ -6,6 +6,8 @@ import { getSessionUser }   from './auth.actions'
 import { revalidatePath }   from 'next/cache'
 import { cookies }          from 'next/headers'
 import { setAuditUser }     from '@/lib/supabase/audit'
+import { sendEmail }        from '@/lib/email/send'
+import { renderNotificationEmail } from '@/lib/email/template'
 import {
   inviteUserSchema,
   updateProfileSchema,
@@ -55,7 +57,7 @@ export async function inviteUser(data: {
   last_name: string
   email: string
   role: string
-}): Promise<{ success?: boolean; inviteLink?: string; error?: string }> {
+}): Promise<{ success?: boolean; emailSent?: boolean; inviteLink?: string; error?: string }> {
   const currentUser = await getSessionUser()
   if (!currentUser || currentUser.role !== 'ADMIN') return { error: 'Sin permisos' }
 
@@ -63,13 +65,17 @@ export async function inviteUser(data: {
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const admin = createAdminClient()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? 'http://localhost:3000'
+  const redirectTo = `${siteUrl}/auth/confirm`
 
+  // Crea el usuario y obtiene el link de activación. No depende del servicio de
+  // correo de Supabase: el email lo enviamos nosotros con el mailer de la app.
   const { data: linkData, error } = await admin.auth.admin.generateLink({
     type: 'invite',
     email: parsed.data.email,
     options: {
-      redirectTo: `${siteUrl}/auth/confirm`,
+      redirectTo,
       data: {
         first_name: parsed.data.first_name,
         last_name: parsed.data.last_name,
@@ -85,8 +91,28 @@ export async function inviteUser(data: {
     return { error: error.message }
   }
 
+  const inviteLink = linkData.properties.action_link
+
+  // Enviamos el correo de invitación con el mailer propio (nunca lanza).
+  const html = renderNotificationEmail({
+    badge: 'Invitación',
+    title: 'Te invitaron a IL Stockroom',
+    subtitle: `${currentUser.first_name} ${currentUser.last_name} te invitó a unirte`,
+    intro:
+      `Hola ${parsed.data.first_name}, has sido invitado a IL Stockroom. ` +
+      'Haz clic en el botón para activar tu cuenta y crear tu contraseña. El enlace expira en 24 horas.',
+    ctaLabel: 'Activar mi cuenta',
+    ctaUrl: inviteLink,
+  })
+
+  const mail = await sendEmail({
+    to: parsed.data.email,
+    subject: 'Te invitaron a IL Stockroom',
+    html,
+  })
+
   revalidatePath('/dashboard/users')
-  return { success: true, inviteLink: linkData.properties.action_link }
+  return { success: true, emailSent: mail.sent, inviteLink }
 }
 
 export async function updateUserRole(

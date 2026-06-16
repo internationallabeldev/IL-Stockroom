@@ -11,7 +11,6 @@ import { ProviderCard } from './provider-card'
 import { ProviderForm } from './provider-form'
 import { getProviders, type Provider } from '@/actions/providers.actions'
 import { getPurchaseOrders, type PurchaseOrderSummary } from '@/actions/purchase-orders.actions'
-import { DataRefresh } from '@/components/shared/data-refresh'
 
 const TYPE_FILTERS = [
   { value: '',               label: 'Todos' },
@@ -67,7 +66,7 @@ function ProvidersStatsBar({ providers, orders }: { providers: Provider[], order
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accent === 'red' ? 'text-red-500' : 'text-muted-foreground/50')} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', accent === 'red' ? 'text-red-500' : 'text-foreground/80')}>
             {value}
           </span>
@@ -79,20 +78,25 @@ function ProvidersStatsBar({ providers, orders }: { providers: Provider[], order
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
             <div className="bg-[#008dc2] transition-all" style={{ width: `${(inkCount / active) * 100}%` }} />
             <div className="bg-foreground/40 transition-all" style={{ width: `${(paperCount / active) * 100}%` }} />
             <div className="bg-[#7c3aed] transition-all" style={{ width: `${(supplyCount / active) * 100}%` }} />
             <div className="bg-foreground/20 transition-all" style={{ width: `${(bothCount / active) * 100}%` }} />
           </div>
-          <span className="text-[11px] font-bold tabular-nums text-[#008dc2]">{inkCount}</span>
-          <span className="text-[9px] text-muted-foreground/40">·</span>
-          <span className="text-[11px] font-bold tabular-nums text-foreground/60">{paperCount}</span>
-          <span className="text-[9px] text-muted-foreground/40">·</span>
-          <span className="text-[11px] font-bold tabular-nums text-[#7c3aed]">{supplyCount}</span>
-          <span className="text-[9px] text-muted-foreground/40">·</span>
-          <span className="text-[11px] font-bold tabular-nums text-foreground/40">{bothCount}</span>
+          {[
+            { label: 'Tintas',      value: inkCount,    dot: 'bg-[#008dc2]',     num: 'text-[#008dc2]' },
+            { label: 'Papel',       value: paperCount,  dot: 'bg-foreground/40', num: 'text-foreground/70' },
+            { label: 'Consumibles', value: supplyCount, dot: 'bg-[#7c3aed]',     num: 'text-[#7c3aed]' },
+            { label: 'Múltiples',   value: bothCount,   dot: 'bg-foreground/20', num: 'text-foreground/50' },
+          ].map(seg => (
+            <span key={seg.label} className="flex items-center gap-1">
+              <span className={cn('size-1.5 shrink-0 rounded-full', seg.dot)} />
+              <span className="text-[10px] text-muted-foreground/60">{seg.label}</span>
+              <span className={cn('text-[11px] font-bold tabular-nums', seg.num)}>{seg.value}</span>
+            </span>
+          ))}
         </div>
       )}
 
@@ -101,7 +105,7 @@ function ProvidersStatsBar({ providers, orders }: { providers: Provider[], order
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Principal</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Principal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topProvider.name}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topPct}%</span>
         </div>
@@ -133,23 +137,16 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', provider: null })
   const embedded = useEmbedded()
 
-  const {
-    data: providers = initialProviders,
-    refetch: refetchProviders,
-    isFetching: fetchingProviders,
-    dataUpdatedAt,
-  } = useQuery({
+  // Auto-refresh stays here; the manual refresh + freshness now live in the
+  // global top-nav control (GlobalDataRefresh), which refetches active queries.
+  const { data: providers = initialProviders } = useQuery({
     queryKey: ['providers'],
     queryFn: () => getProviders(),
     initialData: initialProviders,
     refetchInterval: 30_000,
   })
 
-  const {
-    data: orders = initialOrders,
-    refetch: refetchOrders,
-    isFetching: fetchingOrders,
-  } = useQuery({
+  const { data: orders = initialOrders } = useQuery({
     queryKey: ['purchase-orders-all'],
     queryFn: () => getPurchaseOrders(),
     initialData: initialOrders,
@@ -189,7 +186,7 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="providers-page-size">
+    <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8" id="providers-page-size">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -236,16 +233,16 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
           <div className='gap-2 flex flex-row flex-wrap items-center'>
 
             {/* Type filter */}
-            <div className="flex border border-border shrink-0" id="providers-type-filter">
+            <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0" id="providers-type-filter">
               {TYPE_FILTERS.map(f => (
                 <button
                   key={f.value}
                   onClick={() => setTypeFilter(f.value)}
                   className={cn(
-                    'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                     typeFilter === f.value
-                      ? 'bg-foreground text-background'
-                      : 'text-foreground/50 hover:text-foreground border-l border-border first:border-l-0',
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-foreground/50 hover:text-foreground',
                   )}
                 >
                   {f.label}
@@ -262,24 +259,12 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
                 </EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh
-                      updatedAt={dataUpdatedAt}
-                      isFetching={fetchingProviders || fetchingOrders}
-                      onRefresh={() => { refetchProviders(); refetchOrders() }}
-                    />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
               </>
             ) : (
-              <>
-                <DataRefresh
-                  updatedAt={dataUpdatedAt}
-                  isFetching={fetchingProviders || fetchingOrders}
-                  onRefresh={() => { refetchProviders(); refetchOrders() }}
-                />
-                {pageSizeControl}
-              </>
+              pageSizeControl
             )}
 
             <span id="providers-new-btn" className="shrink-0">
@@ -333,18 +318,23 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
         </div>
       )}
 
-      {/* Count + pagination — bottom */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {filtered.length} proveedor{filtered.length !== 1 ? 'es' : ''}
-          {filtered.length > pageSize && (
-            <span className="ml-1 font-normal normal-case tracking-normal">
-              — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}
-            </span>
-          )}
-        </p>
+      {/* Count + pagination — dos pastillas flotantes (texto izq, paginador der;
+          el medio queda libre) en página completa; inline cuando va embebido. */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
 
-        {totalPages > 1 && (
+        const countEl = (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {filtered.length} proveedor{filtered.length !== 1 ? 'es' : ''}
+            {filtered.length > pageSize && (
+              <span className="ml-1 font-normal normal-case tracking-normal">
+                — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}
+              </span>
+            )}
+          </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -388,8 +378,30 @@ export function ProvidersList({ providers: initialProviders, orders: initialOrde
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       <ProviderForm
         open={drawer.open}

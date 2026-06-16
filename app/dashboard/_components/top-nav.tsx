@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Droplet, FileText, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMaterial } from './material-context'
@@ -12,6 +13,7 @@ import { WorkspaceToggle } from './workspace-toggle'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { SettingsDrawer } from '@/components/settings/settings-drawer'
 import { NotificationBell } from '@/components/notifications/notification-bell'
+import { GlobalDataRefresh } from '@/components/shared/global-data-refresh'
 import type { AppUser } from '@/actions/users.actions'
 
 const PAGE_TITLES: Record<string, string> = {
@@ -54,9 +56,12 @@ export function TopNav({ user }: { user: AppUser }) {
 
     <header className="fixed top-0 z-50 h-16 w-full bg-background border-b border-border flex items-center justify-between px-8">
       <div className="flex items-center gap-4">
-        <span className="font-heading font-bold text-xl tracking-tighter select-none">
+        <Link
+          href="/"
+          className="font-heading font-bold text-xl tracking-tighter select-none transition-opacity hover:opacity-70"
+        >
           IL - STOCKROOM
-        </span>
+        </Link>
 
         {pageTitle && (
           <>
@@ -111,6 +116,8 @@ export function TopNav({ user }: { user: AppUser }) {
         </button>
 
         <div className="w-px h-5 bg-border" />
+
+        <GlobalDataRefresh />
 
         <WorkspaceToggle />
 

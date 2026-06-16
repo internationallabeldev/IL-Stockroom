@@ -19,7 +19,6 @@ import {
   type MaterialType,
 } from '@/actions/requisitions.actions'
 import { RequisitionSheet } from '@/components/requisitions/requisition-sheet'
-import { DataRefresh }      from '@/components/shared/data-refresh'
 import type { Database }    from '@/types/database.types'
 
 type UserRole     = Database['public']['Enums']['user_role']
@@ -107,14 +106,14 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       <div className="flex items-center gap-2">
         <PackageCheck className="size-3 shrink-0 text-muted-foreground/50" />
-        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Completadas</span>
+        <span className="text-[10px] text-muted-foreground/60 font-medium">Completadas</span>
         <span className="text-[11px] font-bold tabular-nums text-foreground/80">{all.length}</span>
       </div>
 
       <div className="flex items-center gap-2">
         <span className="text-border/60 select-none hidden @2xl:inline">·</span>
         <ClipboardList className="size-3 shrink-0 text-muted-foreground/50" />
-        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">OPs</span>
+        <span className="text-[10px] text-muted-foreground/60 font-medium">OPs</span>
         <span className="text-[11px] font-bold tabular-nums text-foreground/80">{uniqueOps}</span>
       </div>
 
@@ -122,7 +121,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <CircleDashed className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Parciales</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Parciales</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{partialCount}</span>
         </div>
       )}
@@ -131,7 +130,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Droplet className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Tinta</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalKg.toFixed(2)} kg</span>
         </div>
       )}
@@ -140,7 +139,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <FileText className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Papel</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalM2.toFixed(3)} m²</span>
         </div>
       )}
@@ -149,7 +148,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <RotateCcw className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Devuelto</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Devuelto</span>
           <span className="text-[11px] font-bold tabular-nums text-green-600 dark:text-green-400">{returnsLabel}</span>
           {returnsPct !== null && (
             <span className="text-[10px] text-muted-foreground/50 tabular-nums">{returnsPct}%</span>
@@ -161,7 +160,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Timer className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Entrega prom.</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Entrega prom.</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{formatDuration(avgHours)}</span>
         </div>
       )}
@@ -170,7 +169,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Clock className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Hoy</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Hoy</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{todayCount}</span>
         </div>
       )}
@@ -179,7 +178,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Tinta ppal</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Tinta ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topInkName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topInkPct}%</span>
         </div>
@@ -189,7 +188,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Papel ppal</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Papel ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topPaperName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topPaperPct}%</span>
         </div>
@@ -199,7 +198,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <UserCheck className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Almacenista</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Almacenista</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topDelivererName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topDelivererCount}</span>
         </div>
@@ -227,7 +226,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   const [pageSizeInp, setPageSizeInp] = useState('15')
   const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
 
-  const { data: all = initialRequisitions, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: all = initialRequisitions } = useQuery({
     queryKey:        ['requisitions', 'with-outputs'],
     queryFn:         () => getRequisitions({ statuses: ['FULFILLED', 'PARTIAL'] }),
     initialData:     initialRequisitions,
@@ -389,7 +388,6 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
               </EmbeddedSummaryChip>
               <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                 <div className="flex flex-col items-start gap-2.5">
-                  <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                   {dateRangeControl}
                   {pageSizeControl}
                 </div>
@@ -397,7 +395,6 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             </>
           ) : (
             <>
-              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
               {pageSizeControl}
             </>
           )}
@@ -531,13 +528,17 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
         </div>
       )}
 
-      {/* Bottom bar */}
-      <div className="flex items-center justify-between mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {filtered.length} salida{filtered.length !== 1 ? 's' : ''}
-        </p>
+      {/* Bottom bar — dos pastillas flotantes en página completa; inline embebido */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
 
-        {totalPages > 1 && (
+        const countEl = (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {filtered.length} salida{filtered.length !== 1 ? 's' : ''}
+          </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -576,8 +577,30 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* Detail sheet */}
       <RequisitionSheet

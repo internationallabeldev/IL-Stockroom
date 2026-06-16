@@ -16,18 +16,16 @@ import {
   CheckCircle2,
   Layers,
   TrendingDown,
-  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
-import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
+import { EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { getSupplyCategories } from '@/actions/supplies.actions'
 import { type SupplyCategoryWithItems, type SupplyItemWithStatus } from '@/lib/supplies/types'
 import { SupplyItemRow } from './supply-item-row'
 import { SupplyItemForm } from './supply-item-form'
 import { SupplyCategoryForm } from './supply-category-form'
-import { DataRefresh } from '@/components/shared/data-refresh'
 
 type StatusFilter = 'all' | 'critical' | 'warning' | 'ok'
 
@@ -88,7 +86,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accentClass(accent))} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', valueClass(accent))}>
             {value}
           </span>
@@ -100,7 +98,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
             <div className="bg-red-500 transition-all"    style={{ width: `${(totals.critical / totalTracked) * 100}%` }} />
             <div className="bg-yellow-400 transition-all" style={{ width: `${(totals.warning  / totalTracked) * 100}%` }} />
@@ -119,7 +117,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingDown className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Crítica</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Crítica</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">
             {worstCategory.cat.name}
           </span>
@@ -301,7 +299,7 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
     defaultCategoryId?: number
   }>({ open: false, item: null })
 
-  const { data: categories = initialCategories, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: categories = initialCategories } = useQuery({
     queryKey:       ['supply-categories'],
     queryFn:        getSupplyCategories,
     initialData:    initialCategories,
@@ -419,19 +417,10 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
 
             {!embedded && <div className="flex-1" />}
 
-            {embedded ? (
-              <>
-                <EmbeddedSummaryChip>
-                  <SuppliesStatsBar categories={categories} />
-                </EmbeddedSummaryChip>
-                <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
-                  <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-                  </div>
-                </ToolbarHoverMenu>
-              </>
-            ) : (
-              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
+            {embedded && (
+              <EmbeddedSummaryChip>
+                <SuppliesStatsBar categories={categories} />
+              </EmbeddedSummaryChip>
             )}
 
             {canEdit && (

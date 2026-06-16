@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, FileCheck, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEmbedded } from '@/lib/embedded-context'
 import { getAllReceipts, type InkReceiptWithContext, type PaperReceiptWithContext } from '@/actions/receipts.actions'
 import { QualityBadge } from './quality-badge'
 import { QualityUpdateForm } from './quality-update-form'
@@ -32,6 +33,7 @@ type Props = {
 type SortKey = 'batch' | 'type' | 'material' | 'order' | 'date' | 'qty' | 'quality'
 
 export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMaterial, search, pageSize, qualityFilter, typeFilter }: Props) {
+  const embedded = useEmbedded()
   const [page, setPage] = useState(1)
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -237,17 +239,22 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
         </div>
       )}
 
-      {/* Count + pagination — bottom */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {sorted.length} recepci{sorted.length !== 1 ? 'ones' : 'ón'}
-          {sorted.length > pageSize && (
-            <span className="ml-1 font-normal normal-case tracking-normal">
-              — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)}
-            </span>
-          )}
-        </p>
-        {totalPages > 1 && (
+      {/* Count + pagination — dos pastillas flotantes en página completa; inline embebido */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
+
+        const countEl = (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {sorted.length} recepci{sorted.length !== 1 ? 'ones' : 'ón'}
+            {sorted.length > pageSize && (
+              <span className="ml-1 font-normal normal-case tracking-normal">
+                — mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)}
+              </span>
+            )}
+          </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -289,8 +296,30 @@ export function ReceiptsHistory({ initialInk, initialPaper, canEdit, defaultMate
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       <QualityUpdateForm
         open={dialog.open}

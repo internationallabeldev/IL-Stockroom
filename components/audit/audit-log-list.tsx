@@ -24,7 +24,6 @@ import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
 import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import { OperationBadge }    from './operation-badge'
 import { AuditLogDetail }    from './audit-log-detail'
-import { DataRefresh }       from '@/components/shared/data-refresh'
 import { getAuditLog, getAuditStats, type AuditStats } from '@/actions/audit.actions'
 import { AUDITED_TABLES, type AuditLogEntry, type AuditOperation } from '@/lib/audit-constants'
 import type { AppUser }      from '@/actions/users.actions'
@@ -91,7 +90,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accentClass(accent))} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', valueClass(accent))}>
             {value.toLocaleString()}
           </span>
@@ -103,7 +102,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Distribución</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
             <div className="bg-emerald-500 transition-all" style={{ width: `${(byOperation.INSERT / opTotal) * 100}%` }} />
             <div className="bg-blue-500    transition-all" style={{ width: `${(byOperation.UPDATE / opTotal) * 100}%` }} />
@@ -122,7 +121,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Database className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Top tabla</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Top tabla</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-40 truncate">
             {TABLE_LABELS[topTable.name] ?? topTable.name}
           </span>
@@ -172,14 +171,14 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
   const hasFilters = !!(tableFilter || opFilter || userFilter || dateFrom || dateTo || search.trim())
   const isInitialState = page === 1 && pageSize === DEFAULT_PAGE_SIZE && !hasFilters
 
-  const { data, refetch: refetchLog, isFetching: fetchingLog, dataUpdatedAt } = useQuery({
+  const { data } = useQuery({
     queryKey: ['audit_log', page, pageSize, search, tableFilter, opFilter, userFilter, dateFrom, dateTo],
     queryFn:  () => getAuditLog({ page, pageSize, ...filterArgs }),
     initialData: isInitialState ? { data: initialData, total: initialTotal } : undefined,
     staleTime: 15_000,
   })
 
-  const { data: stats = initialStats, refetch: refetchStats, isFetching: fetchingStats } = useQuery({
+  const { data: stats = initialStats } = useQuery({
     queryKey: ['audit_stats', search, tableFilter, opFilter, userFilter, dateFrom, dateTo],
     queryFn:  () => getAuditStats(filterArgs),
     initialData: !hasFilters ? initialStats : undefined,
@@ -262,14 +261,6 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
           </div>
 
           <div className="gap-2 flex flex-row flex-wrap items-center">
-            {!embedded && (
-              <DataRefresh
-                updatedAt={dataUpdatedAt}
-                isFetching={fetchingLog || fetchingStats}
-                onRefresh={() => { refetchLog(); refetchStats() }}
-              />
-            )}
-
             {/* Operation filter pills */}
             <div className="flex border border-border shrink-0" id="audit-op-filter">
               {OPERATION_FILTERS.map(f => (
@@ -295,11 +286,6 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
                 </EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh
-                      updatedAt={dataUpdatedAt}
-                      isFetching={fetchingLog || fetchingStats}
-                      onRefresh={() => { refetchLog(); refetchStats() }}
-                    />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
@@ -463,18 +449,22 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
         </div>
       )}
 
-      {/* ── Count + Pagination — bottom ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {total.toLocaleString()} registro{total !== 1 ? 's' : ''}
-          {total > pageSize && (
-            <span className="ml-1 font-normal normal-case tracking-normal">
-              — mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)}
-            </span>
-          )}
-        </p>
+      {/* ── Count + Pagination — dos pastillas flotantes en página completa; inline embebido ── */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
 
-        {pages > 1 && (
+        const countEl = (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {total.toLocaleString()} registro{total !== 1 ? 's' : ''}
+            {total > pageSize && (
+              <span className="ml-1 font-normal normal-case tracking-normal">
+                — mostrando {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)}
+              </span>
+            )}
+          </p>
+        )
+
+        const paginationEl = pages > 1 ? (
           <div className="flex items-center gap-1">
             <PagBtn onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
               <ChevronLeft className="size-3.5" />
@@ -510,8 +500,30 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
               <ChevronRight className="size-3.5" />
             </PagBtn>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* ── Detail sheet ────────────────────────────────────────────────────── */}
       <AuditLogDetail entry={selected} onClose={() => setSelected(null)} />

@@ -22,7 +22,6 @@ import {
 import { RequisitionStatusBadge } from './requisition-status-badge'
 import { RequisitionForm }        from './requisition-form'
 import { RequisitionSheet }       from './requisition-sheet'
-import { DataRefresh }            from '@/components/shared/data-refresh'
 import type { Database }          from '@/types/database.types'
 
 type UserRole = Database['public']['Enums']['user_role']
@@ -72,7 +71,7 @@ function RequisitionsStatsBar({ reqs }: { reqs: Requisition[] }) {
             accent === 'amber' ? 'text-amber-500'  :
             'text-muted-foreground/50',
           )} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
           <span className={cn(
             'text-[11px] font-bold tabular-nums',
             accent === 'red'   ? 'text-red-500'   :
@@ -248,7 +247,7 @@ export function RequisitionsList({
   const [selectedReq, setSelectedReq] = useState<Requisition | null>(null)
   const [expandedId,  setExpandedId]  = useState<number | null>(null)
 
-  const { data: all = initialRequisitions, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: all = initialRequisitions } = useQuery({
     queryKey:        ['requisitions'],
     queryFn:         () => getRequisitions(),
     initialData:     initialRequisitions,
@@ -391,14 +390,12 @@ export function RequisitionsList({
               </EmbeddedSummaryChip>
               <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                 <div className="flex flex-col items-start gap-2.5">
-                  <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                   {pageSizeControl}
                 </div>
               </ToolbarHoverMenu>
             </>
           ) : (
             <>
-              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
               {pageSizeControl}
             </>
           )}
@@ -548,13 +545,17 @@ export function RequisitionsList({
         </div>
       )}
 
-      {/* ── Bottom bar ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mt-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {filtered.length} requisición{filtered.length !== 1 ? 'es' : ''}
-        </p>
+      {/* ── Bottom bar — dos pastillas flotantes en página completa; inline embebido ── */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
 
-        {totalPages > 1 && (
+        const countEl = (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {filtered.length} requisición{filtered.length !== 1 ? 'es' : ''}
+          </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -593,8 +594,30 @@ export function RequisitionsList({
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* ── Create form ───────────────────────────────────────────────────── */}
       <RequisitionForm

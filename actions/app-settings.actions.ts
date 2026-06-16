@@ -47,6 +47,9 @@ const DEFAULTS: AppSettings = {
     alert_roles:          ['ADMIN', 'WAREHOUSE_MANAGER'],
     alert_cooldown_hours: 24,
   },
+  onboarding: {
+    welcome_message: 'Bienvenido al sistema de gestión de inventario de International Label.',
+  },
 }
 
 function parseSettings(rows: RawRow[]): AppSettings {
@@ -84,6 +87,9 @@ function parseSettings(rows: RawRow[]): AppSettings {
     supplies: {
       alert_roles:          (map['supplies.alert_roles']          as string[]) ?? DEFAULTS.supplies.alert_roles,
       alert_cooldown_hours: (map['supplies.alert_cooldown_hours'] as number)   ?? DEFAULTS.supplies.alert_cooldown_hours,
+    },
+    onboarding: {
+      welcome_message: (map['onboarding.welcome_message'] as string) || DEFAULTS.onboarding.welcome_message,
     },
   }
 }

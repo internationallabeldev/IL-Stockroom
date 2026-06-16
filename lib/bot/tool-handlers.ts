@@ -22,6 +22,14 @@ function cleanTerm(s?: string): string | undefined {
   return t || undefined
 }
 
+/** Returned whenever a query yields nothing, so the model knows there is no data
+ *  to report instead of inventing it. The system prompt pairs `found: false`
+ *  with a fixed "no encontré información" reply. */
+const NOT_FOUND = JSON.stringify({
+  found: false,
+  message: 'No se encontraron datos para esta consulta',
+})
+
 /** Execute a read-only bot tool and return its result as a JSON string.
  *  Uses the service-role client (bypasses RLS) but only ever SELECTs non-sensitive
  *  inventory data — never users' credentials, tokens or keys. */
@@ -51,6 +59,7 @@ export async function executeTool(
           provider: providers ?? null,
         }))
         if (args.only_low_stock) rows = rows.filter(r => r.below_min)
+        if (rows.length === 0) return NOT_FOUND
         return JSON.stringify(rows)
       }
 
@@ -71,6 +80,7 @@ export async function executeTool(
           provider: providers ?? null,
         }))
         if (args.only_low_stock) rows = rows.filter(r => r.below_min)
+        if (rows.length === 0) return NOT_FOUND
         return JSON.stringify(rows)
       }
 
@@ -95,6 +105,7 @@ export async function executeTool(
           rows = rows.filter(r => r.category?.toLowerCase().includes(term))
         }
         if (args.only_critical) rows = rows.filter(r => r.critical)
+        if (rows.length === 0) return NOT_FOUND
         return JSON.stringify(rows)
       }
 
@@ -117,6 +128,7 @@ export async function executeTool(
             requested_by: u ? u.nickname || `${u.first_name} ${u.last_name}` : null,
           }
         })
+        if (rows.length === 0) return NOT_FOUND
         return JSON.stringify(rows)
       }
 
@@ -139,6 +151,7 @@ export async function executeTool(
           expected_delivery_date: r.expected_delivery_date,
           provider: (r.providers as { name: string } | null)?.name ?? null,
         }))
+        if (rows.length === 0) return NOT_FOUND
         return JSON.stringify(rows)
       }
 
@@ -148,7 +161,7 @@ export async function executeTool(
           supabase.from('paper_catalog').select('name, code, current_stock_m2, min_stock_m2').eq('enabled', true),
           supabase.from('supply_items').select('name, unit, quantity_current, quantity_minimum').eq('enabled', true),
         ])
-        return JSON.stringify({
+        const alerts = {
           inks: (inks.data ?? [])
             .filter(r => (r.current_stock_kg ?? 0) < (r.min_stock_kg ?? 0))
             .map(r => ({ name: r.name, code: r.code, current_kg: r.current_stock_kg, min_kg: r.min_stock_kg })),
@@ -158,7 +171,9 @@ export async function executeTool(
           supplies: (supplies.data ?? [])
             .filter(r => r.quantity_current <= r.quantity_minimum)
             .map(r => ({ name: r.name, current: r.quantity_current, min: r.quantity_minimum, unit: r.unit })),
-        })
+        }
+        if (!alerts.inks.length && !alerts.papers.length && !alerts.supplies.length) return NOT_FOUND
+        return JSON.stringify(alerts)
       }
 
       case 'get_recent_movements': {
@@ -198,6 +213,8 @@ export async function executeTool(
             item: (r.supply_items as { name: string } | null)?.name ?? null,
           }))
         }
+        const hasMovements = Object.values(result).some(v => Array.isArray(v) && v.length > 0)
+        if (!hasMovements) return NOT_FOUND
         return JSON.stringify(result)
       }
 
@@ -211,7 +228,8 @@ export async function executeTool(
 
         const { data, error } = await query
         if (error) return JSON.stringify({ error: error.message })
-        return JSON.stringify(data ?? [])
+        if (!data || data.length === 0) return NOT_FOUND
+        return JSON.stringify(data)
       }
 
       default:

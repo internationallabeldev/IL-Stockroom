@@ -12,7 +12,7 @@ export default async function ProvidersPage() {
   const canEdit = user?.role === 'ADMIN' || user?.role === 'PURCHASER'
 
   return (
-    <div className="px-8 pb-8">
+    <div className="px-8 pb-16">
       <ProvidersList providers={providers} orders={orders} canEdit={canEdit} />
     </div>
   )

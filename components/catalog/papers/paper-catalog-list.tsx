@@ -11,7 +11,6 @@ import { PaperCatalogCard } from './paper-catalog-card'
 import { PaperCatalogForm } from './paper-catalog-form'
 import { getPaperCatalog, type PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import type { Provider } from '@/actions/providers.actions'
-import { DataRefresh } from '@/components/shared/data-refresh'
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -52,7 +51,7 @@ function PaperStatsBar({ items }: { items: PaperCatalogItem[] }) {
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accent === 'red' ? 'text-red-500' : accent === 'amber' ? 'text-amber-400' : 'text-muted-foreground/50')} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', accent === 'red' ? 'text-red-500' : accent === 'amber' ? 'text-amber-400' : 'text-foreground/80')}>
             {value}
           </span>
@@ -92,7 +91,7 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', item: null })
 
-  const { data: items = initialItems, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: items = initialItems } = useQuery({
     queryKey: ['paper-catalog'],
     queryFn: () => getPaperCatalog(),
     initialData: initialItems,
@@ -217,14 +216,12 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
                 </EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
               </>
             ) : (
               <>
-                <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                 {pageSizeControl}
               </>
             )}
@@ -280,9 +277,11 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
         </div>
       )}
 
-      {/* Count + Pagination — bottom */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+      {/* Count + Pagination — dos pastillas flotantes en página completa; inline embebido */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
+
+        const countEl = (
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {filtered.length} papel{filtered.length !== 1 ? 'es' : ''}
             {filtered.length > pageSize && (
@@ -291,6 +290,9 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
               </span>
             )}
           </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -329,8 +331,30 @@ export function PaperCatalogList({ items: initialItems, providers, canEdit }: Pr
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        </div>
-      )}
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       <PaperCatalogForm
         open={drawer.open}
