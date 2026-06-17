@@ -110,6 +110,49 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_channel_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          channel_id: number
+          user_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id: number
+          user_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          channel_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channel_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channels: {
         Row: {
           archived_at: string | null
@@ -160,35 +203,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      chat_channel_members: {
-        Row: {
-          added_at: string | null
-          added_by: string | null
-          channel_id: number
-          user_id: string
-        }
-        Insert: {
-          added_at?: string | null
-          added_by?: string | null
-          channel_id: number
-          user_id: string
-        }
-        Update: {
-          added_at?: string | null
-          added_by?: string | null
-          channel_id?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_channel_members_channel_id_fkey"
-            columns: ["channel_id"]
-            isOneToOne: false
-            referencedRelation: "chat_channels"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       chat_mentions: {
         Row: {
@@ -1659,6 +1673,8 @@ export type Database = {
           last_sign_in_at: string | null
           nickname: string | null
           notifications: Json | null
+          onboarded_at: string | null
+          onboarding_completed: boolean | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           theme: string | null
@@ -1681,6 +1697,8 @@ export type Database = {
           last_sign_in_at?: string | null
           nickname?: string | null
           notifications?: Json | null
+          onboarded_at?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           role: Database["public"]["Enums"]["user_role"]
           theme?: string | null
@@ -1703,6 +1721,8 @@ export type Database = {
           last_sign_in_at?: string | null
           nickname?: string | null
           notifications?: Json | null
+          onboarded_at?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           theme?: string | null
@@ -1723,6 +1743,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chat_can_access_channel: { Args: { cid: number }; Returns: boolean }
+      chat_is_admin: { Args: never; Returns: boolean }
+      chat_is_member: { Args: { cid: number }; Returns: boolean }
       set_current_user_id: { Args: { user_id: string }; Returns: undefined }
     }
     Enums: {

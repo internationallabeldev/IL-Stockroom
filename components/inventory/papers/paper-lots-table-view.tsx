@@ -5,6 +5,7 @@ import { History, PowerOff, Layers, ArrowUp, ArrowDown, ArrowUpDown } from 'luci
 import { toast } from 'sonner'
 import { disablePaperLot, type PaperLot } from '@/actions/paper-inventory.actions'
 import { DisponibleCell } from './disponible-cell'
+import { PaperInfoHoverCard, ProviderInfoHoverCard } from '@/components/inventory/shared/inventory-hover-cards'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { getLotStatusInfo } from './lot-utils'
@@ -119,16 +120,20 @@ export function PaperLotsTableView({ lots, canManage, canRequest, onHistory, onR
               </td>
 
               <td className="px-4 py-3">
-                <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
-                <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                <ProviderInfoHoverCard receipt={lot.receipt}>
+                  <p className="font-medium text-[11px]">{lot.receipt?.purchase_order_item?.purchase_order?.provider?.name ?? '—'}</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{lot.receipt?.provider_batch ?? '—'}</p>
+                </ProviderInfoHoverCard>
               </td>
 
               <td className="px-4 py-3">
-                <p className="font-mono text-[10px] text-muted-foreground">{lot.paper_catalog?.code}</p>
-                <p className="font-medium">{lot.paper_catalog?.name}</p>
-                {lot.paper_catalog?.weight_gsm && (
-                  <p className="text-[9px] text-muted-foreground font-mono">{lot.paper_catalog.weight_gsm} g/m²</p>
-                )}
+                <PaperInfoHoverCard lot={lot}>
+                  <p className="font-mono text-[10px] text-muted-foreground">{lot.paper_catalog?.code}</p>
+                  <p className="font-medium">{lot.paper_catalog?.name}</p>
+                  {lot.paper_catalog?.weight_gsm && (
+                    <p className="text-[9px] text-muted-foreground font-mono">{lot.paper_catalog.weight_gsm} g/m²</p>
+                  )}
+                </PaperInfoHoverCard>
               </td>
 
               <td className="px-4 py-3">

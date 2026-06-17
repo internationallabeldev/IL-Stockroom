@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, UserPlus, X, Settings2 } from 'lucide-react'
+import { Search, UserPlus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
-import { ToolbarHoverMenu } from '@/components/shared/toolbar-hover-menu'
 import { RoleBadge } from './role-badge'
 import { InviteUserForm } from './invite-user-form'
 import { UserDetailSheet } from './user-detail-sheet'
 import { getUsers, type AppUser } from '@/actions/users.actions'
 import { UserAvatar } from '@/components/shared/user-avatar'
-import { DataRefresh } from '@/components/shared/data-refresh'
 
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'Todos' },
@@ -54,7 +52,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [selected, setSelected] = useState<AppUser | null>(null)
 
-  const { data: users = initialUsers, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: users = initialUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => getUsers(),
     initialData: initialUsers,
@@ -138,16 +136,6 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
         </div>
 
         {!embedded && <div className="flex-1" />}
-
-        {embedded ? (
-          <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
-            <div className="flex flex-col items-start gap-2.5">
-              <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-            </div>
-          </ToolbarHoverMenu>
-        ) : (
-          <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-        )}
 
         <button
           onClick={() => setInviteOpen(true)}

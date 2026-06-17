@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Bell,
   Check,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { createClient } from '@/lib/supabase/client'
+import { openChat } from '@/lib/chat/open-chat'
 import {
   getNotifications,
   getUnreadCount,
@@ -70,24 +72,64 @@ export function NotificationBell({ userId }: { userId: string }) {
     }
   }, [])
 
-  // Live updates via Supabase Realtime (INSERT on this user's notifications).
-  // Replaces interval polling — a fetch on window focus covers any missed events.
+  // Mark a single notification as read, without navigating.
+  const markOneRead = useCallback((id: number) => {
+    setItems(prev =>
+      prev.map(i => (i.id === id && !i.read_at ? { ...i, read_at: new Date().toISOString() } : i)),
+    )
+    setUnread(c => Math.max(0, c - 1))
+    startTransition(() => { markAsRead(id) })
+  }, [])
+
+  // What a notification's toast-click does: chat mentions open the chat widget
+  // (on the mentioned channel); everything else navigates to its link when it has
+  // one, falling back to this bell's panel.
+  const triggerNotification = useCallback((n: Notification) => {
+    if (!n.read_at) markOneRead(n.id)
+    if (n.type === 'chat_mention') {
+      const channelId = (n.metadata as { channel_id?: number } | null)?.channel_id
+      openChat({ channelId })
+    } else if (n.link) {
+      router.push(n.link)
+    } else {
+      setOpen(true)
+    }
+  }, [markOneRead, router])
+
+  // Surface a freshly-arrived notification as a sonner toast, with an action
+  // that routes to the chat or the panel via `triggerNotification`.
+  const showToast = useCallback((n: Notification) => {
+    const meta = TYPE_META[n.type] ?? FALLBACK_META
+    const Icon = meta.icon
+    toast(n.title, {
+      description: n.body ?? undefined,
+      icon: <Icon className="size-4" />,
+      action: {
+        label: n.type === 'chat_mention' ? 'Abrir' : 'Ver',
+        onClick: () => triggerNotification(n),
+      },
+    })
+  }, [triggerNotification])
+
+  // Live updates via Supabase Realtime Broadcast — the server emits a `new` event
+  // on this user's channel right after inserting the row. Broadcast is direct
+  // pub/sub (sub-second), unlike postgres_changes which polls the WAL and runs RLS
+  // per subscriber (the source of the old 10-20s lag). A fetch on window focus
+  // covers any event missed while the tab was backgrounded.
   useEffect(() => {
     refreshCount()
 
     const supabase = createClient()
     const channel = supabase
       .channel(`notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-        payload => {
-          const row = payload.new as Notification
-          setUnread(c => c + 1)
-          // Prepend to the open list so it shows without reopening
-          setItems(prev => (prev.some(i => i.id === row.id) ? prev : [row, ...prev]))
-        },
-      )
+      .on('broadcast', { event: 'new' }, ({ payload }) => {
+        const row = payload as Notification
+        setUnread(c => c + 1)
+        // Prepend to the open list so it shows without reopening
+        setItems(prev => (prev.some(i => i.id === row.id) ? prev : [row, ...prev]))
+        // Pop a toast so the user notices without watching the bell.
+        showToast(row)
+      })
       .subscribe()
 
     const onFocus = () => refreshCount()
@@ -97,7 +139,7 @@ export function NotificationBell({ userId }: { userId: string }) {
       supabase.removeChannel(channel)
       window.removeEventListener('focus', onFocus)
     }
-  }, [userId, refreshCount])
+  }, [userId, refreshCount, showToast])
 
   // Load list when the popover opens
   useEffect(() => {
@@ -107,15 +149,6 @@ export function NotificationBell({ userId }: { userId: string }) {
       .then(setItems)
       .finally(() => setLoading(false))
   }, [open])
-
-  // Mark a single notification as read, without navigating.
-  const markOneRead = useCallback((id: number) => {
-    setItems(prev =>
-      prev.map(i => (i.id === id && !i.read_at ? { ...i, read_at: new Date().toISOString() } : i)),
-    )
-    setUnread(c => Math.max(0, c - 1))
-    startTransition(() => { markAsRead(id) })
-  }, [])
 
   function handleClick(n: Notification) {
     if (!n.read_at) markOneRead(n.id)

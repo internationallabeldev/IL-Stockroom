@@ -20,7 +20,6 @@ import type { InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { PaperCatalogItem } from '@/actions/paper-catalog.actions'
 import { cn } from '@/lib/utils'
 import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
-import { DataRefresh } from '@/components/shared/data-refresh'
 import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 
 const STATUS_TABS: { value: OrderStatus | ''; label: string }[] = [
@@ -77,7 +76,7 @@ function OrdersStatsBar({ orders }: { orders: PurchaseOrderSummary[] }) {
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accent === 'red' ? 'text-red-500' : 'text-muted-foreground/50')} />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">{label}</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', accent === 'red' ? 'text-red-500' : 'text-foreground/80')}>
             {value}
           </span>
@@ -88,7 +87,7 @@ function OrdersStatsBar({ orders }: { orders: PurchaseOrderSummary[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden sm:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Cumplimiento</span>
+          <span className="text-[10px] text-muted-foreground/60 font-medium">Cumplimiento</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{compliance}%</span>
           <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-foreground/60 transition-all" style={{ width: `${compliance}%` }} />
@@ -148,7 +147,7 @@ export function OrdersList({
     setPage(1)
   }
 
-  const { data: allOrders = initialOrders, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: allOrders = initialOrders } = useQuery({
     queryKey: ['purchase-orders', materialType],
     queryFn: () => getPurchaseOrders({ material_type: materialType }),
     initialData: initialOrders,
@@ -315,14 +314,12 @@ export function OrdersList({
                 </EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
               </>
             ) : (
               <>
-                <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} className="shrink-0" />
                 {pageSizeControl}
               </>
             )}
@@ -552,32 +549,36 @@ export function OrdersList({
         </>
       )}
 
-      {/* Bottom bar: insights + pagination */}
-      <div className="flex items-center justify-between mt-4">
+      {/* Bottom bar: insights + pagination — dos pastillas flotantes en página
+          completa; inline cuando va embebido. */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
 
-        <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
-          <span>{orders.length} orden{orders.length !== 1 ? 'es' : ''}</span>
-          {kpiDelayed > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <span className="text-red-500 font-bold">{kpiDelayed} retrasada{kpiDelayed !== 1 ? 's' : ''}</span>
-            </>
-          )}
-          {nextDelivery && (
-            <>
-              <span className="text-border">·</span>
-              <span>próxima entrega {nextDelivery.slice(0, 10) === todayStr ? 'hoy' : fmtDate(nextDelivery)}</span>
-            </>
-          )}
-          {kpiToday > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <span className="text-foreground">{kpiToday} recibida{kpiToday !== 1 ? 's' : ''} hoy</span>
-            </>
-          )}
-        </div>
+        const countEl = (
+          <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+            <span>{orders.length} orden{orders.length !== 1 ? 'es' : ''}</span>
+            {kpiDelayed > 0 && (
+              <>
+                <span className="text-border">·</span>
+                <span className="text-red-500 font-bold">{kpiDelayed} retrasada{kpiDelayed !== 1 ? 's' : ''}</span>
+              </>
+            )}
+            {nextDelivery && (
+              <>
+                <span className="text-border">·</span>
+                <span>próxima entrega {nextDelivery.slice(0, 10) === todayStr ? 'hoy' : fmtDate(nextDelivery)}</span>
+              </>
+            )}
+            {kpiToday > 0 && (
+              <>
+                <span className="text-border">·</span>
+                <span className="text-foreground">{kpiToday} recibida{kpiToday !== 1 ? 's' : ''} hoy</span>
+              </>
+            )}
+          </div>
+        )
 
-        {totalPages > 1 && (
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -613,8 +614,30 @@ export function OrdersList({
               <ChevronRight className="size-3.5" />
             </button>
           </div>
-        )}
-      </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {materialType === 'INK' ? (
         <InkOrderForm

@@ -11,7 +11,6 @@ import { InkCatalogCard } from './ink-catalog-card'
 import { InkCatalogForm } from './ink-catalog-form'
 import { getInkCatalog, type InkCatalogItem } from '@/actions/ink-catalog.actions'
 import type { Provider } from '@/actions/providers.actions'
-import { DataRefresh } from '@/components/shared/data-refresh'
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -85,7 +84,7 @@ function InkStatsBar({ items }: { items: InkCatalogItem[] }) {
                   : 'text-muted-foreground/50',
             )}
           />
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
+          <span className="text-[10px] text-muted-foreground/60 font-medium">
             {label}
           </span>
           <span
@@ -136,7 +135,7 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
   const [pageSizeInput, setPageSizeInput] = useState(String(DEFAULT_PAGE_SIZE))
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, mode: 'create', item: null })
 
-  const { data: items = initialItems, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: items = initialItems } = useQuery({
     queryKey: ['ink-catalog'],
     queryFn: () => getInkCatalog(),
     initialData: initialItems,
@@ -262,14 +261,12 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
                 </EmbeddedSummaryChip>
                 <ToolbarHoverMenu label="Controles" icon={Settings2} iconOnly>
                   <div className="flex flex-col items-start gap-2.5">
-                    <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                     {pageSizeControl}
                   </div>
                 </ToolbarHoverMenu>
               </>
             ) : (
               <>
-                <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
                 {pageSizeControl}
               </>
             )}
@@ -325,9 +322,11 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
         </div>
       )}
 
-      {/* Count + Pagination — bottom */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+      {/* Count + Pagination — dos pastillas flotantes en página completa; inline embebido */}
+      {(() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
+
+        const countEl = (
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {filtered.length} tinta{filtered.length !== 1 ? 's' : ''}
             {filtered.length > pageSize && (
@@ -336,49 +335,74 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
               </span>
             )}
           </p>
+        )
+
+        const paginationEl = totalPages > 1 ? (
           <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={safePage === 1}
-            className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="size-3.5" />
-          </button>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
-            .reduce<(number | '…')[]>((acc, n, idx, arr) => {
-              if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
-              acc.push(n)
-              return acc
-            }, [])
-            .map((n, i) =>
-              n === '…' ? (
-                <span key={`e-${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
-              ) : (
-                <button
-                  key={n}
-                  onClick={() => setPage(n as number)}
-                  className={`size-7 text-[10px] font-bold border transition-colors ${safePage === n
-                    ? 'bg-foreground text-background border-foreground'
-                    : 'border-border hover:bg-muted'
-                  }`}
-                >
-                  {n}
-                </button>
-              )
-            )}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`e-${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={`size-7 text-[10px] font-bold border transition-colors ${safePage === n
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border hover:bg-muted'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
 
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={safePage === totalPages}
-            className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="size-3.5" />
-          </button>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
           </div>
-        </div>
-      )}
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       <InkCatalogForm
         open={drawer.open}

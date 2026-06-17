@@ -13,7 +13,6 @@ import { InkLotsTableView }       from './ink-lots-table-view'
 import { InkCatalogGroupView }    from './ink-catalog-group-view'
 import { InkLotHistorySheet }     from './ink-lot-history-sheet'
 import { InkInventoryStatsBar }   from './ink-inventory-stats-bar'
-import { DataRefresh }            from '@/components/shared/data-refresh'
 import { RequisitionForm }        from '@/components/requisitions/requisition-form'
 import { getLotStatusInfo }       from './lot-utils'
 
@@ -85,7 +84,7 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
   const [requisitionOpen, setRequisitionOpen] = useState(false)
   const [selectedLot,     setSelectedLot]     = useState<InkLot | null>(null)
 
-  const { data: lots, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const { data: lots, refetch } = useQuery({
     queryKey:        ['ink-inventory'],
     queryFn:         () => getInkInventory(),
     initialData:     initialLots,
@@ -198,8 +197,6 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
   // hover dropdown when embedded so the toolbar fits on a single row.
   const metaControls = (
     <>
-      <DataRefresh updatedAt={dataUpdatedAt} isFetching={isFetching} onRefresh={() => refetch()} />
-
       {/* Summary */}
       <p className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">
         {sortedFiltered.length} lote{sortedFiltered.length !== 1 ? 's' : ''}
@@ -490,8 +487,10 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
       )}
 
       {/* ── Pagination (table view only) ─────────────────────────────────────── */}
-      {view === 'table' && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+      {view === 'table' && (() => {
+        const pill = 'border border-border rounded-lg bg-card/85 backdrop-blur-sm shadow-lg'
+
+        const countEl = (
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {sortedFiltered.length} lote{sortedFiltered.length !== 1 ? 's' : ''}
             {sortedFiltered.length > pageSize && (
@@ -500,51 +499,74 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
               </span>
             )}
           </p>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="size-3.5" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(n => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
-                .reduce<(number | '…')[]>((acc, n, idx, arr) => {
-                  if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
-                  acc.push(n)
-                  return acc
-                }, [])
-                .map((n, i) =>
-                  n === '…' ? (
-                    <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
-                  ) : (
-                    <button
-                      key={n}
-                      onClick={() => setPage(n as number)}
-                      className={cn(
-                        'size-7 text-[10px] font-bold border transition-colors',
-                        currentPage === n
-                          ? 'bg-foreground text-background border-foreground'
-                          : 'border-border hover:bg-muted',
-                      )}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="size-3.5" />
-              </button>
+        )
+
+        const paginationEl = totalPages > 1 ? (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPages || Math.abs(n - currentPage) <= 1)
+              .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…')
+                acc.push(n)
+                return acc
+              }, [])
+              .map((n, i) =>
+                n === '…' ? (
+                  <span key={`e${i}`} className="w-7 text-center text-[10px] text-muted-foreground">…</span>
+                ) : (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n as number)}
+                    className={cn(
+                      'size-7 text-[10px] font-bold border transition-colors',
+                      currentPage === n
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'border-border hover:bg-muted',
+                    )}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="size-7 flex items-center justify-center border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        ) : null
+
+        if (embedded) {
+          return (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+              {countEl}
+              {paginationEl}
             </div>
-          )}
-        </div>
-      )}
+          )
+        }
+
+        return (
+          <>
+            <div className={cn('fixed bottom-12 left-20 z-20 flex items-center px-4 py-2', pill)}>
+              {countEl}
+            </div>
+            {paginationEl && (
+              <div className={cn('fixed bottom-12 right-16 z-20 flex items-center px-3 py-2', pill)}>
+                {paginationEl}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* ── Sheets ──────────────────────────────────────────────────────────── */}
       <InkLotHistorySheet

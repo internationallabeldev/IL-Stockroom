@@ -132,6 +132,12 @@ export async function clearBotConversation(channelId: number): Promise<{ success
     return { error: 'No es tu chat con el asistente' }
   }
 
+  // Detach FKs that point at these messages before deleting them. The schema
+  // intends these as ON DELETE SET NULL, but deployments created before that was
+  // added still carry plain FKs, so clear them explicitly to avoid violations.
+  await admin.from('chat_read_status').update({ last_read_message_id: null }).eq('channel_id', channelId)
+  await admin.from('chat_messages').update({ reply_to_id: null }).eq('channel_id', channelId)
+
   const { error } = await admin.from('chat_messages').delete().eq('channel_id', channelId)
   if (error) return { error: error.message }
   return { success: true }
@@ -145,8 +151,9 @@ const SYSTEM_PROMPT = (date: string) =>
   `- Responde SIEMPRE en español, breve y directo. Usa listas cuando ayude.\n` +
   `- Para cualquier pregunta sobre tintas, papel, suministros, requisiciones, órdenes de ` +
   `compra, proveedores o movimientos DEBES usar las herramientas disponibles; no respondas de memoria.\n` +
-  `- Usa ÚNICAMENTE los datos que devuelvan las herramientas. Nunca inventes nombres, códigos ni cifras.\n` +
-  `- Si una herramienta no devuelve resultados, di claramente "No encontré información sobre eso".\n` +
+  `- Usa ÚNICAMENTE los datos que devuelvan las herramientas. NUNCA inventes datos, nombres, códigos ni cifras.\n` +
+  `- Si una herramienta devuelve found: false o un array vacío, responde EXACTAMENTE: ` +
+  `"No encontré información para esa consulta en el sistema." No generes números ni datos que no vengan de las herramientas.\n` +
   `- Responde solo lo que se preguntó; no agregues datos que no se pidieron.\n` +
   `- Eres de solo lectura: si te piden crear, editar o eliminar algo, explica que solo puedes consultar.\n` +
   `- No reveles correos, teléfonos ni datos personales de usuarios.\n` +
@@ -188,6 +195,26 @@ async function buildHistory(channelId: number, limit: number) {
 
 const TEMPERATURE = 0.1
 
+/** Names of the bot's tools and their argument keys, used to spot when the model
+ *  has emitted a tool call (or its arguments) as plain text instead of a real
+ *  `tool_calls` payload. */
+const TOOL_ARG_TAGS =
+  /<\/?(ink_name|paper_name|category|status|material_type|provider_type|days|only_low_stock|only_critical)\b/i
+
+/** Heuristic: the model's "final" message is not a natural-language answer but a
+ *  leftover/malformed tool call or raw structured data (XML tags or bare JSON).
+ *  Llama-class models sometimes return these with finish_reason: 'stop'. */
+function looksLikeRawOutput(content: string): boolean {
+  const t = content.trim()
+  if (!t) return false
+  return (
+    /<function\s*=/.test(t) ||                              // <function=get_paper_stock>{...}
+    /<\/?(tool_call|function_call|tool_response)\b/i.test(t) ||
+    TOOL_ARG_TAGS.test(t) ||                                // <paper_name>...</paper_name>
+    /^[[{][\s\S]*[\]}]$/.test(t)                            // bare JSON object/array
+  )
+}
+
 /** Some models (esp. Llama) emit a tool call as the literal text
  *  `<function=name>{json}` and Groq replies 400 tool_use_failed. We pull those
  *  calls out of `failed_generation` so we can run them ourselves instead of failing. */
@@ -218,6 +245,36 @@ function getFailedGeneration(e: unknown): string | null {
   return typeof fg === 'string' && fg.length > 0 ? fg : null
 }
 
+/** Recover from a malformed tool call: run any tools the model named (if we could
+ *  parse them) and ask the model once more WITHOUT tools, so its reply is always
+ *  natural-language text — never a raw tool result or XML/JSON blob. */
+async function cleanupAnswer(
+  groq: Groq,
+  model: string,
+  messages: Groq.Chat.Completions.ChatCompletionMessageParam[],
+  calls: { name: string; args: Record<string, unknown> }[],
+  userId: string,
+): Promise<string | null> {
+  const blocks: string[] = []
+  for (const c of calls) {
+    const result = await executeTool(c.name, c.args, userId)
+    blocks.push(`Resultado de ${c.name}(${JSON.stringify(c.args)}):\n${result}`)
+  }
+  const guidance = blocks.length
+    ? `Datos consultados en el sistema:\n${blocks.join('\n\n')}\n\n` +
+      `Responde la última pregunta del usuario usando solo estos datos, en español y de forma concisa. ` +
+      `No incluyas etiquetas XML, JSON ni llamadas a herramientas en tu respuesta.`
+    : `Responde la última pregunta del usuario en español, en lenguaje natural y conciso. ` +
+      `No incluyas etiquetas XML, JSON ni llamadas a herramientas en tu respuesta.`
+  const final = await groq.chat.completions.create({
+    model,
+    messages: [...messages, { role: 'system', content: guidance }],
+    temperature: TEMPERATURE,
+    max_tokens: 1000,
+  })
+  return final.choices[0]?.message?.content?.trim() ?? null
+}
+
 /** Drive the model→tools→model loop, recovering from malformed tool calls.
  *  Returns the final assistant text (or null). Mutates `messages`. */
 async function runConversation(
@@ -244,31 +301,19 @@ async function runConversation(
       const fg = getFailedGeneration(e)
       const calls = fg ? parseFailedFunctions(fg) : []
       if (calls.length === 0) throw e
-      const blocks: string[] = []
-      for (const c of calls) {
-        const result = await executeTool(c.name, c.args, userId)
-        blocks.push(`Resultado de ${c.name}(${JSON.stringify(c.args)}):\n${result}`)
-      }
-      const final = await groq.chat.completions.create({
-        model,
-        messages: [
-          ...messages,
-          {
-            role: 'system',
-            content:
-              `Datos consultados en el sistema:\n${blocks.join('\n\n')}\n\n` +
-              `Responde la última pregunta del usuario usando solo estos datos, en español y de forma concisa.`,
-          },
-        ],
-        temperature: TEMPERATURE,
-        max_tokens: 1000,
-      })
-      return final.choices[0]?.message?.content?.trim() ?? null
+      return cleanupAnswer(groq, model, messages, calls, userId)
     }
 
     const choice = response.choices[0]
     if (choice?.finish_reason !== 'tool_calls') {
-      return choice?.message?.content?.trim() ?? null
+      const content = choice?.message?.content?.trim() ?? null
+      // Guard: a "stop" reply can still be a malformed tool call emitted as text
+      // (e.g. `<paper_name>X</paper_name> {...}`). Never surface that raw — run any
+      // calls we can parse and re-ask without tools for a natural-language answer.
+      if (content && looksLikeRawOutput(content)) {
+        return cleanupAnswer(groq, model, messages, parseFailedFunctions(content), userId)
+      }
+      return content
     }
 
     messages.push(choice.message)

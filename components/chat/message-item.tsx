@@ -9,21 +9,11 @@ import { UserAvatar } from '@/components/shared/user-avatar'
 import { cn } from '@/lib/utils'
 import { renderExtensions } from '@/lib/chat/extensions'
 import { PRIORITY_META, type ChatPriority } from '@/lib/chat/constants'
+import { ROLE_LABEL } from '@/lib/chat/roles'
 import { EmojiPicker } from './emoji-picker'
 import type { ChatMessage, ChatReaction, ChatUser } from '@/actions/chat.actions'
-import type { Database } from '@/types/database.types'
-
-type Role = Database['public']['Enums']['user_role']
 
 const BOT_USER_ID = process.env.NEXT_PUBLIC_BOT_USER_ID
-
-const ROLE_LABEL: Record<Role, string> = {
-  ADMIN:             'Admin',
-  PURCHASER:         'Compras',
-  WAREHOUSE_MANAGER: 'Almacén',
-  PRODUCER:          'Producción',
-  USER:              'Usuario',
-}
 
 // Re-serialize stored HTML through the editor schema, dropping anything the schema
 // doesn't allow. Cheap XSS guard without an extra sanitizer dependency.

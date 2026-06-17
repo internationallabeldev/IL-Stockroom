@@ -27,8 +27,8 @@ function formatAgo(ms: number): string {
 
 /**
  * Freshness indicator + manual refresh control for list toolbars.
- * Shows "Actualizado hace Xs" and a refresh icon that spins while fetching.
- * Communicates that data auto-refreshes AND lets the user force an update.
+ * Shows a refresh icon (spins while fetching) + the relative time of the last
+ * fetch ("hace Xs"). Communicates auto-refresh AND lets the user force one.
  */
 export function DataRefresh({ updatedAt, isFetching, onRefresh, className }: Props) {
   // Re-render every 10s so the relative time stays current between fetches.
@@ -57,10 +57,7 @@ export function DataRefresh({ updatedAt, isFetching, onRefresh, className }: Pro
           Actualizando…
         </span>
       ) : (
-        <span className="flex items-center gap-1 whitespace-nowrap">
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">Actualizado</span>
-          <span className="text-[10px] font-bold tabular-nums">{formatAgo(updatedAt)}</span>
-        </span>
+        <span className="text-[10px] font-bold tabular-nums whitespace-nowrap">{formatAgo(updatedAt)}</span>
       )}
     </button>
   )

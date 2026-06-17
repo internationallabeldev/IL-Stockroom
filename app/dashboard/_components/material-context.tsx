@@ -8,7 +8,6 @@ export type Material = 'ink' | 'paper'
 export const MATERIAL_ROUTES: Record<string, Record<Material, string>> = {
   '/dashboard/requisitions': { ink: '/dashboard/requisitions/inks',  paper: '/dashboard/requisitions/paper'  },
   '/dashboard/inventory':    { ink: '/dashboard/inventory/inks',     paper: '/dashboard/inventory/paper'     },
-  '/dashboard/complement':   { ink: '/dashboard/complement/inks',    paper: '/dashboard/complement/paper'    },
   '/dashboard/receipts':     { ink: '/dashboard/receipts/ink',       paper: '/dashboard/receipts/paper'      },
   '/dashboard/orders':       { ink: '/dashboard/orders/ink',         paper: '/dashboard/orders/paper'        },
   '/dashboard/catalog':      { ink: '/dashboard/catalog/inks',       paper: '/dashboard/catalog/papers'      },

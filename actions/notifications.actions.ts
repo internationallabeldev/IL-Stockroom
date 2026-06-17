@@ -73,7 +73,8 @@ async function dispatch(targets: TargetUser[], payload: NotifyPayload): Promise<
 
   const admin = createAdminClient()
 
-  // 1. In-app rows (service_role bypasses RLS)
+  // 1. In-app rows (service_role bypasses RLS). `.select()` returns the inserted
+  // rows with their real id/created_at so we can broadcast them verbatim.
   const rows = recipients.map(u => ({
     user_id:  u.id,
     type:     payload.type,
@@ -82,7 +83,21 @@ async function dispatch(targets: TargetUser[], payload: NotifyPayload): Promise<
     link:     payload.link ?? null,
     metadata: (payload.metadata ?? {}) as Json,
   }))
-  await admin.from('notifications').insert(rows)
+  const { data: inserted } = await admin.from('notifications').insert(rows).select()
+
+  // 1b. Realtime Broadcast — direct pub/sub, far lower latency than postgres_changes
+  // (no WAL polling / per-subscriber RLS). One HTTP send per recipient's channel;
+  // never let a Realtime hiccup break the surrounding action.
+  if (inserted?.length) {
+    await Promise.all(
+      inserted.map(row =>
+        admin
+          .channel(`notifications:${row.user_id}`)
+          .httpSend('new', row)
+          .catch(() => {}),
+      ),
+    )
+  }
 
   // 2. Web Push — fire to every recipient's devices (no-op without VAPID keys)
   await sendPushToUsers(recipients.map(u => u.id), {

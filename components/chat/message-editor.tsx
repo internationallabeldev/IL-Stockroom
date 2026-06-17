@@ -12,9 +12,10 @@ import StarterKit from '@tiptap/starter-kit'
 import Mention, { type MentionNodeAttrs, type MentionOptions } from '@tiptap/extension-mention'
 import type { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion'
 import { PluginKey } from '@tiptap/pm/state'
-import { Send, X, Flag, ChevronRight } from 'lucide-react'
+import { Send, X, Flag, ChevronRight, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/shared/user-avatar'
+import { ROLE_LABEL, ROLE_ORDER, roleMentionId, type Role } from '@/lib/chat/roles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Reference } from '@/lib/chat/extensions'
@@ -57,9 +58,21 @@ function placePopup(el: HTMLElement, clientRect?: (() => DOMRect | null) | null)
 
 type MentionListHandle = { onKeyDown: (e: KeyboardEvent) => boolean }
 
+/** Dropdown rows: a single user, or a whole role (mentions everyone in it). */
+type MentionItem =
+  | { kind: 'user'; user: ChatUser }
+  | { kind: 'role'; role: Role; count: number }
+
 type MentionListProps = {
-  items: ChatUser[]
+  items: MentionItem[]
   command: (attrs: MentionNodeAttrs) => void
+}
+
+/** The mention node attributes for an item: role items carry a `role:<ROLE>` id. */
+function attrsFor(item: MentionItem): MentionNodeAttrs {
+  return item.kind === 'role'
+    ? { id: roleMentionId(item.role), label: ROLE_LABEL[item.role] }
+    : { id: item.user.id, label: displayName(item.user) }
 }
 
 const MentionList = forwardRef<MentionListHandle, MentionListProps>(
@@ -68,8 +81,8 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
     useEffect(() => setIndex(0), [items])
 
     const select = (i: number) => {
-      const u = items[i]
-      if (u) command({ id: u.id, label: displayName(u) })
+      const item = items[i]
+      if (item) command(attrsFor(item))
     }
 
     useImperativeHandle(
@@ -96,9 +109,9 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
         className="w-56 rounded-md border border-border bg-popover shadow-md"
       >
         <div className="py-1">
-          {items.map((u, i) => (
+          {items.map((item, i) => (
             <button
-              key={u.id}
+              key={item.kind === 'role' ? `role-${item.role}` : item.user.id}
               type="button"
               onClick={() => select(i)}
               onMouseEnter={() => setIndex(i)}
@@ -107,8 +120,27 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
                 i === index ? 'bg-muted' : '',
               )}
             >
-              <UserAvatar firstName={u.first_name} lastName={u.last_name} avatarUrl={u.avatar_url} size="sm" />
-              <span className="truncate">{displayName(u)}</span>
+              {item.kind === 'role' ? (
+                <>
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-foreground/70">
+                    <Users className="size-3" />
+                  </span>
+                  <span className="truncate font-medium">{ROLE_LABEL[item.role]}</span>
+                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                    {item.count} {item.count === 1 ? 'persona' : 'personas'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <UserAvatar
+                    firstName={item.user.first_name}
+                    lastName={item.user.last_name}
+                    avatarUrl={item.user.avatar_url}
+                    size="sm"
+                  />
+                  <span className="truncate">{displayName(item.user)}</span>
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -119,14 +151,38 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
 
 function createMentionSuggestion(
   getUsers: () => ChatUser[],
+  getSelfId: () => string,
+  getAllowedIds: () => Set<string> | null,
   setOpen: (open: boolean) => void,
-): Omit<SuggestionOptions<ChatUser, MentionNodeAttrs>, 'editor'> {
+): Omit<SuggestionOptions<MentionItem, MentionNodeAttrs>, 'editor'> {
   return {
     items: ({ query }) => {
       const q = query.toLowerCase()
-      return getUsers()
+      const selfId = getSelfId()
+      // In a private channel only its members are mentionable (the server enforces
+      // this too); `null` means no restriction (public channel). Filtering the user
+      // list at the source also keeps the role counts below accurate.
+      const allowed = getAllowedIds()
+      const users = getUsers()
+        .filter(u => u.id !== selfId)
+        .filter(u => !allowed || allowed.has(u.id))
+
+      // Role rows (e.g. @Admin) mention everyone holding that role. Counts come
+      // straight from the directory, so no extra fetch — and a role with nobody
+      // else in it is omitted (nothing to notify).
+      const counts = new Map<Role, number>()
+      for (const u of users) counts.set(u.role, (counts.get(u.role) ?? 0) + 1)
+      const roleItems: MentionItem[] = ROLE_ORDER
+        .filter(r => (counts.get(r) ?? 0) > 0)
+        .filter(r => ROLE_LABEL[r].toLowerCase().includes(q) || r.toLowerCase().includes(q))
+        .map(r => ({ kind: 'role', role: r, count: counts.get(r)! }))
+
+      const userItems: MentionItem[] = users
         .filter(u => `${u.nickname ?? ''} ${u.first_name} ${u.last_name}`.toLowerCase().includes(q))
-        .slice(0, 50)
+        .map(u => ({ kind: 'user', user: u }))
+
+      // Roles first so they're discoverable; cap the combined list.
+      return [...roleItems, ...userItems].slice(0, 50)
     },
     render: () => {
       let component: ReactRenderer<MentionListHandle, MentionListProps> | null = null
@@ -137,7 +193,7 @@ function createMentionSuggestion(
       }
 
       return {
-        onStart: (props: SuggestionProps<ChatUser, MentionNodeAttrs>) => {
+        onStart: (props: SuggestionProps<MentionItem, MentionNodeAttrs>) => {
           setOpen(true)
           component = new ReactRenderer(MentionList, {
             props: { items: props.items, command: props.command },
@@ -150,7 +206,7 @@ function createMentionSuggestion(
           el.appendChild(component.element)
           place(props.clientRect)
         },
-        onUpdate: (props: SuggestionProps<ChatUser, MentionNodeAttrs>) => {
+        onUpdate: (props: SuggestionProps<MentionItem, MentionNodeAttrs>) => {
           component?.updateProps({ items: props.items, command: props.command })
           place(props.clientRect)
         },
@@ -392,12 +448,17 @@ type Props = {
   onSend: (content: string, contentText: string, priority?: ChatPriority | null) => void | Promise<void>
   disabled?: boolean
   mentionUsers: ChatUser[]
+  /** Current user's id — excluded from the @mention dropdown (no self-mentions). */
+  currentUserId: string
+  /** Ids mentionable here: a Set restricts to those users (private channel members),
+   *  `null`/undefined means no restriction (public channel). */
+  allowedMentionIds?: Set<string> | null
   /** When set, the editor starts with this HTML (edit mode): no priority picker, shows cancel. */
   initialContent?: string
   onCancel?: () => void
 }
 
-export function MessageEditor({ onSend, disabled, mentionUsers, initialContent, onCancel }: Props) {
+export function MessageEditor({ onSend, disabled, mentionUsers, currentUserId, allowedMentionIds, initialContent, onCancel }: Props) {
   const [empty, setEmpty] = useState(!initialContent)
   const [priority, setPriority] = useState<ChatPriority | null>(null)
   const [hintIdx, setHintIdx] = useState(0)
@@ -413,6 +474,10 @@ export function MessageEditor({ onSend, disabled, mentionUsers, initialContent, 
   sendRef.current = onSend
   const usersRef = useRef(mentionUsers)
   usersRef.current = mentionUsers
+  const selfIdRef = useRef(currentUserId)
+  selfIdRef.current = currentUserId
+  const allowedIdsRef = useRef(allowedMentionIds ?? null)
+  allowedIdsRef.current = allowedMentionIds ?? null
   const priorityRef = useRef(priority)
   priorityRef.current = priority
   const mentionOpenRef = useRef(false)
@@ -425,7 +490,7 @@ export function MessageEditor({ onSend, disabled, mentionUsers, initialContent, 
       StarterKit,
       Mention.configure({
         HTMLAttributes: { class: 'mention' },
-        suggestion: createMentionSuggestion(() => usersRef.current, v => { mentionOpenRef.current = v }),
+        suggestion: createMentionSuggestion(() => usersRef.current, () => selfIdRef.current, () => allowedIdsRef.current, v => { mentionOpenRef.current = v }),
       }),
       Reference.configure({
         HTMLAttributes: { class: 'chat-ref' },

@@ -10,6 +10,7 @@ import {
   type ChatMessage,
 } from '@/actions/chat.actions'
 import { ChatView } from './chat-view'
+import { OPEN_CHAT_EVENT, type OpenChatDetail } from '@/lib/chat/open-chat'
 import type { Database } from '@/types/database.types'
 
 type Pos = { x: number; y: number }
@@ -72,6 +73,7 @@ class ChatErrorBoundary extends Component<
 
 export function ChatWidget({ userId, userRole }: Props) {
   const [open, setOpen] = useState(false)
+  const [requestedChannelId, setRequestedChannelId] = useState<number | null>(null)
   const [channel, setChannel] = useState<ChatChannel | null>(null)
   const [channelStatus, setChannelStatus] = useState<'loading' | 'error'>('loading')
   const [unread, setUnread] = useState(0)
@@ -147,6 +149,19 @@ export function ChatWidget({ userId, userRole }: Props) {
     setOpen(true)
     setUnread(0)
   }
+
+  // Open on demand from elsewhere (e.g. a chat-mention notification toast),
+  // optionally jumping to the mentioned channel.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<OpenChatDetail>).detail
+      setOpen(true)
+      setUnread(0)
+      if (detail?.channelId != null) setRequestedChannelId(detail.channelId)
+    }
+    window.addEventListener(OPEN_CHAT_EVENT, onOpen)
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpen)
+  }, [])
 
   // Toggle between the floating size and a large centered window.
   const toggleMaximize = useCallback(() => {
@@ -238,6 +253,8 @@ export function ChatWidget({ userId, userRole }: Props) {
             userRole={userRole}
             width={size.w}
             maximized={maximized}
+            requestedChannelId={requestedChannelId}
+            onChannelOpened={() => setRequestedChannelId(null)}
             onToggleMaximize={toggleMaximize}
             onClose={() => setOpen(false)}
             onPointerDownDrag={onDragStart}

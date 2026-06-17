@@ -25,7 +25,7 @@ export default function ConfirmPage() {
       const code = searchParams.get('code')
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) { window.location.href = '/auth/set-password'; return }
+        if (!error) { window.location.href = '/welcome'; return }
       }
 
       // 2. OTP: token_hash + type en query param
@@ -33,7 +33,7 @@ export default function ConfirmPage() {
       const type = searchParams.get('type') as EmailOtpType | null
       if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-        if (!error) { window.location.href = '/auth/set-password'; return }
+        if (!error) { window.location.href = '/welcome'; return }
       }
 
       // 3. Implicit flow: access_token en el hash — @supabase/ssr no lo detecta automáticamente,
@@ -42,7 +42,7 @@ export default function ConfirmPage() {
       const refresh_token = hashParams.get('refresh_token')
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token })
-        if (!error) { window.location.href = '/auth/set-password'; return }
+        if (!error) { window.location.href = '/welcome'; return }
       }
 
       // Sin sesión ni params válidos

@@ -8,7 +8,7 @@ import { logoutAction } from '@/actions/auth.actions'
 import {
   LayoutDashboard, Package, ClipboardList,
   Truck, BookOpen, ClipboardCheck, ShoppingCart, LogOut,
-  PackagePlus, Users, Settings, ShieldCheck, History, Boxes,
+  Users, Settings, ShieldCheck, History, Boxes,
   type LucideIcon,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -37,7 +37,6 @@ const I = {
   audit:          { kind: 'static'   as const, href: '/dashboard/audit',        label: 'Auditoría',    icon: ShieldCheck     },
   requisitions:   { kind: 'material' as const, base: '/dashboard/requisitions', label: 'Requisiciones',icon: ClipboardList   },
   inventory:      { kind: 'material' as const, base: '/dashboard/inventory',    label: 'Inventario',   icon: Package         },
-  complement:     { kind: 'material' as const, base: '/dashboard/complement',   label: 'Complemento',  icon: PackagePlus     },
   receipts:       { kind: 'material' as const, base: '/dashboard/receipts',     label: 'Recepciones',  icon: ClipboardCheck  },
   orders:         { kind: 'material' as const, base: '/dashboard/orders',       label: 'Órdenes',      icon: ShoppingCart    },
   catalog:        { kind: 'material' as const, base: '/dashboard/catalog',      label: 'Catálogo',     icon: BookOpen        },
@@ -48,17 +47,17 @@ const I = {
 // ── Sections per role ─────────────────────────────────────────────────────────
 
 const NAV_SECTIONS: Record<Role, NavSection[]> = {
-  // Flujo completo: Proveedores → Catálogo → Órdenes → Recepciones → Inventario → Complemento → Requisiciones → Salidas
+  // Flujo completo: Proveedores → Catálogo → Órdenes → Recepciones → Inventario → Requisiciones → Salidas
   ADMIN: [
     { label: 'General',  items: [I.dashboard] },
-    { label: 'Flujo',    items: [I.providers, I.catalog, I.orders, I.receipts, I.inventory, I.requisitions, I.outputsHistory, I.complement] },
+    { label: 'Flujo',    items: [I.providers, I.catalog, I.orders, I.receipts, I.inventory, I.requisitions, I.outputsHistory] },
     { label: 'Almacén',  items: [I.supplies] },
     { label: 'Sistema',  items: [I.users, I.appSettings, I.audit] },
   ],
   // Lado almacén: desde que llega el material hasta que sale
   WAREHOUSE_MANAGER: [
     { label: 'General',  items: [I.dashboard] },
-    { label: 'Flujo',    items: [I.catalog, I.receipts, I.inventory, I.requisitions, I.outputsHistory, I.complement] },
+    { label: 'Flujo',    items: [I.catalog, I.receipts, I.inventory, I.requisitions, I.outputsHistory] },
     { label: 'Almacén',  items: [I.supplies] },
     { label: 'Sistema',  items: [I.audit] },
   ],
