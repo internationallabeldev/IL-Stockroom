@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2, Mail, Phone, Clock, Shield } from 'lucide-react'
+import { Loader2, Mail, Phone, Clock, Shield, Eye, EyeOff } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { RoleBadge } from './role-badge'
 import {
@@ -73,6 +73,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
   const [confirmDisable, setConfirmDisable] = useState(false)
   const [loadingToggle, setLoadingToggle] = useState(false)
   const [selectedRole, setSelectedRole] = useState<UserRole>(user?.role ?? 'USER')
+  const [showPassword, setShowPassword] = useState(false)
   const isSelf = user?.id === currentUserId
 
   const profileForm = useForm<UpdateProfileValues>({
@@ -266,12 +267,23 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
             <form onSubmit={passwordForm.handleSubmit(handlePasswordReset)} className="space-y-3">
               <div>
                 <label className={labelCls}>Contraseña</label>
-                <input
-                  {...passwordForm.register('password')}
-                  type="password"
-                  className={inputCls}
-                  placeholder="Mínimo 8 caracteres"
-                />
+                <div className="relative">
+                  <input
+                    {...passwordForm.register('password')}
+                    type={showPassword ? 'text' : 'password'}
+                    className={inputCls + ' pr-9'}
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-foreground/60 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </button>
+                </div>
                 {passwordForm.formState.errors.password && (
                   <p className="mt-1 text-[10px] text-red-600">
                     {passwordForm.formState.errors.password.message}
@@ -282,7 +294,7 @@ export function UserDetailSheet({ user, open, onClose, currentUserId }: Props) {
                 <label className={labelCls}>Confirmar</label>
                 <input
                   {...passwordForm.register('confirm')}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   className={inputCls}
                 />
                 {passwordForm.formState.errors.confirm && (

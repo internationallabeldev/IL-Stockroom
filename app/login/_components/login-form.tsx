@@ -1,8 +1,14 @@
 'use client'
 
 import { useActionState } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Mail, Lock } from 'lucide-react'
 import { loginAction } from '@/actions/auth.actions'
-import { Loader2 } from 'lucide-react'
+import { AuthField } from '@/components/auth/auth-field'
+import { AuthSubmitButton } from '@/components/auth/auth-submit-button'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
+import { getAuthErrorEntry } from '@/lib/auth/error-messages'
 
 async function loginWrapper(_: unknown, formData: FormData) {
   return loginAction(formData)
@@ -10,61 +16,57 @@ async function loginWrapper(_: unknown, formData: FormData) {
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginWrapper, null)
+  const params = useSearchParams()
+  const redirectTo = params.get('redirect') ?? ''
+  const errorCode = params.get('error')
+  const urlError = !state?.error && errorCode ? getAuthErrorEntry(errorCode).message : null
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
-      {state?.error && (
-        <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-destructive">
-          {state.error}
-        </div>
-      )}
+    <>
+      <form action={formAction} className="flex flex-col gap-5">
+        {(state?.error || urlError) && (
+          <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-destructive">
+            {state?.error ?? urlError}
+          </div>
+        )}
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Correo electrónico
-        </label>
-        <input
+        {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
+
+        <AuthField
           id="email"
           name="email"
           type="email"
+          label="Correo electrónico"
           placeholder="usuario@empresa.com"
           autoComplete="email"
+          icon={Mail}
           required
           disabled={isPending}
-          className="h-10 w-full border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-foreground/60 disabled:opacity-50"
         />
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Contraseña
-        </label>
-        <input
+        <AuthField
           id="password"
           name="password"
           type="password"
+          label="Contraseña"
           placeholder="••••••••"
           autoComplete="current-password"
+          icon={Lock}
           required
           disabled={isPending}
-          className="h-10 w-full border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-foreground/60 disabled:opacity-50"
         />
-      </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="mt-1 flex h-11 w-full items-center justify-center gap-2 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest transition-opacity hover:opacity-80 disabled:opacity-50 active:scale-[0.99]"
-      >
-        {isPending ? (
-          <>
-            <Loader2 className="size-3.5 animate-spin" />
-            Verificando…
-          </>
-        ) : (
-          'Acceder al sistema'
-        )}
-      </button>
-    </form>
+        <Link
+          href="/auth/reset-password"
+          className="self-end text-[10px] font-bold uppercase tracking-widest text-[#F5F2EA]/35 hover:text-[#F5F2EA]/60"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+
+        <AuthSubmitButton pending={isPending} label="Acceder al sistema" />
+      </form>
+
+      <GoogleAuthButton />
+    </>
   )
 }

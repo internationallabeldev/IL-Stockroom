@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -23,7 +23,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresca el token si está por vencer
   const { data: { user } } = await supabase.auth.getUser()
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
@@ -31,25 +30,34 @@ export async function middleware(request: NextRequest) {
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
   const isUsersRoute = request.nextUrl.pathname.startsWith('/dashboard/users')
 
-  // Sin sesión intentando entrar al dashboard → /login
   if (!user && isDashboard) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const url = new URL('/login', request.url)
+    url.searchParams.set('redirect', request.nextUrl.pathname)
+    url.searchParams.set('error', 'session_expired')
+    return NextResponse.redirect(url)
   }
 
-  // Con sesión intentando ir a login → /dashboard
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Ruta /users: solo ADMIN
-  if (user && isUsersRoute) {
+  if (user && isDashboard) {
+    // Una sola consulta cubre el corte inmediato por desactivación (enabled)
+    // y el control de acceso a /dashboard/users (role) en cada request.
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('role, enabled')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'ADMIN') {
+    if (!profile?.enabled) {
+      await supabase.auth.signOut()
+      const url = new URL('/login', request.url)
+      url.searchParams.set('error', 'disabled')
+      return NextResponse.redirect(url)
+    }
+
+    if (isUsersRoute && profile.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }

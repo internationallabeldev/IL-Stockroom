@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, ArrowRight, Lock } from 'lucide-react'
+import { Loader2, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react'
 import { gsap } from '@/lib/landing/gsap-config'
 import { createClient } from '@/lib/supabase/client'
 import { resetPasswordSchema, type ResetPasswordValues } from '@/lib/validations/user.schema'
@@ -28,6 +28,7 @@ export function ScreenStart({ active, data, reduced, isMobile, onEnter, onTour }
 
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<null | 'enter' | 'tour'>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -117,19 +118,28 @@ export function ScreenStart({ active, data, reduced, isMobile, onEnter, onTour }
             <Lock className="absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-[#F5F2EA]/30" />
             <input
               {...register('password')}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Nueva contraseña"
-              className="w-full border-b border-[#F5F2EA]/25 bg-transparent py-2 pl-6 text-sm text-[#F5F2EA] placeholder:text-[#F5F2EA]/30 outline-none focus:border-(--cmyk-accent) transition-colors"
+              className="w-full border-b border-[#F5F2EA]/25 bg-transparent py-2 pl-6 pr-7 text-sm text-[#F5F2EA] placeholder:text-[#F5F2EA]/30 outline-none focus:border-(--cmyk-accent) transition-colors"
             />
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-[#F5F2EA]/30 transition-colors hover:text-[#F5F2EA]/60"
+            >
+              {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+            </button>
             {errors.password && <p className="mt-1 text-[10px] text-red-400">{errors.password.message}</p>}
           </div>
           <div className="relative">
             <Lock className="absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-[#F5F2EA]/30" />
             <input
               {...register('confirm')}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Confirmar contraseña"
-              className="w-full border-b border-[#F5F2EA]/25 bg-transparent py-2 pl-6 text-sm text-[#F5F2EA] placeholder:text-[#F5F2EA]/30 outline-none focus:border-(--cmyk-accent) transition-colors"
+              className="w-full border-b border-[#F5F2EA]/25 bg-transparent py-2 pl-6 pr-7 text-sm text-[#F5F2EA] placeholder:text-[#F5F2EA]/30 outline-none focus:border-(--cmyk-accent) transition-colors"
             />
             {errors.confirm && <p className="mt-1 text-[10px] text-red-400">{errors.confirm.message}</p>}
           </div>

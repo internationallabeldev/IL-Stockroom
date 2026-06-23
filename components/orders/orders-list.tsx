@@ -107,10 +107,11 @@ type Props = {
   paperCatalog: PaperCatalogItem[]
   canCreate: boolean
   canReceive?: boolean
+  companyAddress?: string | null
 }
 
 export function OrdersList({
-  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive,
+  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive, companyAddress,
 }: Props) {
   const embedded = useEmbedded()
   const router = useRouter()
@@ -645,6 +646,7 @@ export function OrdersList({
           onClose={() => setFormOpen(false)}
           providers={providers}
           inkCatalog={inkCatalog}
+          companyAddress={companyAddress}
         />
       ) : (
         <PaperOrderForm
@@ -652,6 +654,7 @@ export function OrdersList({
           onClose={() => setFormOpen(false)}
           providers={providers}
           paperCatalog={paperCatalog}
+          companyAddress={companyAddress}
         />
       )}
     </>

@@ -26,6 +26,7 @@ type Props = {
   onClose: () => void
   providers: Provider[]
   paperCatalog: PaperCatalogItem[]
+  companyAddress?: string | null
 }
 
 const today = new Date().toISOString().split('T')[0]
@@ -43,13 +44,13 @@ const DEFAULT: CreatePurchaseOrderValues = {
   paper_items:            [],
 }
 
-export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props) {
+export function PaperOrderForm({ open, onClose, providers, paperCatalog, companyAddress }: Props) {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [address, setAddress] = useState<DeliveryAddress>(EMPTY_ADDRESS)
 
   const {
-    register, handleSubmit, reset, setValue,
+    register, handleSubmit, reset, setValue, watch,
     control, formState: { errors, isSubmitting },
   } = useForm<CreatePurchaseOrderValues>({
     resolver: zodResolver(createPurchaseOrderSchema),
@@ -62,6 +63,16 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
     const next = { ...address, [field]: value }
     setAddress(next)
     setValue('delivery_place', formatDeliveryAddress(next), { shouldValidate: true })
+  }
+
+  function handleUseDefault() {
+    if (!companyAddress) return
+    setAddress(EMPTY_ADDRESS)
+    setValue('delivery_place', companyAddress, { shouldValidate: true })
+  }
+
+  function handleClearDefault() {
+    setValue('delivery_place', '', { shouldValidate: false })
   }
 
   function handleClose() {
@@ -133,7 +144,7 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
           {/* Detalles */}
           <div className="border border-border/50">
             <p className={sectionHeader}>Detalles de la orden</p>
-            <div className="px-4 py-3 space-y-3">
+            <div className="px-4 py-4 space-y-5">
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Fecha de solicitud *" error={errors.request_date?.message}>
                   <input {...register('request_date')} type="date" className={inputCls} />
@@ -162,6 +173,10 @@ export function PaperOrderForm({ open, onClose, providers, paperCatalog }: Props
                 onChange={handleAddressChange}
                 error={errors.delivery_place?.message}
                 required
+                value={watch('delivery_place')}
+                defaultAddress={companyAddress}
+                onUseDefault={handleUseDefault}
+                onClearDefault={handleClearDefault}
               />
               <FormField label="Notas (opcional)" error={errors.notes?.message}>
                 <textarea
@@ -347,7 +362,7 @@ function PaperSelector({
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
+  'w-full border-b border-foreground/20 bg-transparent py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring [&_option]:bg-background [&_option]:text-foreground'
 
 const sectionHeader =
   'px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50 bg-muted/30'

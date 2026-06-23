@@ -260,6 +260,24 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+/* ── auth: patrón CMYK de fondo + loader de puntos del botón ────────────── */
+@keyframes pattern-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(40px, 40px); }
+}
+.animate-pattern-drift {
+  animation: pattern-drift 36s linear infinite;
+}
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
+}
+.dot-loader span {
+  animation: dot-pulse 1.4s infinite;
+}
+.dot-loader span:nth-child(2) { animation-delay: 0.2s; }
+.dot-loader span:nth-child(3) { animation-delay: 0.4s; }
+
 /* ── landing: fallbacks estáticos para prefers-reduced-motion ──
    GSAP solo crea animaciones bajo (prefers-reduced-motion: no-preference);
    estas reglas devuelven el contenido a un layout plano y visible. */
@@ -276,3 +294,47 @@
 .landing-reduced .esp-desc { opacity: 1 !important; }
 .landing-reduced .contacto-wipe { clip-path: none !important; }
 .landing-reduced .hero-backdrop { display: none; }
+
+/* ── PILOT: skeletons temáticos CMYK (módulo proveedores) ────────────────────
+   Experimento aislado y reversible. Para revertir: borra este bloque y los
+   archivos *-skeleton.tsx del módulo de proveedores.
+   No depende del ciclo JS de --cmyk-accent (que no corre en el dashboard);
+   cicla sus propios colores en CSS para sentirse como tinta CMYK corriendo. */
+@keyframes shimmer-cmyk {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.cmyk-skeleton-shimmer {
+  background-image: linear-gradient(
+    105deg,
+    rgba(26, 26, 26, 0.06) 0%,
+    rgba(0, 174, 239, 0.08) 20%,
+    rgba(236, 0, 140, 0.08) 40%,
+    rgba(255, 230, 0, 0.08) 60%,
+    rgba(26, 26, 26, 0.06) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-cmyk 2.5s ease-in-out infinite;
+}
+@keyframes pulse-cmyk {
+  0%, 100% { background-color: rgba(0, 174, 239, 0.07); } /* C */
+  25%      { background-color: rgba(236, 0, 140, 0.07); } /* M */
+  50%      { background-color: rgba(255, 230, 0, 0.10); } /* Y */
+  75%      { background-color: rgba(26, 26, 26, 0.06); }  /* K */
+}
+.cmyk-skeleton-pulse {
+  animation: pulse-cmyk 8s ease-in-out infinite;
+}
+/* prefers-reduced-motion: el shimmer cae a un pulse plano sin gradiente animado
+   y el pulse-cmyk se congela en un gris neutro visible en claro y oscuro. */
+@media (prefers-reduced-motion: reduce) {
+  .cmyk-skeleton-shimmer {
+    background-image: none;
+    background-color: rgba(127, 127, 127, 0.12);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .cmyk-skeleton-pulse {
+    animation: none;
+    background-color: rgba(127, 127, 127, 0.12);
+  }
+}

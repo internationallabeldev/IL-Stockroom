@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { X, Upload, Loader2, Pencil, Mail, Phone, MessageCircle, MapPin, ExternalLink } from 'lucide-react'
 import { providerSchema, type ProviderFormValues } from '@/lib/validations/provider.schema'
@@ -43,6 +44,7 @@ type Props = {
 }
 
 export function ProviderForm({ open, onClose, provider, mode: initialMode = 'create', canEdit = false }: Props) {
+  const queryClient = useQueryClient()
   const [mode, setMode]           = useState<DrawerMode>(initialMode)
   const [uploading, setUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -119,6 +121,9 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
       ? await updateProvider(provider.id, fd)
       : await createProvider(fd)
     if (res.error) { toast.error(res.error); return }
+    // La lista vive en el cache de React Query (no en el server component), así
+    // que revalidatePath no basta: hay que invalidar la query para que refetchee.
+    await queryClient.invalidateQueries({ queryKey: ['providers'] })
     toast.success(provider ? 'Proveedor actualizado' : 'Proveedor creado')
     onClose()
   }
@@ -335,7 +340,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
               </label>
               <select
                 {...register('provider_type')}
-                className="w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50"
+                className={inputCls}
               >
                 {TYPE_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -460,7 +465,7 @@ export function ProviderForm({ open, onClose, provider, mode: initialMode = 'cre
 }
 
 const inputCls =
-  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
+  'w-full border-b border-foreground/20 bg-transparent py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring [&_option]:bg-background [&_option]:text-foreground'
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (

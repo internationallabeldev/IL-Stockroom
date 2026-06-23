@@ -3,15 +3,17 @@ import { getProviders } from '@/actions/providers.actions'
 import { getInkCatalog } from '@/actions/ink-catalog.actions'
 import { getPaperCatalog } from '@/actions/paper-catalog.actions'
 import { getSessionUser } from '@/actions/auth.actions'
+import { getPublicSettings } from '@/actions/app-settings.actions'
 import { OrdersList } from '@/components/orders/orders-list'
 
 export default async function InkOrdersPage() {
-  const [orders, providers, inkCatalog, paperCatalog, user] = await Promise.all([
+  const [orders, providers, inkCatalog, paperCatalog, user, settings] = await Promise.all([
     getPurchaseOrders({ material_type: 'INK' }),
     getProviders(),
     getInkCatalog(),
     getPaperCatalog(),
     getSessionUser(),
+    getPublicSettings(),
   ])
 
   const canCreate  = user?.role === 'ADMIN' || user?.role === 'PURCHASER'
@@ -27,6 +29,7 @@ export default async function InkOrdersPage() {
         paperCatalog={paperCatalog}
         canCreate={canCreate}
         canReceive={canReceive}
+        companyAddress={settings.company.address}
       />
     </div>
   )

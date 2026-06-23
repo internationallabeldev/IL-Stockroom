@@ -30,10 +30,41 @@ const NOT_FOUND = JSON.stringify({
   message: 'No se encontraron datos para esta consulta',
 })
 
+/** Per-tool DB budget. A single inventory SELECT should take well under this;
+ *  if it doesn't, we'd rather tell the model "no data" than hang the whole chat. */
+const TOOL_TIMEOUT_MS = 6000
+const TOOL_TIMEOUT = JSON.stringify({
+  found: false,
+  message: 'La consulta tardó demasiado y se canceló',
+})
+
 /** Execute a read-only bot tool and return its result as a JSON string.
+ *  Bounds each call with TOOL_TIMEOUT_MS so a slow/locked query can't stall askBot. */
+export async function executeTool(
+  toolName: string,
+  args: ToolArgs,
+  requestingUserId: string,
+): Promise<string> {
+  try {
+    return await Promise.race([
+      runTool(toolName, args, requestingUserId),
+      new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('tool-timeout')), TOOL_TIMEOUT_MS),
+      ),
+    ])
+  } catch (e) {
+    if (e instanceof Error && e.message === 'tool-timeout') {
+      console.warn('[bot] tool timeout', { toolName, ms: TOOL_TIMEOUT_MS })
+      return TOOL_TIMEOUT
+    }
+    return JSON.stringify({ error: e instanceof Error ? e.message : 'Error ejecutando la herramienta' })
+  }
+}
+
+/** The actual read-only query dispatch (wrapped by executeTool's timeout).
  *  Uses the service-role client (bypasses RLS) but only ever SELECTs non-sensitive
  *  inventory data — never users' credentials, tokens or keys. */
-export async function executeTool(
+async function runTool(
   toolName: string,
   args: ToolArgs,
   _requestingUserId: string,

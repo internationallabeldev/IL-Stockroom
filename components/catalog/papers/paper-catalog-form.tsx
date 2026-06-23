@@ -560,7 +560,7 @@ export function PaperCatalogForm({ open, onClose, item, mode: initialMode = 'cre
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-9 border border-foreground/20 bg-card px-3 text-sm outline-none focus:border-foreground/50 transition-colors'
+  'w-full border-b border-foreground/20 bg-transparent py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring [&_option]:bg-background [&_option]:text-foreground'
 
 type FieldInfoData = { what: string; why: string; example: string }
 

@@ -14,6 +14,7 @@ import {
   updateOwnProfileSchema,
   notificationPreferencesSchema,
 } from '@/lib/validations/user.schema'
+import { passwordSchema } from '@/lib/validations/password.schema'
 import type { Database } from '@/types/database.types'
 
 export type AppUser = Database['public']['Tables']['users']['Row']
@@ -215,7 +216,9 @@ export async function resetUserPassword(
 ): Promise<{ success?: boolean; error?: string }> {
   const currentUser = await getSessionUser()
   if (!currentUser || currentUser.role !== 'ADMIN') return { error: 'Sin permisos' }
-  if (newPassword.length < 8) return { error: 'Mínimo 8 caracteres' }
+
+  const passwordCheck = passwordSchema.safeParse(newPassword)
+  if (!passwordCheck.success) return { error: passwordCheck.error.issues[0].message }
 
   const admin = createAdminClient()
 
@@ -235,7 +238,9 @@ export async function updateOwnPassword(
 ): Promise<{ success?: boolean; error?: string }> {
   const currentUser = await getSessionUser()
   if (!currentUser) return { error: 'Sin permisos' }
-  if (newPassword.length < 8) return { error: 'Mínimo 8 caracteres' }
+
+  const passwordCheck = passwordSchema.safeParse(newPassword)
+  if (!passwordCheck.success) return { error: passwordCheck.error.issues[0].message }
   if (currentPassword === newPassword) return { error: 'La nueva contraseña debe ser diferente' }
 
   const supabase = await createClient()

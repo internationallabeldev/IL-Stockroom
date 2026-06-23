@@ -17,6 +17,8 @@ export async function getProviders(filters?: {
   type?: string
   enabled?: boolean
 }): Promise<Provider[]> {
+  // TEMPORAL - solo para probar el skeleton temático (piloto proveedores), quitar después
+  //await new Promise(resolve => setTimeout(resolve, 1500))
   const supabase = await createClient()
   let query = supabase.from('providers').select('*').order('name')
 
