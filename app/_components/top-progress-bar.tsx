@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useIsFetching } from '@tanstack/react-query'
 
 const TRICKLE_MS  = 200    // cadence of the fake "loading" trickle
 const COMPLETE_MS = 220    // hold at 100% before fading out
@@ -12,12 +13,15 @@ const SAFETY_MS   = 10000  // auto-complete if a navigation never resolves
  * Global navigation progress bar (Google Classroom style).
  *
  * Mounted once at the root layout so it covers every route. Starts on any
- * internal link click and on browser back/forward, trickles toward 90%, and
- * completes when the pathname commits. Colour comes from the `--foreground`
- * token, so it's black in light theme and white in dark. Zero dependencies.
+ * internal link click, on browser back/forward, AND whenever React Query has
+ * an active fetch in flight (so the global refresh control in the top nav
+ * drives this same bar). Trickles toward 90% and completes when the pathname
+ * commits or all fetches settle. Colour comes from the `--foreground` token,
+ * so it's black in light theme and white in dark.
  */
 export function TopProgressBar() {
   const pathname = usePathname()
+  const isFetching = useIsFetching() > 0
   const [progress, setProgress] = useState(0)
   const [visible, setVisible]   = useState(false)
 
@@ -62,6 +66,13 @@ export function TopProgressBar() {
 
   // The route committed → finish the bar.
   useEffect(() => { done() }, [pathname, done])
+
+  // React Query activity drives the bar too: a fetch starting (e.g. the global
+  // refresh control in the top nav) runs it; the last fetch settling finishes it.
+  useEffect(() => {
+    if (isFetching) start()
+    else done()
+  }, [isFetching, start, done])
 
   // Detect the start of a navigation.
   useEffect(() => {

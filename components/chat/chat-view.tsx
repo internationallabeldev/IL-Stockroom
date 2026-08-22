@@ -25,6 +25,7 @@ import { PinnedMessages } from './pinned-messages'
 import { ChannelSidebar } from './channel-sidebar'
 import { ChannelSettings } from './channel-settings'
 import { BotTypingIndicator } from './bot-typing-indicator'
+import { BotWelcome } from './bot-welcome'
 import { useChat } from '@/hooks/use-chat'
 import {
   getChannels,
@@ -485,11 +486,19 @@ export function ChatView({
 
         {/* Body */}
         {messages.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center px-6 text-center">
-            <p className="text-[11px] text-muted-foreground">
-              {loading ? 'Cargando…' : `Sé el primero en escribir en ${activeChannel.name}.`}
-            </p>
-          </div>
+          loading ? (
+            <div className="flex flex-1 items-center justify-center px-6 text-center">
+              <p className="text-[11px] text-muted-foreground">Cargando…</p>
+            </div>
+          ) : activeChannel.is_bot_dm ? (
+            <BotWelcome userName={users.get(currentUserId)?.first_name} />
+          ) : (
+            <div className="flex flex-1 items-center justify-center px-6 text-center">
+              <p className="text-[11px] text-muted-foreground">
+                {`Sé el primero en escribir en ${activeChannel.name}.`}
+              </p>
+            </div>
+          )
         ) : (
           <MessageList
             messages={messages}

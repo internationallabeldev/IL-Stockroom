@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Mail, Phone, MessageCircle, Pencil, Power } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { toggleProviderStatus, type Provider } from '@/actions/providers.actions'
 
@@ -20,6 +21,7 @@ type Props = {
 }
 
 export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const type = TYPE_LABELS[provider.provider_type]
 
@@ -27,7 +29,11 @@ export function ProviderCard({ provider, canEdit, onView, onEdit }: Props) {
     setLoading(true)
     const res = await toggleProviderStatus(provider.id)
     if (res.error) toast.error(res.error)
-    else toast.success(provider.enabled ? 'Proveedor desactivado' : 'Proveedor activado')
+    else {
+      // La lista lee del cache de React Query; invalidar para reflejar el cambio.
+      await queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success(provider.enabled ? 'Proveedor desactivado' : 'Proveedor activado')
+    }
     setLoading(false)
   }
 

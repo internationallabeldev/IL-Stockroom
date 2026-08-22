@@ -1,19 +1,25 @@
-import { getProviders } from '@/actions/providers.actions'
-import { getPurchaseOrders } from '@/actions/purchase-orders.actions'
-import { getSessionUser } from '@/actions/auth.actions'
-import { ProvidersList } from '@/components/providers/providers-list'
+import { Suspense } from 'react'
+import { ProvidersListServer } from '@/components/providers/providers-list-server'
+import { ProvidersFiltersSkeleton } from '@/components/providers/providers-filters-skeleton'
+import { ProvidersListSkeleton } from '@/components/providers/providers-list-skeleton'
 
-export default async function ProvidersPage() {
-  const [providers, orders, user] = await Promise.all([
-    getProviders(),
-    getPurchaseOrders(),
-    getSessionUser(),
-  ])
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'PURCHASER'
-
+// El fetch vive ahora en ProvidersListServer para que el Suspense boundary
+// pueda mostrar los skeletons temáticos mientras resuelve. Un solo boundary:
+// la barra de filtros vive dentro de ProvidersList y depende de los mismos
+// datos, así que no se puede suspender por separado.
+export default function ProvidersPage() {
   return (
     <div className="px-8 pb-16">
-      <ProvidersList providers={providers} orders={orders} canEdit={canEdit} />
+      <Suspense
+        fallback={
+          <>
+            <ProvidersFiltersSkeleton />
+            <ProvidersListSkeleton />
+          </>
+        }
+      >
+        <ProvidersListServer />
+      </Suspense>
     </div>
   )
 }

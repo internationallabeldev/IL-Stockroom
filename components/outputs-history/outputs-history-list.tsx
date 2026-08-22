@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchSeed } from '@/hooks/use-search-seed'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmbedded, toolbarStickyClass } from '@/lib/embedded-context'
+import { useMaterial } from '@/app/dashboard/_components/material-context'
 import { ToolbarHoverMenu, EmbeddedSummaryChip } from '@/components/shared/toolbar-hover-menu'
 import {
   getRequisitions,
@@ -106,14 +107,14 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
 
       <div className="flex items-center gap-2">
         <PackageCheck className="size-3 shrink-0 text-muted-foreground/50" />
-        <span className="text-[10px] text-muted-foreground/60 font-medium">Completadas</span>
+        <span className="text-[11px] text-muted-foreground/70 font-medium">Completadas</span>
         <span className="text-[11px] font-bold tabular-nums text-foreground/80">{all.length}</span>
       </div>
 
       <div className="flex items-center gap-2">
         <span className="text-border/60 select-none hidden @2xl:inline">·</span>
         <ClipboardList className="size-3 shrink-0 text-muted-foreground/50" />
-        <span className="text-[10px] text-muted-foreground/60 font-medium">OPs</span>
+        <span className="text-[11px] text-muted-foreground/70 font-medium">OPs</span>
         <span className="text-[11px] font-bold tabular-nums text-foreground/80">{uniqueOps}</span>
       </div>
 
@@ -121,7 +122,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <CircleDashed className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Parciales</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Parciales</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{partialCount}</span>
         </div>
       )}
@@ -130,7 +131,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Droplet className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Tinta</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Tinta</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalKg.toFixed(2)} kg</span>
         </div>
       )}
@@ -139,7 +140,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <FileText className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Papel</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Papel</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{totalM2.toFixed(3)} m²</span>
         </div>
       )}
@@ -148,7 +149,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <RotateCcw className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Devuelto</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Devuelto</span>
           <span className="text-[11px] font-bold tabular-nums text-green-600 dark:text-green-400">{returnsLabel}</span>
           {returnsPct !== null && (
             <span className="text-[10px] text-muted-foreground/50 tabular-nums">{returnsPct}%</span>
@@ -160,7 +161,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Timer className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Entrega prom.</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Entrega prom.</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{formatDuration(avgHours)}</span>
         </div>
       )}
@@ -169,7 +170,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Clock className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Hoy</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Hoy</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{todayCount}</span>
         </div>
       )}
@@ -178,7 +179,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Tinta ppal</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Tinta ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topInkName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topInkPct}%</span>
         </div>
@@ -188,7 +189,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Papel ppal</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Papel ppal</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topPaperName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topPaperPct}%</span>
         </div>
@@ -198,7 +199,7 @@ function OutputsStatsBar({ all }: { all: Requisition[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <UserCheck className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Almacenista</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Almacenista</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">{topDelivererName}</span>
           <span className="text-[10px] text-muted-foreground/50 tabular-nums">{topDelivererCount}</span>
         </div>
@@ -215,8 +216,13 @@ type Props = {
 
 export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   const embedded = useEmbedded()
+  const { material } = useMaterial()
   const [search,      setSearch]      = useSearchSeed()
-  const [matFilter,   setMatFilter]   = useState<MatFilter>('ALL')
+  // Página completa: el material lo decide el toggle global del top-nav.
+  // Embebido (workspace): el toggle global se oculta, así que el panel
+  // conserva sus tabs locales Todos/Tinta/Papel.
+  const [localMat,    setLocalMat]    = useState<MatFilter>('ALL')
+  const matFilter: MatFilter = embedded ? localMat : (material === 'ink' ? 'INK' : 'PAPER')
   const [dateFrom,    setDateFrom]    = useState('')
   const [dateTo,      setDateTo]      = useState('')
   const [sortKey,     setSortKey]     = useState<SortKey>('date')
@@ -232,6 +238,8 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
     initialData:     initialRequisitions,
     refetchInterval: 60_000,
   })
+
+  useEffect(() => { setPage(1) }, [matFilter])
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -286,14 +294,14 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
         type="date"
         value={dateFrom}
         onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-        className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+        className="h-8 border border-border bg-card px-2 text-[11px] outline-none focus:border-foreground/40 transition-colors"
       />
       <span className="text-[10px] text-muted-foreground">—</span>
       <input
         type="date"
         value={dateTo}
         onChange={e => { setDateTo(e.target.value); setPage(1) }}
-        className="h-8 border border-foreground/20 bg-card px-2 text-[11px] outline-none focus:border-foreground/50 transition-colors"
+        className="h-8 border border-border bg-card px-2 text-[11px] outline-none focus:border-foreground/40 transition-colors"
       />
       {(dateFrom || dateTo) && (
         <button
@@ -307,7 +315,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   )
 
   const pageSizeControl = (
-    <div id="outputs-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+    <div id="outputs-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -330,7 +338,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
   return (
     <>
       {/* Toolbar */}
-      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-4', toolbarStickyClass(embedded))}>
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-4', toolbarStickyClass(embedded))}>
         <div className="@container">
 
         {/* Filters row */}
@@ -339,13 +347,13 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
 
           {/* Search */}
           <div id="outputs-search" className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')}>
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="Buscar #, orden, solicitante…"
               className={cn(
-                'h-8 w-full pl-8 pr-7 border border-foreground/20 bg-card text-xs outline-none focus:border-foreground/50 transition-colors',
+                'h-8 w-full pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors',
                 !embedded && '@2xl:w-100',
               )}
             />
@@ -359,25 +367,25 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             )}
           </div>
 
-          {/* Material type */}
-          <div id="outputs-mat-tabs" className="flex border border-border shrink-0">
-            {MAT_TABS.map(t => (
-              <button
-                key={t.value}
-                onClick={() => { setMatFilter(t.value); setPage(1) }}
-                className={cn(
-                  'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                  matFilter === t.value
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {!embedded && dateRangeControl}
+          {/* Material type — solo embebido; en página completa manda el toggle global */}
+          {embedded && (
+            <div id="outputs-mat-tabs" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
+              {MAT_TABS.map(t => (
+                <button
+                  key={t.value}
+                  onClick={() => { setLocalMat(t.value); setPage(1) }}
+                  className={cn(
+                    'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
+                    matFilter === t.value
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-foreground/50 hover:text-foreground',
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {!embedded && <div className="flex-1" />}
 
@@ -395,6 +403,7 @@ export function OutputsHistoryList({ initialRequisitions, userRole }: Props) {
             </>
           ) : (
             <>
+              {dateRangeControl}
               {pageSizeControl}
             </>
           )}

@@ -31,7 +31,7 @@ export type WelcomeData = {
 // Home each role lands on after completing onboarding.
 const ROLE_HOME: Record<UserRole, string> = {
   ADMIN:             '/dashboard',
-  PURCHASER:         '/dashboard/orders',
+  PURCHASER:         '/dashboard/orders/ink',
   WAREHOUSE_MANAGER: '/dashboard/inventory/inks',
   PRODUCER:          '/dashboard/requisitions',
   USER:              '/dashboard',

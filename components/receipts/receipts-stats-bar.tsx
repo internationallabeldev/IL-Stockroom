@@ -122,7 +122,7 @@ export function ReceiptsStatsBar({ initialInk, initialPaper, material }: Props) 
             accent === 'amber' ? 'text-amber-400' :
             'text-muted-foreground/50',
           )} />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">
+          <span className="text-[11px] text-muted-foreground/70 font-medium">
             {label}
           </span>
           <span className={cn(
@@ -140,7 +140,7 @@ export function ReceiptsStatsBar({ initialInk, initialPaper, material }: Props) 
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Building2 className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">
+          <span className="text-[11px] text-muted-foreground/70 font-medium">
             Mayor incidencias
           </span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-[140px] truncate">

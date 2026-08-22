@@ -76,7 +76,7 @@ function OrdersStatsBar({ orders }: { orders: PurchaseOrderSummary[] }) {
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accent === 'red' ? 'text-red-500' : 'text-muted-foreground/50')} />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', accent === 'red' ? 'text-red-500' : 'text-foreground/80')}>
             {value}
           </span>
@@ -87,7 +87,7 @@ function OrdersStatsBar({ orders }: { orders: PurchaseOrderSummary[] }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden sm:inline">·</span>
           <TrendingUp className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Cumplimiento</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Cumplimiento</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80">{compliance}%</span>
           <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-foreground/60 transition-all" style={{ width: `${compliance}%` }} />
@@ -107,10 +107,11 @@ type Props = {
   paperCatalog: PaperCatalogItem[]
   canCreate: boolean
   canReceive?: boolean
+  companyAddress?: string | null
 }
 
 export function OrdersList({
-  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive,
+  initialOrders, materialType, providers, inkCatalog, paperCatalog, canCreate, canReceive, companyAddress,
 }: Props) {
   const embedded = useEmbedded()
   const router = useRouter()
@@ -224,7 +225,7 @@ export function OrdersList({
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div id="orders-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8 shrink-0">
+    <div id="orders-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8 shrink-0">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -247,18 +248,20 @@ export function OrdersList({
   return (
     <>
       {/* Toolbar */}
-      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-6', toolbarStickyClass(embedded))}>
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-6', toolbarStickyClass(embedded))}>
         <div className="py-3 flex flex-wrap items-center gap-2">
 
+          <div className='flex flex-row w-full justify-between'>
+            
           {/* Search */}
           <div id="orders-search" className={cn('relative min-w-0', embedded ? 'flex-1' : 'shrink basis-72')}>
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               type="text"
               placeholder="Buscar por # o proveedor..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
-              className="h-8 w-full pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
+              className="h-8 w-100 pl-8 pr-7 border border-border bg-card text-xs outline-none focus:border-foreground/40 transition-colors"
             />
             {search && (
               <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -267,24 +270,8 @@ export function OrdersList({
             )}
           </div>
 
-          {/* Status tabs */}
-          <div id="orders-status-filter" className="flex border border-border shrink-0">
-              {STATUS_TABS.map(t => (
-                <button
-                  key={t.value}
-                  onClick={() => { setStatusFilter(t.value); setPage(1) }}
-                  className={cn(
-                    'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                    statusFilter === t.value
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
 
+          <div className='flex flex-row gap-2 items-center'>
             <button
               id="orders-filters-btn"
               onClick={() => setFiltersOpen(v => !v)}
@@ -304,6 +291,26 @@ export function OrdersList({
                 <span className="ml-0.5 bg-white/20 text-[9px] px-1 rounded-sm">{activeFilters}</span>
               )}
             </button>
+
+          {/* Status tabs */}
+          <div id="orders-status-filter" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
+              {STATUS_TABS.map(t => (
+                <button
+                  key={t.value}
+                  onClick={() => { setStatusFilter(t.value); setPage(1) }}
+                  className={cn(
+                    'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
+                    statusFilter === t.value
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-foreground/50 hover:text-foreground',
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+          </div>
+
+          
 
             {!embedded && <div className="flex-1" />}
 
@@ -339,6 +346,15 @@ export function OrdersList({
                 {!embedded && 'Nueva orden'}
               </button>
             )}
+
+
+          </div>
+
+          
+            
+          </div>
+
+
 
         </div>
 
@@ -645,6 +661,7 @@ export function OrdersList({
           onClose={() => setFormOpen(false)}
           providers={providers}
           inkCatalog={inkCatalog}
+          companyAddress={companyAddress}
         />
       ) : (
         <PaperOrderForm
@@ -652,6 +669,7 @@ export function OrdersList({
           onClose={() => setFormOpen(false)}
           providers={providers}
           paperCatalog={paperCatalog}
+          companyAddress={companyAddress}
         />
       )}
     </>

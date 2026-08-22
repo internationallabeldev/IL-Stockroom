@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { passwordSchema } from './password.schema'
 
 const ROLES = ['ADMIN', 'PURCHASER', 'WAREHOUSE_MANAGER', 'PRODUCER', 'USER'] as const
 
@@ -31,7 +32,7 @@ export const notificationPreferencesSchema = z.object({
 })
 
 export const resetPasswordSchema = z.object({
-  password: z.string().min(8, 'Mínimo 8 caracteres'),
+  password: passwordSchema,
   confirm: z.string(),
 }).refine(d => d.password === d.confirm, {
   message: 'Las contraseñas no coinciden',
@@ -40,7 +41,7 @@ export const resetPasswordSchema = z.object({
 
 export const changeOwnPasswordSchema = z.object({
   currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
-  newPassword: z.string().min(8, 'Mínimo 8 caracteres'),
+  newPassword: passwordSchema,
   confirm: z.string(),
 }).refine(d => d.newPassword === d.confirm, {
   message: 'Las contraseñas no coinciden',

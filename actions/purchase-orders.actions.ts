@@ -24,7 +24,7 @@ export type PurchaseOrderSummary = PurchaseOrderRow & {
 }
 
 export type PurchaseOrderDetail = PurchaseOrderRow & {
-  providers: { id: number; name: string; provider_type: string; email: string | null; phone: string; address: string; contact_person: string | null } | null
+  providers: { id: number; name: string; provider_type: string; email: string | null; phone: string; address: string; contact_person: string | null; rfc: string | null; legal_name: string | null; customer_number: string | null } | null
   ink_items: (InkItemRow   & { ink_catalog:   { id: number; code: string; name: string; color_code: string | null; current_stock_kg: number | null } | null })[]
   paper_items: (PaperItemRow & { paper_catalog: { id: number; code: string; name: string; material:   string | null; weight_gsm:       number | null } | null })[]
 }
@@ -71,7 +71,7 @@ export async function getPurchaseOrderById(id: number): Promise<PurchaseOrderDet
     .from('purchase_orders')
     .select(`
       *,
-      providers:provider_id ( id, name, provider_type, email, phone, address, contact_person ),
+      providers:provider_id ( id, name, provider_type, email, phone, address, contact_person, rfc, legal_name, customer_number ),
       ink_items:purchase_order_ink_items (
         *, ink_catalog ( id, code, name, color_code, current_stock_kg )
       ),

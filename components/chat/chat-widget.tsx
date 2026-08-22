@@ -21,6 +21,9 @@ const MIN_H = 360
 const DEFAULT: Size = { w: 440, h: 560 }
 const POS_KEY = 'chat-widget-pos'
 const SIZE_KEY = 'chat-widget-size'
+const LAUNCHER_KEY = 'chat-launcher-pos'
+const LAUNCHER_SIZE = 48 // size-12
+const DRAG_THRESHOLD = 4 // px before a press counts as a drag (vs. a click)
 const MARGIN = 24
 
 function clamp(v: number, min: number, max: number) {
@@ -80,7 +83,11 @@ export function ChatWidget({ userId, userRole }: Props) {
   const [pos, setPos] = useState<Pos | null>(null)
   const [size, setSize] = useState<Size>(DEFAULT)
   const [maximized, setMaximized] = useState(false)
+  const [launcherPos, setLauncherPos] = useState<Pos | null>(null)
   const restoreRef = useRef<{ pos: Pos; size: Size } | null>(null)
+  // Tracks whether the last launcher press turned into a drag, so the click
+  // that follows pointerup doesn't also open the chat.
+  const launcherDraggedRef = useRef(false)
 
   const openRef = useRef(open)
   openRef.current = open
@@ -99,6 +106,23 @@ export function ChatWidget({ userId, userRole }: Props) {
     } else {
       setPos({ x: window.innerWidth - s.w - MARGIN, y: window.innerHeight - s.h - MARGIN })
     }
+  }, [])
+
+  // Launcher (closed-state bubble) position: restored from storage or anchored
+  // bottom-right. Kept inside the viewport on load and on window resize.
+  useEffect(() => {
+    const maxX = () => Math.max(MARGIN, window.innerWidth - LAUNCHER_SIZE - MARGIN)
+    const maxY = () => Math.max(MARGIN, window.innerHeight - LAUNCHER_SIZE - MARGIN)
+    const stored = readStored<Pos>(LAUNCHER_KEY)
+    setLauncherPos(
+      stored
+        ? { x: clamp(stored.x, MARGIN, maxX()), y: clamp(stored.y, MARGIN, maxY()) }
+        : { x: maxX(), y: maxY() },
+    )
+    const onResize = () =>
+      setLauncherPos(p => (p ? { x: clamp(p.x, MARGIN, maxX()), y: clamp(p.y, MARGIN, maxY()) } : p))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   // Load the general channel.
@@ -220,13 +244,52 @@ export function ChatWidget({ userId, userRole }: Props) {
     window.addEventListener('pointerup', up)
   }, [pos, size])
 
+  // ── Launcher drag (free reposition, persisted) ──────────────────────────────
+  const onLauncherDragStart = useCallback((e: React.PointerEvent) => {
+    const startPos = launcherPos ?? {
+      x: window.innerWidth - LAUNCHER_SIZE - MARGIN,
+      y: window.innerHeight - LAUNCHER_SIZE - MARGIN,
+    }
+    const start = { mx: e.clientX, my: e.clientY, px: startPos.x, py: startPos.y }
+    launcherDraggedRef.current = false
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - start.mx
+      const dy = ev.clientY - start.my
+      if (!launcherDraggedRef.current && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        launcherDraggedRef.current = true
+      }
+      if (!launcherDraggedRef.current) return
+      const next = {
+        x: clamp(start.px + dx, MARGIN, window.innerWidth - LAUNCHER_SIZE - MARGIN),
+        y: clamp(start.py + dy, MARGIN, window.innerHeight - LAUNCHER_SIZE - MARGIN),
+      }
+      setLauncherPos(next)
+      localStorage.setItem(LAUNCHER_KEY, JSON.stringify(next))
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }, [launcherPos])
+
   // Launcher (closed state)
   if (!open) {
     return (
       <button
-        onClick={handleOpen}
+        onPointerDown={onLauncherDragStart}
+        onClick={() => {
+          // A drag just ended — swallow the synthetic click instead of opening.
+          if (launcherDraggedRef.current) {
+            launcherDraggedRef.current = false
+            return
+          }
+          handleOpen()
+        }}
         aria-label="Abrir chat"
-        className="fixed bottom-6 right-6 z-60 flex size-12 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105"
+        style={launcherPos ? { left: launcherPos.x, top: launcherPos.y } : { right: MARGIN, bottom: MARGIN }}
+        className="fixed z-60 flex size-12 touch-none select-none items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 active:cursor-grabbing"
       >
         <MessageCircle className="size-5" />
         {unread > 0 && (
