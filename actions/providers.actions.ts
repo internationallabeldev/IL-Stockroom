@@ -13,6 +13,50 @@ type ProviderUpdate = Database['public']['Tables']['providers']['Update']
 
 const ALLOWED_ROLES = ['ADMIN', 'PURCHASER']
 
+/**
+ * Los campos opcionales llegan como '' desde el FormData; el schema los
+ * normaliza a null, así que aquí solo se desempaqueta el FormData tal cual.
+ * Compartido por create y update para que no se desincronicen.
+ */
+function toRawProvider(formData: FormData) {
+  const get = (k: string) => formData.get(k) ?? null
+  return {
+    name:                    get('name'),
+    email:                   get('email'),
+    phone:                   get('phone'),
+    whatsapp:                get('whatsapp'),
+    address:                 get('address'),
+    contact_person:          get('contact_person'),
+    provider_type:           get('provider_type'),
+    logo_url:                get('logo_url'),
+    latitude:                formData.get('latitude')  ? Number(formData.get('latitude'))  : null,
+    longitude:               formData.get('longitude') ? Number(formData.get('longitude')) : null,
+    supply_types: (() => { try { return JSON.parse(formData.get('supply_types') as string) } catch { return null } })(),
+    // Fiscal
+    rfc:                     get('rfc'),
+    legal_name:              get('legal_name'),
+    tax_regime:              get('tax_regime'),
+    postal_code:             get('postal_code'),
+    city:                    get('city'),
+    state:                   get('state'),
+    country:                 get('country'),
+    // Comercial y pagos
+    payment_terms_days:      get('payment_terms_days'),
+    currency:                get('currency'),
+    credit_limit:            get('credit_limit'),
+    bank:                    get('bank'),
+    clabe:                   get('clabe'),
+    account_number:          get('account_number'),
+    customer_number:         get('customer_number'),
+    // Operativo y cumplimiento
+    billing_email:           get('billing_email'),
+    website:                 get('website'),
+    notes:                   get('notes'),
+    csf_url:                 get('csf_url'),
+    compliance_opinion_date: get('compliance_opinion_date'),
+  }
+}
+
 export async function getProviders(filters?: {
   type?: string
   enabled?: boolean
@@ -20,9 +64,11 @@ export async function getProviders(filters?: {
   // TEMPORAL - solo para probar el skeleton temático (piloto proveedores), quitar después
   //await new Promise(resolve => setTimeout(resolve, 1500))
   const supabase = await createClient()
-  let query = supabase.from('providers').select('*').order('name')
+  // deleted_at es la baja definitiva (aún sin UI que la escriba); `enabled`
+  // sigue siendo la baja temporal y sí se muestra en la lista.
+  let query = supabase.from('providers').select('*').is('deleted_at', null).order('name')
 
-  if (filters?.type) query = query.eq('provider_type', filters.type as ProviderInsert['provider_type'])
+  if (filters?.type) query = query.eq('provider_type', filters.type as Provider['provider_type'])
   if (filters?.enabled !== undefined) query = query.eq('enabled', filters.enabled)
 
   const { data, error } = await query
@@ -47,21 +93,7 @@ export async function createProvider(
   const user = await getSessionUser()
   if (!user || !ALLOWED_ROLES.includes(user.role)) return { error: 'Sin permisos' }
 
-  const raw = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    whatsapp: formData.get('whatsapp') || null,
-    address: formData.get('address'),
-    contact_person: formData.get('contact_person') || null,
-    provider_type: formData.get('provider_type'),
-    logo_url: formData.get('logo_url') || null,
-    latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
-    longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-    supply_types: (() => { try { return JSON.parse(formData.get('supply_types') as string) } catch { return null } })(),
-  }
-
-  const parsed = providerSchema.safeParse(raw)
+  const parsed = providerSchema.safeParse(toRawProvider(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { supply_types, ...rest } = parsed.data
@@ -86,21 +118,7 @@ export async function updateProvider(
   const user = await getSessionUser()
   if (!user || !ALLOWED_ROLES.includes(user.role)) return { error: 'Sin permisos' }
 
-  const raw = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    whatsapp: formData.get('whatsapp') || null,
-    address: formData.get('address'),
-    contact_person: formData.get('contact_person') || null,
-    provider_type: formData.get('provider_type'),
-    logo_url: formData.get('logo_url') || null,
-    latitude: formData.get('latitude') ? Number(formData.get('latitude')) : null,
-    longitude: formData.get('longitude') ? Number(formData.get('longitude')) : null,
-    supply_types: (() => { try { return JSON.parse(formData.get('supply_types') as string) } catch { return null } })(),
-  }
-
-  const parsed = providerSchema.safeParse(raw)
+  const parsed = providerSchema.safeParse(toRawProvider(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { supply_types, ...rest } = parsed.data

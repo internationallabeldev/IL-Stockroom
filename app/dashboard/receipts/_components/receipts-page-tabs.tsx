@@ -73,7 +73,7 @@ export function ReceiptsPageTabs({
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div id="receipts-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+    <div id="receipts-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -133,15 +133,14 @@ export function ReceiptsPageTabs({
             {/* Dynamic secondary controls */}
             {tab === 'pending' && (
               <>
-                <div id="receipts-bulk-actions" className="flex border border-border">
-                  {BULK_OPTIONS.map((o, i) => (
+                <div id="receipts-bulk-actions" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
+                  {BULK_OPTIONS.map(o => (
                     <button
                       key={o.value}
                       onClick={() => setBulkQuality(prev => prev === o.value ? null : o.value)}
                       className={cn(
-                        'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap',
-                        i > 0 && 'border-l border-border',
-                        bulkQuality === o.value ? o.activeCls : 'text-foreground/50 hover:text-foreground',
+                        'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap',
+                        bulkQuality === o.value ? cn(o.activeCls, 'shadow-sm') : 'text-foreground/50 hover:text-foreground',
                       )}
                     >
                       {o.label}
@@ -164,15 +163,14 @@ export function ReceiptsPageTabs({
             {tab === 'history' && (
               <>
                 {!defaultMaterial && (
-                  <div className="flex border border-border">
-                    {TYPE_FILTERS.map((f, i) => (
+                  <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
+                    {TYPE_FILTERS.map(f => (
                       <button
                         key={f.value}
                         onClick={() => setTypeFilter(f.value)}
                         className={cn(
-                          'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                          i > 0 && 'border-l border-border',
-                          typeFilter === f.value ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                          'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
+                          typeFilter === f.value ? 'bg-card text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground',
                         )}
                       >
                         {f.label}
@@ -180,15 +178,14 @@ export function ReceiptsPageTabs({
                     ))}
                   </div>
                 )}
-                <div id="receipts-quality-filter" className="flex border border-border">
-                  {QUALITY_FILTERS.map((f, i) => (
+                <div id="receipts-quality-filter" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
+                  {QUALITY_FILTERS.map(f => (
                     <button
                       key={f.value}
                       onClick={() => setQualityFilter(f.value)}
                       className={cn(
-                        'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                        i > 0 && 'border-l border-border',
-                        qualityFilter === f.value ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground',
+                        'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
+                        qualityFilter === f.value ? 'bg-card text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground',
                       )}
                     >
                       {f.label}

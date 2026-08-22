@@ -25,7 +25,7 @@ function StatRow({ stat, withDivider }: { stat: StatItem; withDivider?: boolean 
     <div className="flex items-center gap-2 min-w-0">
       {withDivider && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
       <Icon className={cn('size-3 shrink-0', accentText(accent) ?? 'text-muted-foreground/50')} />
-      <span className="text-[10px] text-muted-foreground/60 font-medium">
+      <span className="text-[11px] text-muted-foreground/70 font-medium">
         {label}
       </span>
       <span

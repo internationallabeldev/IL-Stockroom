@@ -203,7 +203,7 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
       </p>
 
       {/* Page size */}
-      <div id="ink-inv-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+      <div id="ink-inv-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
         <input
           type="number"
@@ -277,7 +277,7 @@ export function InkInventoryView({ initialLots, canManage, canRequest, inkCatalo
           <div className={cn('flex items-center gap-2 min-w-0', embedded && 'flex-1')}>
             {/* Search */}
             <div id="ink-inv-search" className="relative flex-1 @2xl:flex-none min-w-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}

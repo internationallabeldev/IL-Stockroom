@@ -90,7 +90,7 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nombre o email..."
             className={cn(
-              'h-8 w-full border border-foreground/20 bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/50 transition-colors',
+              'h-8 w-full border border-border bg-card pl-8 pr-7 text-xs outline-none focus:border-foreground/40 transition-colors',
               !embedded && '@2xl:w-56',
             )}
           />
@@ -101,16 +101,16 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           )}
         </div>
 
-        <div className="flex border border-border shrink-0">
+        <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
           {ROLE_FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setRoleFilter(f.value)}
               className={cn(
-                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                 roleFilter === f.value
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-foreground/50 hover:text-foreground',
               )}
             >
               {f.label}
@@ -118,16 +118,16 @@ export function UsersList({ initialUsers, currentUserId }: Props) {
           ))}
         </div>
 
-        <div className="flex border border-border shrink-0">
+        <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
           {STATUS_FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setStatusFilter(f.value)}
               className={cn(
-                'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                 statusFilter === f.value
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-foreground/50 hover:text-foreground',
               )}
             >
               {f.label}

@@ -90,7 +90,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden sm:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accentClass(accent))} />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', valueClass(accent))}>
             {value.toLocaleString()}
           </span>
@@ -102,7 +102,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Distribución</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
             <div className="bg-emerald-500 transition-all" style={{ width: `${(byOperation.INSERT / opTotal) * 100}%` }} />
             <div className="bg-blue-500    transition-all" style={{ width: `${(byOperation.UPDATE / opTotal) * 100}%` }} />
@@ -121,7 +121,7 @@ function AuditStatsBar({ stats }: { stats: AuditStats }) {
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Database className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Top tabla</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Top tabla</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-40 truncate">
             {TABLE_LABELS[topTable.name] ?? topTable.name}
           </span>
@@ -215,7 +215,7 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div className="flex items-center gap-1.5 border border-border px-2.5 h-8" id="audit-page-size">
+    <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8" id="audit-page-size">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -262,16 +262,16 @@ export function AuditLogList({ initialData, initialTotal, initialStats, users }:
 
           <div className="gap-2 flex flex-row flex-wrap items-center">
             {/* Operation filter pills */}
-            <div className="flex border border-border shrink-0" id="audit-op-filter">
+            <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0" id="audit-op-filter">
               {OPERATION_FILTERS.map(f => (
                 <button
                   key={f.value || 'all'}
                   onClick={() => setOpFilter(f.value)}
                   className={cn(
-                    'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                     opFilter === f.value
-                      ? 'bg-foreground text-background'
-                      : 'text-foreground/50 hover:text-foreground border-l border-border first:border-l-0',
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-foreground/50 hover:text-foreground',
                   )}
                 >
                   {f.label}

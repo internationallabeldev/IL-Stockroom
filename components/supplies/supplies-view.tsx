@@ -86,7 +86,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div key={label} className="flex items-center gap-2">
           {i > 0 && <span className="text-border/60 select-none hidden @2xl:inline">·</span>}
           <Icon className={cn('size-3 shrink-0', accentClass(accent))} />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{label}</span>
           <span className={cn('text-[11px] font-bold tabular-nums', valueClass(accent))}>
             {value}
           </span>
@@ -98,7 +98,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <Layers className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Distribución</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Distribución</span>
           <div className="flex h-1.5 w-14 overflow-hidden rounded-full gap-px">
             <div className="bg-red-500 transition-all"    style={{ width: `${(totals.critical / totalTracked) * 100}%` }} />
             <div className="bg-yellow-400 transition-all" style={{ width: `${(totals.warning  / totalTracked) * 100}%` }} />
@@ -117,7 +117,7 @@ function SuppliesStatsBar({ categories }: { categories: SupplyCategoryWithItems[
         <div className="flex items-center gap-2">
           <span className="text-border/60 select-none hidden @2xl:inline">·</span>
           <TrendingDown className="size-3 shrink-0 text-muted-foreground/50" />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">Crítica</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">Crítica</span>
           <span className="text-[11px] font-bold tabular-nums text-foreground/80 max-w-30 truncate">
             {worstCategory.cat.name}
           </span>
@@ -382,7 +382,7 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
 
           <div className="gap-2 flex flex-row flex-wrap items-center">
             {/* Status filter */}
-            <div className="flex border border-border shrink-0" id="supplies-status-filter">
+            <div className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0" id="supplies-status-filter">
               {FILTER_OPTIONS.map(f => {
                 const count    = filterCounts[f.value]
                 const isActive = filter === f.value
@@ -393,9 +393,9 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
                     onClick={() => setFilter(f.value)}
                     disabled={isEmpty}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors border-l border-border first:border-l-0',
+                      'flex items-center gap-1.5 px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                       isActive
-                        ? 'bg-foreground text-background'
+                        ? 'bg-card text-foreground shadow-sm'
                         : isEmpty
                           ? 'text-foreground/20 cursor-not-allowed'
                           : 'text-foreground/50 hover:text-foreground',
@@ -405,7 +405,7 @@ export function SuppliesView({ categories: initialCategories, canEdit }: Props) 
                     {f.value !== 'all' && (
                       <span className={cn(
                         'text-[9px] tabular-nums font-bold',
-                        isActive ? 'text-background/60' : isEmpty ? 'text-foreground/20' : 'text-foreground/30'
+                        isActive ? 'text-foreground/40' : isEmpty ? 'text-foreground/20' : 'text-foreground/30'
                       )}>
                         {count}
                       </span>

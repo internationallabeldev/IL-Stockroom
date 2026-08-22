@@ -71,7 +71,7 @@ function RequisitionsStatsBar({ reqs }: { reqs: Requisition[] }) {
             accent === 'amber' ? 'text-amber-500'  :
             'text-muted-foreground/50',
           )} />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">{label}</span>
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{label}</span>
           <span className={cn(
             'text-[11px] font-bold tabular-nums',
             accent === 'red'   ? 'text-red-500'   :
@@ -305,7 +305,7 @@ export function RequisitionsList({
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div id="req-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+    <div id="req-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -328,14 +328,14 @@ export function RequisitionsList({
   return (
     <>
       {/* ── Sticky toolbar ────────────────────────────────────────────────── */}
-      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-4', toolbarStickyClass(embedded))}>
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-4', toolbarStickyClass(embedded))}>
 
         {/* Toolbar row */}
         <div className="py-3 flex flex-wrap items-center gap-2">
 
           {/* Search */}
           <div id="req-search" className={cn('relative', embedded ? 'flex-1 min-w-0' : 'flex-none')}>
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
@@ -356,24 +356,21 @@ export function RequisitionsList({
           </div>
 
           {/* Tabs */}
-          <div id="req-tabs" className="flex border border-border shrink-0">
+          <div id="req-tabs" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
             {TABS.map(t => (
               <button
                 key={t.value}
                 onClick={() => { setTab(t.value); setPage(1) }}
                 className={cn(
-                  'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors relative',
+                  'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all relative',
                   tab === t.value
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-foreground/50 hover:text-foreground',
                 )}
               >
                 {t.label}
                 {t.value === 'pending' && pendingCount > 0 && (
-                  <span className={cn(
-                    'ml-1.5 text-[8px] font-bold px-1 rounded-full',
-                    tab === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-400 text-amber-900',
-                  )}>
+                  <span className="ml-1.5 text-[8px] font-bold px-1 rounded-full bg-amber-400 text-amber-900">
                     {pendingCount}
                   </span>
                 )}

@@ -1131,6 +1131,26 @@ export type Database = {
       }
       providers: {
         Row: {
+          account_number: string | null
+          bank: string | null
+          billing_email: string | null
+          city: string | null
+          clabe: string | null
+          compliance_opinion_date: string | null
+          country: string | null
+          credit_limit: number | null
+          csf_url: string | null
+          currency: string | null
+          customer_number: string | null
+          deleted_at: string | null
+          legal_name: string | null
+          notes: string | null
+          payment_terms_days: number | null
+          postal_code: string | null
+          rfc: string | null
+          state: string | null
+          tax_regime: string | null
+          website: string | null
           address: string
           contact_person: string | null
           created_at: string | null
@@ -1148,6 +1168,26 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          account_number?: string | null
+          bank?: string | null
+          billing_email?: string | null
+          city?: string | null
+          clabe?: string | null
+          compliance_opinion_date?: string | null
+          country?: string | null
+          credit_limit?: number | null
+          csf_url?: string | null
+          currency?: string | null
+          customer_number?: string | null
+          deleted_at?: string | null
+          legal_name?: string | null
+          notes?: string | null
+          payment_terms_days?: number | null
+          postal_code?: string | null
+          rfc?: string | null
+          state?: string | null
+          tax_regime?: string | null
+          website?: string | null
           address: string
           contact_person?: string | null
           created_at?: string | null
@@ -1165,6 +1205,26 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          account_number?: string | null
+          bank?: string | null
+          billing_email?: string | null
+          city?: string | null
+          clabe?: string | null
+          compliance_opinion_date?: string | null
+          country?: string | null
+          credit_limit?: number | null
+          csf_url?: string | null
+          currency?: string | null
+          customer_number?: string | null
+          deleted_at?: string | null
+          legal_name?: string | null
+          notes?: string | null
+          payment_terms_days?: number | null
+          postal_code?: string | null
+          rfc?: string | null
+          state?: string | null
+          tax_regime?: string | null
+          website?: string | null
           address?: string
           contact_person?: string | null
           created_at?: string | null

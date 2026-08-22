@@ -377,6 +377,14 @@ export function OrderPDF({ order, settings, logoBase64 }: OrderPDFProps) {
             <View style={[s.dataCell, { flex: 2 }]}>
               <Text style={s.cellLabel}>Proveedor</Text>
               <Text style={s.cellValueBold}>{provider?.name ?? '—'}</Text>
+              {provider?.legal_name && provider.legal_name !== provider.name && (
+                <Text style={s.cellValue}>{provider.legal_name}</Text>
+              )}
+              {/* El RFC es lo que permite casar esta OC con el CFDI que llegue. */}
+              {provider?.rfc && <Text style={s.cellValue}>R.F.C.: {provider.rfc}</Text>}
+              {provider?.customer_number && (
+                <Text style={s.cellValue}>Nº de cliente: {provider.customer_number}</Text>
+              )}
             </View>
             <View style={[s.dataCellLast, { flex: 2 }]}>
               <Text style={s.cellLabel}>Dirección del proveedor</Text>

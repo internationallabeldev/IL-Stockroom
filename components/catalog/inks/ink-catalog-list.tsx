@@ -84,7 +84,7 @@ function InkStatsBar({ items }: { items: InkCatalogItem[] }) {
                   : 'text-muted-foreground/50',
             )}
           />
-          <span className="text-[10px] text-muted-foreground/60 font-medium">
+          <span className="text-[11px] text-muted-foreground/70 font-medium">
             {label}
           </span>
           <span
@@ -187,7 +187,7 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
 
   // Page size — inline on full pages, tucked into the "Controles" dropdown when embedded.
   const pageSizeControl = (
-    <div id="catalog-page-size" className="flex items-center gap-1.5 border border-border px-2.5 h-8">
+    <div id="catalog-page-size" className="flex items-center gap-1.5 bg-muted/50 px-2.5 h-8">
       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">Por página</span>
       <input
         type="number"
@@ -204,7 +204,7 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
   return (
     <>
       {/* Toolbar */}
-      <div className={cn('sticky z-30 bg-background border-b border-border/50 mb-6', toolbarStickyClass(embedded))}>
+      <div className={cn('sticky z-30 bg-background border-b border-border mb-6', toolbarStickyClass(embedded))}>
         <div className="@container">
         <div className={cn(
           'py-3 flex gap-2',
@@ -213,7 +213,7 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
             : 'flex-col @2xl:flex-row @2xl:flex-wrap @2xl:items-center @2xl:gap-3 @2xl:justify-between',
         )}>
           <div className={cn('relative min-w-0', embedded ? 'flex-1' : 'w-full @2xl:w-auto')}>
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground/40 pointer-events-none" />
             <input
               id="catalog-search"
               type="search"
@@ -235,16 +235,16 @@ export function InkCatalogList({ items: initialItems, providers, canEdit }: Prop
           <div className='flex flex-row flex-wrap items-center gap-2'>
 
             {/* Stock filter */}
-            <div id="catalog-stock-filter" className="flex border border-border shrink-0">
+            <div id="catalog-stock-filter" className="flex gap-0.5 bg-black/4 dark:bg-black/25 p-0.5 shrink-0">
               {STOCK_FILTERS.map(f => (
                 <button
                   key={f.value}
                   onClick={() => setStockFilter(f.value)}
                   className={cn(
-                    'px-3 h-8 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    'px-3 h-7 text-[10px] font-bold uppercase tracking-widest transition-all',
                     stockFilter === f.value
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:text-foreground border-l border-border first:border-l-0',
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-foreground/50 hover:text-foreground',
                   )}
                 >
                   {f.label}

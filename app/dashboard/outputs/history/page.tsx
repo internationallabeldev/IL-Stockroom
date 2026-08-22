@@ -12,7 +12,7 @@ export default async function OutputsHistoryPage() {
   if (!user) redirect('/login')
 
   return (
-    <div className="px-8 pt-6 pb-8">
+    <div className="px-8 pb-8">
       <OutputsHistoryList
         initialRequisitions={fulfilled}
         userRole={user.role}
